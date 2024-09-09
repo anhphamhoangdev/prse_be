@@ -1,6 +1,7 @@
 package com.hcmute.prse_be;
 
 import com.hcmute.prse_be.config.Config;
+import com.hcmute.prse_be.service.LogService;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;

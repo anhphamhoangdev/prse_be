@@ -1,5 +1,6 @@
 package com.hcmute.prse_be;
 
+import com.hcmute.prse_be.service.LogService;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 
