@@ -71,41 +71,41 @@ public class TestController {
 
         return Response.error("ERROR");
     }
-@PostMapping("/test11")
+    @PostMapping("/test11")
     public JSONObject doTest11(@RequestBody Map<String,Object> request, @RequestHeader("accept-token") String acceptToken)
-{
-    if(acceptToken.equals("UTE123"))
     {
-        Random random = new Random();
-        int numb1 = random.nextInt(5);
-        int numb2 = random.nextInt(5);
-        numb1 =2;
-        numb2 =1;
-        List<Map<String,Object>> dataList = (List<Map<String, Object>>) request.get("data");
-        JSONObject dataResponse = new JSONObject();
-        JSONArray dataArray = new JSONArray();
-        if(numb1> dataList.size() && numb2> dataList.size())
+        if(acceptToken.equals("UTE123"))
         {
-            return Response.success(dataResponse);
-        }
-        else {
-            for(Map<String, Object> item : dataList)
+            Random random = new Random();
+            int numb1 = random.nextInt(5);
+            int numb2 = random.nextInt(5);
+            numb1 =2;
+            numb2 =1;
+            List<Map<String,Object>> dataList = (List<Map<String, Object>>) request.get("data");
+            JSONObject dataResponse = new JSONObject();
+            JSONArray dataArray = new JSONArray();
+            if(numb1> dataList.size() && numb2> dataList.size())
             {
-                int numbTemp = ConvertUtils.toInt(item.get("id"));
-                if(numbTemp ==numb1 || numbTemp ==numb2){
-                    JSONObject dataTemp = new JSONObject();
-                    dataTemp.put("id",item.get("id"));
-                    dataTemp.put("name",item.get("name"));
-                    dataTemp.put("age", item.get("age"));
-                    dataTemp.put("email", item.get("email"));
-                    dataArray.add(dataTemp);
-                }
+                return Response.success(dataResponse);
             }
-            dataResponse.put("infor",dataArray);
-            return Response.success(dataResponse);
+            else {
+                for(Map<String, Object> item : dataList)
+                {
+                    int numbTemp = ConvertUtils.toInt(item.get("id"));
+                    if(numbTemp ==numb1 || numbTemp ==numb2){
+                        JSONObject dataTemp = new JSONObject();
+                        dataTemp.put("id",item.get("id"));
+                        dataTemp.put("name",item.get("name"));
+                        dataTemp.put("age", item.get("age"));
+                        dataTemp.put("email", item.get("email"));
+                        dataArray.add(dataTemp);
+                    }
+                }
+                dataResponse.put("infor",dataArray);
+                return Response.success(dataResponse);
+            }
         }
+        return Response.error("ERROR");
     }
-    return Response.error("ERROR");
-}
 
 }
