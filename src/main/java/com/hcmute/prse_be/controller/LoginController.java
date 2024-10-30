@@ -3,7 +3,6 @@ package com.hcmute.prse_be.controller;
 import com.hcmute.prse_be.config.Config;
 import com.hcmute.prse_be.response.Response;
 import com.hcmute.prse_be.service.HttpService;
-import com.hcmute.prse_be.service.LogService;
 import com.hcmute.prse_be.util.ConvertUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import net.minidev.json.JSONObject;

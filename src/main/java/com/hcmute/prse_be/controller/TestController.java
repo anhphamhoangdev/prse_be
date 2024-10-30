@@ -176,6 +176,13 @@ public class TestController {
         return response;
     }
 
+    @GetMapping("success")
+    public JSONObject success() {
+
+        return Response.success();
+    }
+
+
 
 
 
