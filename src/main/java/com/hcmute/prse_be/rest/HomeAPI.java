@@ -56,17 +56,32 @@ public class HomeAPI {
     }
 
     @GetMapping(ApiPaths.HOME_FREE_COURSE)
-    public JSONObject getFreeCourse()
-    {
+    public JSONObject getFreeCourse() {
         LogService.getgI().info("[HOME] " + ApiPaths.HOME_FREE_COURSE);
         JSONObject response = new JSONObject();
         try {
-            response.put("free_courses", courseService.getFreeCourse(0, PaginationNumber.HOME_COURSE_PER_PAGE));
+            response.put("courses", courseService.getFreeCourse(0, PaginationNumber.HOME_COURSE_PER_PAGE));
         } catch (Exception e) {
-            response.put("free_courses", new JSONArray());
+            response.put("courses", new JSONArray());
         }
         return Response.success(response);
 
     }
+
+    @GetMapping(ApiPaths.HOME_DISCOUNT_COURSE)
+    public JSONObject getDiscountCourse() {
+        LogService.getgI().info("[HOME] " + ApiPaths.HOME_DISCOUNT_COURSE);
+        JSONObject response = new JSONObject();
+        try {
+            response.put("courses", courseService.getDiscountCourse(0, PaginationNumber.HOME_COURSE_PER_PAGE));
+        } catch (Exception e) {
+            response.put("courses", new JSONArray());
+        }
+        return Response.success(response);
+    }
+
+
+
+
 
 }
