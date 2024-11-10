@@ -12,7 +12,33 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 public interface CourseRepository extends JpaRepository<CourseEntity, Long> {
-    List<CourseEntity> findAllByIsPublishTrueAndOriginalPrice(double originalPrice, Pageable pageable);
+
+    @Query("""
+            SELECT new com.hcmute.prse_be.dtos.CourseDTO(
+                c.id,
+                c.instructorId,
+                c.title,
+                c.shortDescription,
+                c.description,
+                c.imageUrl,
+                c.language,
+                c.originalPrice,
+                c.originalPrice,
+                c.averageRating,
+                c.totalStudents,
+                c.totalViews,
+                c.isPublish,
+                c.isHot,
+                c.isDiscount,
+                c.createdAt,
+                c.updatedAt
+            )
+            FROM CourseEntity c
+            WHERE c.isPublish = true 
+            AND c.originalPrice = 0
+            """)
+    Page<CourseDTO> findAllByIsPublishTrueAndOriginalPrice(Pageable pageable);
+
 
     @Query("""
             SELECT new com.hcmute.prse_be.dtos.CourseDTO(
@@ -46,5 +72,77 @@ public interface CourseRepository extends JpaRepository<CourseEntity, Long> {
     Page<CourseDTO> findAllActiveDiscountedCourses(LocalDateTime currentDateTime, Pageable pageable);
 
 
+    @Query(value = """
 
+            SELECT NEW com.hcmute.prse_be.dtos.CourseDTO(
+            c.id,                   
+            c.instructorId,          
+            c.title,                 
+            c.shortDescription,     
+            c.description,          
+            c.imageUrl,             
+            c.language,             
+            c.originalPrice,         
+            c.originalPrice,        
+            c.averageRating,        
+            c.totalStudents,        
+            c.totalViews,           
+            c.isPublish,            
+            c.isHot,                
+            c.isDiscount,           
+            c.createdAt,            
+            c.updatedAt             
+        )
+        FROM CourseEntity c 
+        WHERE c.isPublish = true 
+        AND LOWER(c.title) LIKE LOWER(CONCAT('%', :q, '%')) 
+        OR LOWER(c.description) LIKE LOWER(CONCAT('%', :q, '%'))
+        """)
+    Page<CourseDTO> findCoursesByKeyword(
+            @Param("q") String q,
+            Pageable pageable
+    );
+
+
+    @Query(value = """
+        SELECT NEW com.hcmute.prse_be.dtos.CourseDTO(
+            c.id,                   
+            c.instructorId,          
+            c.title,                 
+            c.shortDescription,      
+            c.description,           
+            c.imageUrl,              
+            c.language,              
+            c.originalPrice,         
+            c.originalPrice,         
+            c.averageRating,         
+            c.totalStudents,         
+            c.totalViews,            
+            c.isPublish,             
+            c.isHot,                 
+            c.isDiscount,            
+            c.createdAt,             
+            c.updatedAt              
+        )
+        FROM CourseEntity c 
+        WHERE c.isPublish = true 
+        AND (
+            LOWER(c.title) LIKE LOWER(CONCAT('%', :keyword, '%')) 
+            OR LOWER(c.description) LIKE LOWER(CONCAT('%', :keyword, '%'))
+        )
+        AND (:price = 'all' 
+            OR (:price = 'free' AND c.originalPrice = 0)
+            OR (:price = 'paid' AND c.originalPrice > 0)
+            OR (:price = 'under_50' AND c.originalPrice < 50000)
+            OR (:price = '50_200' AND c.originalPrice BETWEEN 50000 AND 200000)
+            OR (:price = 'over_200' AND c.originalPrice > 200000)
+        )
+        AND (:rating IS NULL OR c.averageRating >= :rating)
+        """)
+    Page<CourseDTO> searchCoursesWithFilters(
+            @Param("keyword") String keyword,
+            @Param("price") String price,
+            @Param("rating") Integer rating,
+            Pageable pageable
+    );
 }

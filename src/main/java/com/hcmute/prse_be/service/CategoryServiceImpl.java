@@ -1,14 +1,17 @@
 package com.hcmute.prse_be.service;
 
+import com.hcmute.prse_be.constants.PaginationNumber;
 import com.hcmute.prse_be.dtos.CategoryWithSubsDTO;
+import com.hcmute.prse_be.dtos.CourseDTO;
 import com.hcmute.prse_be.dtos.SubCategoryDTO;
-import com.hcmute.prse_be.entity.CategoryEntity;
-import com.hcmute.prse_be.entity.SubCategoryEntity;
-import com.hcmute.prse_be.repository.CategoryRepository;
-import com.hcmute.prse_be.repository.SubCategoryRepository;
+import com.hcmute.prse_be.entity.*;
+import com.hcmute.prse_be.repository.*;
+import com.hcmute.prse_be.response.CoursePageResponse;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -20,14 +23,27 @@ public class CategoryServiceImpl implements CategoryService{
     private final CategoryRepository categoryRepository;
 
     private final SubCategoryRepository subCategoryRepository;
+    private final CourseSubCategoryRepository courseSubCategoryRepository;
+    private final CourseDiscountRepository courseDiscountRepository;
+
+
+    private final CourseRepository courseRepository;
 
 
     @Autowired
-    public CategoryServiceImpl(CategoryRepository categoryRepository, SubCategoryRepository subCategoryRepository) {
+    public CategoryServiceImpl(CategoryRepository categoryRepository, SubCategoryRepository subCategoryRepository, CourseSubCategoryRepository courseSubCategoryRepository, CourseDiscountRepository courseDiscountRepository, CourseRepository courseRepository) {
         this.categoryRepository = categoryRepository;
         this.subCategoryRepository = subCategoryRepository;
+        this.courseSubCategoryRepository = courseSubCategoryRepository;
+        this.courseDiscountRepository = courseDiscountRepository;
+        this.courseRepository = courseRepository;
     }
 
+
+    @Override
+    public SubCategoryEntity getSubCategoryById(Long id) {
+        return subCategoryRepository.getReferenceById(id);
+    }
 
     @Override
     public List<CategoryWithSubsDTO> getAllCategoryWithSubsActive() {
@@ -55,6 +71,81 @@ public class CategoryServiceImpl implements CategoryService{
         return categories.stream()
                 .map(category -> mapToCategoryWithSubsDTO(category, subCategoriesMap.getOrDefault(category.getId(), Collections.emptyList())))
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public CoursePageResponse getCoursesBySubCategory(Long subCategoryId, Integer page) {
+        Pageable pageable = PageRequest.of(page, PaginationNumber.COURSE_SUB_CATEGORY_PER_PAGE, Sort.by("createdAt").descending());
+        // Get courses
+        Page<CourseDTO> coursePage = courseSubCategoryRepository
+                .findCoursesBySubCategory(subCategoryId, pageable);
+
+        // Process discount prices
+        List<CourseDTO> processedCourses = coursePage.getContent().stream()
+                .map(this::processDiscountPrice)
+                .toList();
+
+        return new CoursePageResponse(processedCourses, coursePage.getTotalPages(),coursePage.getTotalElements());
+    }
+
+    @Override
+    public CoursePageResponse getCoursesBySubCategoryWithFilters(
+            Long subCategoryId,
+            String keyword,
+            Integer page,
+            String price,
+            Integer rating,
+            String sort
+    ) {
+        Sort sorting = switch (sort) {
+            case "oldest" -> Sort.by("createdAt").ascending();
+            case "price_asc" -> Sort.by("originalPrice").ascending();
+            case "price_desc" -> Sort.by("originalPrice").descending();
+            case "rating" -> Sort.by("averageRating").descending();
+            case "popular" -> Sort.by("totalStudents").descending();
+            default -> Sort.by("createdAt").descending(); // newest
+        };
+
+        Pageable pageable = PageRequest.of(
+                page,
+                PaginationNumber.COURSE_SUB_CATEGORY_PER_PAGE,
+                sorting
+        );
+
+        Page<CourseDTO> coursePage = courseSubCategoryRepository
+                .findCoursesBySubCategoryWithFilters(
+                        subCategoryId,
+                        keyword,
+                        price,
+                        rating,
+                        pageable
+                );
+
+        List<CourseDTO> processedCourses = coursePage.getContent().stream()
+                .map(this::processDiscountPrice)
+                .toList();
+
+        return new CoursePageResponse(
+                processedCourses,
+                coursePage.getTotalPages(),
+                coursePage.getTotalElements()
+        );
+    }
+
+    private CourseDTO processDiscountPrice(CourseDTO course) {
+        if (Boolean.TRUE.equals(course.getIsDiscount())) {
+            courseDiscountRepository.findLatestValidDiscount(course.getId(), LocalDateTime.now())
+                    .ifPresentOrElse(
+                            discount -> course.setDiscountPrice(discount.getDiscountPrice()),
+                            () -> {
+                                CourseEntity courseEntity = courseRepository.getReferenceById(course.getId());
+                                courseEntity.setIsDiscount(false);
+                                courseRepository.save(courseEntity);
+                                course.setDiscountPrice(course.getOriginalPrice());
+                            }
+                    );
+        }
+        return course;
     }
 
     private CategoryWithSubsDTO mapToCategoryWithSubsDTO(CategoryEntity category, List<SubCategoryEntity> subCategories) {

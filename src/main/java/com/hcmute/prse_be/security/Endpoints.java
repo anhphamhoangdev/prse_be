@@ -4,10 +4,14 @@ import com.hcmute.prse_be.config.Config;
 
 public class Endpoints {
 
-    public static final String FRONT_END_HOST = Config.getParam("spring_boot", "front_end_host_test");
+    public static final String FRONT_END_HOST = Config.getParam("spring_boot", "front_end_host");
 
     public static final String[] PUBLIC_GET_END_POINT = {
             "/api/home/**",
+
+            "/api/category/**",
+
+            "api/search/**"
 
 
 //            "/books",
