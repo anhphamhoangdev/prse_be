@@ -1,17 +1,12 @@
 package com.hcmute.prse_be.rest;
 
-import com.hcmute.prse_be.constants.ErrorMsg;
-import com.hcmute.prse_be.entity.SubCategoryEntity;
+import com.hcmute.prse_be.repository.StudentRepository;
 import com.hcmute.prse_be.response.Response;
 import com.hcmute.prse_be.service.CourseService;
 import com.hcmute.prse_be.service.LogService;
-import com.hcmute.prse_be.util.ConvertUtils;
 import net.minidev.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/search")
@@ -60,7 +55,6 @@ public class SearchAPI {
         }
         return Response.success(response);
     }
-
 
 
 

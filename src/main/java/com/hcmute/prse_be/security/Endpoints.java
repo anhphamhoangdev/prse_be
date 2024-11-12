@@ -11,7 +11,9 @@ public class Endpoints {
 
             "/api/category/**",
 
-            "api/search/**"
+            "/api/search/**",
+
+            "/api/student/activate"
 
 
 //            "/books",
@@ -24,12 +26,18 @@ public class Endpoints {
     };
 
     public static final String[] PUBLIC_POST_END_POINT = {
-//            "/user/register",
+            "api/student/register",
+            "api/student/existsByUsername",
+            "api/student/existsByEmail",
+            "api/student/existsByPhoneNumber",
+            "api/student/login",
+
 //            "/user/login",
 //            "/test/**"
     };
 
-    public static final String[] ADMIN_GET_END_POINT = {
+    public static final String[] STUDENT_GET_END_POINT = {
+            "/api/test"
 //            "/users",
 //            "/users/**"
     };

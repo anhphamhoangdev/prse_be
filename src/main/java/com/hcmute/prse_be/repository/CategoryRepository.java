@@ -1,6 +1,5 @@
 package com.hcmute.prse_be.repository;
 
-import com.hcmute.prse_be.entity.BannerEntity;
 import com.hcmute.prse_be.entity.CategoryEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 

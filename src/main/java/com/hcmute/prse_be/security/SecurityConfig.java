@@ -1,5 +1,7 @@
 package com.hcmute.prse_be.security;
 
+import com.hcmute.prse_be.filter.JwtFilter;
+import com.hcmute.prse_be.service.CustomUserDetailsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -17,8 +19,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-//import vn.harris.bookstore_be.filter.JwtFilter;
-//import vn.harris.bookstore_be.service.UserService;
+
 
 import java.util.Arrays;
 import java.util.List;
@@ -27,15 +28,14 @@ import java.util.List;
 public class SecurityConfig {
 
 
-//    @Autowired
-//    private JwtFilter jwtFilter;
+    @Autowired
+    private JwtFilter jwtFilter;
 
     @Bean
     public BCryptPasswordEncoder passwordEncoder()
     {
         return new BCryptPasswordEncoder();
     }
-
 
     @Bean
     public AuthenticationManager authenticationManager(
@@ -44,14 +44,14 @@ public class SecurityConfig {
     }
 
 
-//    @Bean
-//    public DaoAuthenticationProvider authenticationProvider(UserService userService)
-//    {
-//        DaoAuthenticationProvider daoAuthenticationProvider = new DaoAuthenticationProvider();
-//        daoAuthenticationProvider.setUserDetailsService(userService);
-//        daoAuthenticationProvider.setPasswordEncoder(passwordEncoder());
-//        return daoAuthenticationProvider;
-//    }
+    @Bean
+    public DaoAuthenticationProvider authenticationProvider(CustomUserDetailsService userService)
+    {
+        DaoAuthenticationProvider daoAuthenticationProvider = new DaoAuthenticationProvider();
+        daoAuthenticationProvider.setUserDetailsService(userService);
+        daoAuthenticationProvider.setPasswordEncoder(passwordEncoder());
+        return daoAuthenticationProvider;
+    }
 
 
     @Bean
@@ -76,7 +76,7 @@ public class SecurityConfig {
                     config
                             .requestMatchers(HttpMethod.GET, Endpoints.PUBLIC_GET_END_POINT).permitAll()
                             .requestMatchers(HttpMethod.POST, Endpoints.PUBLIC_POST_END_POINT).permitAll()
-                            .requestMatchers(HttpMethod.GET, Endpoints.ADMIN_GET_END_POINT).hasAuthority("ADMIN")
+                            .requestMatchers(HttpMethod.GET, Endpoints.STUDENT_GET_END_POINT).hasAuthority("STUDENT")
                             .requestMatchers(HttpMethod.POST, Endpoints.ADMIN_POST_END_POINT).hasAuthority("ADMIN")
                             .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // Thêm cho CORS preflight
                             .anyRequest().authenticated(); // Thêm default rule
@@ -87,7 +87,7 @@ public class SecurityConfig {
                 )
                 .httpBasic(Customizer.withDefaults())
                 .csrf(AbstractHttpConfigurer::disable);
-//        http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+        http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
