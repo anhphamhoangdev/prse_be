@@ -15,7 +15,6 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -109,7 +108,7 @@ public class StudentAPI {
 
             if (authentication.isAuthenticated()) {
                 UserDetails userDetails = customUserDetailsService.loadUserByUsername(loginRequest.getUsername());
-                final String jwt = jwtService.generateToken(userDetails);
+                final String jwt = jwtService.generateToken(userDetails, loginRequest.isRememberMe());
                 JSONObject response = new JSONObject();
                 response.put("jwt", new JwtResponse(jwt));
                 return Response.success(response);
@@ -122,6 +121,24 @@ public class StudentAPI {
         }
 
         return Response.error("Xác thực thất bại");
+    }
+
+    @GetMapping("/profile")
+    public JSONObject getProfile(Authentication authentication) {
+        try {
+            String username = authentication.getName();
+            StudentEntity student = customUserDetailsService.findByUsername(username);
+            if (student == null) {
+                return Response.error("Không tìm thấy thông tin user");
+            }
+
+            JSONObject response = new JSONObject();
+            response.put("student", student);
+            return Response.success(response);
+
+        } catch (Exception e) {
+            return Response.error("Lỗi khi lấy thông tin: " + e.getMessage());
+        }
     }
 
 

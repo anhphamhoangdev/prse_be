@@ -2,7 +2,6 @@ package com.hcmute.prse_be.service;
 
 import com.hcmute.prse_be.entity.StudentEntity;
 import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
@@ -30,6 +29,9 @@ public class JwtServiceImpl implements JwtService{
 
     private static final long EXPIRATION_TIME = 0;
 
+    private static final long REMEMBER_ME_EXPIRATION_TIME = 7776000000L; // 90 ngày
+
+
     public JwtServiceImpl(CustomUserDetailsService customUserDetailsService) {
         this.customUserDetailsService = customUserDetailsService;
     }
@@ -41,7 +43,7 @@ public class JwtServiceImpl implements JwtService{
 
     // create token tu username
     @Override
-    public String generateToken(UserDetails userDetails) {
+    public String generateToken(UserDetails userDetails, boolean isRememberMe) {
         Map<String, Object> claims = new HashMap<>();
         StudentEntity student = customUserDetailsService.findByUsername(userDetails.getUsername());
 
@@ -51,15 +53,16 @@ public class JwtServiceImpl implements JwtService{
                 .collect(Collectors.toList()));
 
 
-        return createToken(claims, userDetails.getUsername());
+        long expirationTime = isRememberMe ? REMEMBER_ME_EXPIRATION_TIME : EXPIRATION_TIME;
+        return createToken(claims, userDetails.getUsername(), expirationTime);
     }
 
-    private String createToken(Map<String, Object> claims, String subject) {
+    private String createToken(Map<String, Object> claims, String subject, long expirationTime) {
         return Jwts.builder()
                 .setClaims(claims)
                 .setSubject(subject)
                 .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
+                .setExpiration(new Date(System.currentTimeMillis() + expirationTime))
                 .signWith(getSecretKey(), SignatureAlgorithm.HS256)
                 .compact();
     }

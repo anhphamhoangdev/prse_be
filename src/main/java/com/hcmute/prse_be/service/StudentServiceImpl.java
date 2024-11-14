@@ -61,6 +61,9 @@ public class StudentServiceImpl implements StudentService{
         studentEntity.setMoney(0.0);
         studentEntity.setPoint(10.0);
 
+        // set avatar url
+        studentEntity.setAvatarUrl("https://img.freepik.com/free-vector/blue-circle-with-white-user_78370-4707.jpg?t=st=1731498343~exp=1731501943~hmac=5e0f9e570c10ab34c4e26ddddfd420664df00441de784a51728c6141ad6ba734&w=1380");
+
 
         sendActiveEmail(studentEntity.getEmail(), studentEntity.getActiveCode());
 
@@ -127,8 +130,6 @@ public class StudentServiceImpl implements StudentService{
 
         return
                 !studentRepository.existsByUsername(studentEntity.getUsername()) &&
-                !studentRepository.existsByEmail(studentEntity.getEmail()) &&
-                !studentRepository.existsByPhoneNumber(studentEntity.getPhoneNumber());
-
+                !studentRepository.existsByEmail(studentEntity.getEmail());
     }
 }

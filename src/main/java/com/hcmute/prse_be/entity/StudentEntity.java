@@ -42,6 +42,8 @@ public class StudentEntity {
 
     private LocalDateTime updatedAt;
 
+    private String avatarUrl;
+
     @PrePersist
     public void prePersist() {
         LocalDateTime now = LocalDateTime.now();
