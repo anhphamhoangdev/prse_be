@@ -1,4 +1,4 @@
-package com.hcmute.prse_be.web;
+package com.hcmute.prse_be.filter;
 
 import jakarta.servlet.ServletInputStream;
 import jakarta.servlet.http.HttpServletRequest;

@@ -1,4 +1,4 @@
-package com.hcmute.prse_be.web;
+package com.hcmute.prse_be.filter;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -6,6 +6,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -14,7 +15,7 @@ import org.springframework.web.util.ContentCachingResponseWrapper;
 import java.io.IOException;
 
 @Component
-@Order(1)
+@Order(Ordered.HIGHEST_PRECEDENCE)
 public class HttpLoggingFilter extends OncePerRequestFilter {
 
     private static final Logger logger = LoggerFactory.getLogger(HttpLoggingFilter.class);
