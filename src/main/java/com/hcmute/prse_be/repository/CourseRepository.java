@@ -1,5 +1,6 @@
 package com.hcmute.prse_be.repository;
 
+import com.hcmute.prse_be.dtos.CourseBasicDTO;
 import com.hcmute.prse_be.dtos.CourseDTO;
 import com.hcmute.prse_be.entity.CourseEntity;
 import org.springframework.data.domain.Page;
@@ -9,6 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 public interface CourseRepository extends JpaRepository<CourseEntity, Long> {
 
@@ -144,4 +146,8 @@ public interface CourseRepository extends JpaRepository<CourseEntity, Long> {
             @Param("rating") Integer rating,
             Pageable pageable
     );
+
+    // course_basic_detail
+//    Optional<CourseBasicDTO> findCourseBasicById(Long courseId, Long studentId);
+
 }

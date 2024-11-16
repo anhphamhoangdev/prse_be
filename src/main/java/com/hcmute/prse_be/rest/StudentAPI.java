@@ -1,5 +1,6 @@
 package com.hcmute.prse_be.rest;
 
+import com.hcmute.prse_be.constants.ApiPaths;
 import com.hcmute.prse_be.constants.ErrorMsg;
 import com.hcmute.prse_be.entity.StudentEntity;
 import com.hcmute.prse_be.request.LoginRequest;
@@ -19,7 +20,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
-@RequestMapping("/api/student")
+@RequestMapping(ApiPaths.STUDENT_API)
 @RestController
 public class StudentAPI {
 
@@ -39,30 +40,30 @@ public class StudentAPI {
         this.customUserDetailsService = customUserDetailsService;
     }
 
-    @PostMapping("/existsByUsername")
+    @PostMapping(ApiPaths.CHECK_EXIST_USERNAME)
     public boolean existsByUsername(@RequestBody Map<String, String> requestBody) {
         String username = requestBody.get("username");
         return studentService.existsByUsername(username);
     }
 
-    @PostMapping("/existsByEmail")
+    @PostMapping(ApiPaths.CHECK_EXIST_EMAIL)
     public boolean existsByEmail(@RequestBody Map<String, String> requestBody) {
         String email = requestBody.get("email");
         return studentService.existsByEmail(email);
     }
 
-    @PostMapping("/existsByPhoneNumber")
+    @PostMapping(ApiPaths.CHECK_EXIST_PHONE_NUMBER)
     public boolean existsByPhoneNumber(@RequestBody Map<String, String> requestBody) {
         String phoneNumber = requestBody.get("phoneNumber");
         return studentService.existsByPhoneNumber(phoneNumber);
     }
 
-    @GetMapping("/activate")
+    @GetMapping(ApiPaths.ACTIVATE_ACCOUNT)
     public JSONObject activateAccount(@RequestParam String email, @RequestParam String activateCode) {
         return studentService.activeAccount(email, activateCode);
     }
 
-    @PostMapping("/register")
+    @PostMapping(ApiPaths.REGISTER_ACCOUNT)
     public JSONObject registerUser(@RequestBody StudentEntity user) {
         JSONObject response = new JSONObject();
 
@@ -80,13 +81,13 @@ public class StudentAPI {
         }
     }
 
-    @PostMapping("/login")
+    @PostMapping(ApiPaths.LOGIN)
     public JSONObject login(@RequestBody LoginRequest loginRequest) {
         try {
 
             StudentEntity student = customUserDetailsService.findByUsername(loginRequest.getUsername());
             if (student == null) {
-                return Response.error("Tài khoản không tồn tại");
+                return Response.error(ErrorMsg.STUDENT_USERNAME_NOT_EXIST);
             }
 
             if (student.getIsBlocked()) {
@@ -95,7 +96,7 @@ public class StudentAPI {
 
             if (!student.getIsActive()) {
                 studentService.sendActiveEmail(student.getEmail(), student.getActiveCode());
-                return Response.error("Tài khoản chưa được kích hoạt. Vui lòng kiểm tra email!");
+                return Response.error(ErrorMsg.ACCOUNT_NOT_ACTIVATED);
             }
 
 
@@ -115,21 +116,21 @@ public class StudentAPI {
             }
 
         } catch (BadCredentialsException e) {
-            return Response.error("Sai mật khẩu");
+            return Response.error(ErrorMsg.WRONG_PASSWORD);
         } catch (Exception e) {
-            return Response.error("Lỗi hệ thống: " + e.getMessage());
+            return Response.error(ErrorMsg.SOMETHING_WENT_WRONG + e.getMessage());
         }
 
-        return Response.error("Xác thực thất bại");
+        return Response.error(ErrorMsg.AUTHENTICATION_FAILED);
     }
 
-    @GetMapping("/profile")
+    @GetMapping(ApiPaths.GET_PROFILE)
     public JSONObject getProfile(Authentication authentication) {
         try {
             String username = authentication.getName();
             StudentEntity student = customUserDetailsService.findByUsername(username);
             if (student == null) {
-                return Response.error("Không tìm thấy thông tin user");
+                return Response.error(ErrorMsg.STUDENT_USERNAME_NOT_EXIST);
             }
 
             JSONObject response = new JSONObject();
@@ -137,7 +138,7 @@ public class StudentAPI {
             return Response.success(response);
 
         } catch (Exception e) {
-            return Response.error("Lỗi khi lấy thông tin: " + e.getMessage());
+            return Response.error(ErrorMsg.SOMETHING_WENT_WRONG + e.getMessage());
         }
     }
 

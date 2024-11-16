@@ -1,9 +1,9 @@
 package com.hcmute.prse_be.filter;
 
+import com.hcmute.prse_be.constants.ErrorMsg;
 import com.hcmute.prse_be.response.Response;
 import com.hcmute.prse_be.service.CustomUserDetailsService;
 import com.hcmute.prse_be.service.JwtService;
-import com.hcmute.prse_be.service.LogService;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
@@ -63,7 +63,7 @@ public class JwtFilter extends OncePerRequestFilter {
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED); // 401
 
             // Ghi response
-            response.getWriter().write(Response.error("Token đã hết hạn, vui lòng đăng nhập lại").toString());
+            response.getWriter().write(Response.error(ErrorMsg.EXPIRED_TOKEN).toString());
 
         } catch (JwtException e) {
             // Xử lý các lỗi JWT khác
@@ -72,11 +72,11 @@ public class JwtFilter extends OncePerRequestFilter {
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
 
             JSONObject jsonResponse = new JSONObject();
-            jsonResponse.put("error_message", "Token không hợp lệ");
+            jsonResponse.put("error_message", ErrorMsg.INVALID_TOKEN);
             jsonResponse.put("code", 0);
             jsonResponse.put("data", null);
 
-            response.getWriter().write(Response.error("Token không hợp lệ").toString());
+            response.getWriter().write(Response.error(ErrorMsg.INVALID_TOKEN).toString());
         }
     }
 }

@@ -1,6 +1,7 @@
 package com.hcmute.prse_be.rest;
 
-import com.hcmute.prse_be.repository.StudentRepository;
+import com.hcmute.prse_be.constants.ApiPaths;
+import com.hcmute.prse_be.constants.ErrorMsg;
 import com.hcmute.prse_be.response.Response;
 import com.hcmute.prse_be.service.CourseService;
 import com.hcmute.prse_be.service.LogService;
@@ -9,7 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/search")
+@RequestMapping(ApiPaths.SEARCH_API)
 public class SearchAPI {
 
     private final CourseService courseService;
@@ -28,12 +29,12 @@ public class SearchAPI {
         try {
             response.put("total_courses", courseService.getCoursesBySubCategory(q, page));
         } catch (Exception e) {
-            return Response.error("Failed");
+            return Response.error(ErrorMsg.SOMETHING_WENT_WRONG);
         }
         return Response.success(response);
     }
 
-    @GetMapping("/filters")
+    @GetMapping(ApiPaths.SEARCH_FILERS)
     public JSONObject searchCourses(
             @RequestParam(defaultValue = "") String q,
             @RequestParam(defaultValue = "0") Integer page,
@@ -51,7 +52,7 @@ public class SearchAPI {
                     q, page, price, rating, sort
             ));
         } catch (Exception e) {
-            return Response.error("Failed");
+            return Response.error(ErrorMsg.SOMETHING_WENT_WRONG);
         }
         return Response.success(response);
     }

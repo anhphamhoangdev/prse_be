@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/home")
+@RequestMapping(ApiPaths.HOME_API)
 public class HomeAPI {
 
     private final BannerService bannerService;

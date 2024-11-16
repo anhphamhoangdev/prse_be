@@ -1,5 +1,6 @@
 package com.hcmute.prse_be.rest;
 
+import com.hcmute.prse_be.constants.ApiPaths;
 import com.hcmute.prse_be.constants.ErrorMsg;
 import com.hcmute.prse_be.entity.SubCategoryEntity;
 import com.hcmute.prse_be.response.Response;
@@ -11,7 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/category")
+@RequestMapping(ApiPaths.CATEGORY_API)
 public class CategoryAPI {
 
     private final CategoryService categoryService;
@@ -21,7 +22,7 @@ public class CategoryAPI {
         this.categoryService = categoryService;
     }
 
-    @GetMapping("/{id}")
+    @GetMapping(ApiPaths.CATEGORY_PATH_ID)
     public JSONObject getCourseBySubCategoryId(@PathVariable Long id,
                                                @RequestParam(defaultValue = "0") Integer page
     ) {
@@ -44,7 +45,7 @@ public class CategoryAPI {
         return Response.success(response);
     }
 
-    @GetMapping("/{id}/filters")
+    @GetMapping(ApiPaths.CATEGORY_PATH_ID_FILTERS)
     public JSONObject getCoursesBySubCategoryWithFilters(
             @PathVariable Long id,
             @RequestParam(defaultValue = "") String q,  // Thêm keyword search
