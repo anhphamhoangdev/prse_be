@@ -12,6 +12,7 @@ public class TestAPI {
 
     @GetMapping
     public JSONObject test() {
+        // JUST TEST
         return Response.success();
     }
 
