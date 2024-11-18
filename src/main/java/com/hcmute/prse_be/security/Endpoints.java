@@ -13,7 +13,14 @@ public class Endpoints {
 
             "/api/search/**",
 
-            "/api/student/activate"
+            "/api/student/activate",
+
+            "/api/test",
+
+            "/api/test/**",
+
+            "/api/course/**"
+
 
 
 //            "/books",
@@ -37,7 +44,6 @@ public class Endpoints {
     };
 
     public static final String[] STUDENT_GET_END_POINT = {
-            "/api/test",
             "/api/student/profile",
 //            "/users",
 //            "/users/**"

@@ -9,4 +9,10 @@ public class CoursePrerequisiteDTO {
 
     private String content;
 
+    public CoursePrerequisiteDTO(Long id, String content)
+    {
+        this.id = id;
+        this.content = content;
+    }
+
 }

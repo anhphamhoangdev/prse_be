@@ -27,7 +27,9 @@ public class JwtServiceImpl implements JwtService{
 
     private final CustomUserDetailsService customUserDetailsService;
 
-    private static final long EXPIRATION_TIME = 0;
+
+    // 1s = 1000 milliseconds
+    private static final long EXPIRATION_TIME = 86400000L;
 
     private static final long REMEMBER_ME_EXPIRATION_TIME = 7776000000L; // 90 ngày
 

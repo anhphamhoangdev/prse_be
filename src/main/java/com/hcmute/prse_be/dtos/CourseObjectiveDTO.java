@@ -9,4 +9,12 @@ public class CourseObjectiveDTO {
 
     private String content;
 
+    public CourseObjectiveDTO(Long id, String content)
+    {
+        this.id = id;
+        this.content = content;
+    }
+
+
+
 }

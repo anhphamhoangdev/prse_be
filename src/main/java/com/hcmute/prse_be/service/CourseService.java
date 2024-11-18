@@ -1,8 +1,12 @@
 package com.hcmute.prse_be.service;
 
+import com.hcmute.prse_be.dtos.CourseBasicDTO;
 import com.hcmute.prse_be.dtos.CourseDTO;
+import com.hcmute.prse_be.dtos.CourseFeedbackDTO;
 import com.hcmute.prse_be.entity.CourseEntity;
 import com.hcmute.prse_be.response.CoursePageResponse;
+import org.springframework.data.domain.Page;
+import org.springframework.security.core.Authentication;
 
 import java.util.List;
 
@@ -20,6 +24,11 @@ public interface CourseService {
             Integer rating,
             String sort
     );
+
+
+    CourseBasicDTO getDetailCourse(Long id, Authentication authentication);
+
+    Page<CourseFeedbackDTO> getCourseFeedbacks(Long courseId, int page, int size);
 
 
 }

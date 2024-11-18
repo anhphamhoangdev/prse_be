@@ -147,7 +147,47 @@ public interface CourseRepository extends JpaRepository<CourseEntity, Long> {
             Pageable pageable
     );
 
-    // course_basic_detail
-//    Optional<CourseBasicDTO> findCourseBasicById(Long courseId, Long studentId);
+    @Query("""
+    SELECT NEW com.hcmute.prse_be.dtos.CourseBasicDTO(
+        c.id,
+        c.title,
+        c.description,
+        c.imageUrl,
+        c.language,
+        c.originalPrice,
+        CASE 
+            WHEN cd.discountPrice IS NOT NULL 
+            AND cd.isActive = true 
+            AND cd.startDate <= CURRENT_TIMESTAMP 
+            AND cd.endDate >= CURRENT_TIMESTAMP 
+            THEN cd.discountPrice 
+            ELSE NULL 
+        END,
+        c.averageRating,
+        c.totalStudents,
+        c.totalViews,
+        c.updatedAt,
+        c.previewVideoUrl,
+        CAST(c.previewVideoDuration AS Integer),
+        c.instructorId
+    )
+    FROM CourseEntity c
+    LEFT JOIN CourseDiscountEntity cd ON c.id = cd.courseId
+    AND cd.isActive = true
+    AND cd.startDate <= CURRENT_TIMESTAMP
+    AND cd.endDate >= CURRENT_TIMESTAMP
+    AND cd.id = (
+        SELECT MAX(cd2.id)
+        FROM CourseDiscountEntity cd2
+        WHERE cd2.courseId = c.id
+        AND cd2.isActive = true
+        AND cd2.startDate <= CURRENT_TIMESTAMP
+        AND cd2.endDate >= CURRENT_TIMESTAMP
+    )
+    WHERE c.id = :courseId
+""")
+    CourseBasicDTO findCourseBasicById(@Param("courseId") Long courseId);
+
+
 
 }
