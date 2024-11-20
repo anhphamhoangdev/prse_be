@@ -8,21 +8,30 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "course_chapter")
+@Table(name = "lesson_progress")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class CourseChapterEntity {
+public class LessonProgressEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private Long courseId;
+    @Column(name = "chapter_progress_id", nullable = false)
+    private Long chapterProgressId;
 
-    private String title;
+    @Column(name = "lesson_id", nullable = false)
+    private Long lessonId;
 
-    private Integer orderIndex;
+
+    private String status; // ('not_started', 'completed')
+
+    @Column(name = "completed_at")
+    private LocalDateTime completedAt;
+
+    @Column(name = "last_accessed_at")
+    private LocalDateTime lastAccessedAt;
 
     private LocalDateTime createdAt;
 

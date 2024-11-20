@@ -1,6 +1,7 @@
 package com.hcmute.prse_be.service;
 
 import com.hcmute.prse_be.dtos.CourseBasicDTO;
+import com.hcmute.prse_be.dtos.CourseCurriculumDTO;
 import com.hcmute.prse_be.dtos.CourseDTO;
 import com.hcmute.prse_be.dtos.CourseFeedbackDTO;
 import com.hcmute.prse_be.entity.CourseEntity;
@@ -30,5 +31,5 @@ public interface CourseService {
 
     Page<CourseFeedbackDTO> getCourseFeedbacks(Long courseId, int page, int size);
 
-
+    CourseCurriculumDTO getCourseCurriculum(Long courseId, Authentication authentication);
 }

@@ -1,6 +1,7 @@
 package com.hcmute.prse_be.service;
 
 import com.hcmute.prse_be.constants.Constant;
+import com.hcmute.prse_be.constants.LessonType;
 import com.hcmute.prse_be.constants.PaginationNumber;
 import com.hcmute.prse_be.dtos.*;
 import com.hcmute.prse_be.entity.*;
@@ -15,6 +16,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -31,9 +33,14 @@ public class CourseServiceImpl implements CourseService {
     private final StudentRepository studentRepository;
     private final EnrollmentRepository enrollmentRepository;
     private final CourseFeedbackRepository courseFeedbackRepository;
+    private final ChapterRepository chapterRepository;
+    private final LessonRepository lessonRepository;
+    private final ChapterProgressRepository chapterProgressRepository;
+    private final LessonProgressRepository lessonProgressRepository;
+    private final VideoLessonRepository videoLessonRepository;
 
     @Autowired
-    public CourseServiceImpl(CourseRepository courseRepository, CourseDiscountRepository courseDiscountRepository, InstructorRepository instructorRepository, CourseObjectiveRepository courseObjectiveRepository, SubCategoryRepository subCategoryRepository, CoursePrerequisiteRepository coursePrerequisiteRepository, StudentRepository studentRepository, EnrollmentRepository enrollmentRepository, CourseFeedbackRepository courseFeedbackRepository) {
+    public CourseServiceImpl(CourseRepository courseRepository, CourseDiscountRepository courseDiscountRepository, InstructorRepository instructorRepository, CourseObjectiveRepository courseObjectiveRepository, SubCategoryRepository subCategoryRepository, CoursePrerequisiteRepository coursePrerequisiteRepository, StudentRepository studentRepository, EnrollmentRepository enrollmentRepository, CourseFeedbackRepository courseFeedbackRepository, ChapterRepository chapterRepository, LessonRepository lessonRepository, ChapterProgressRepository chapterProgressRepository, LessonProgressRepository lessonProgressRepository, VideoLessonRepository videoLessonRepository) {
         this.courseRepository = courseRepository;
         this.courseDiscountRepository = courseDiscountRepository;
         this.instructorRepository = instructorRepository;
@@ -43,6 +50,11 @@ public class CourseServiceImpl implements CourseService {
         this.studentRepository = studentRepository;
         this.enrollmentRepository = enrollmentRepository;
         this.courseFeedbackRepository = courseFeedbackRepository;
+        this.chapterRepository = chapterRepository;
+        this.lessonRepository = lessonRepository;
+        this.chapterProgressRepository = chapterProgressRepository;
+        this.lessonProgressRepository = lessonProgressRepository;
+        this.videoLessonRepository = videoLessonRepository;
     }
 
     @Override
@@ -190,6 +202,95 @@ public class CourseServiceImpl implements CourseService {
         );
 
         return feedbacks.map(CourseFeedbackDTO::convertToDTO);
+    }
+
+    @Override
+    public CourseCurriculumDTO getCourseCurriculum(Long courseId, Authentication authentication) {
+
+        boolean isAuthentication = authentication != null && authentication.isAuthenticated();
+
+        // tao ra list ChapterDTO de chua response
+        List<ChapterDTO> chapters = new ArrayList<>();
+
+        // find list chapter cua course
+        List<ChapterEntity> chapterOfCourse = chapterRepository.findByCourseIdOrderByOrderIndexAsc(courseId);
+
+        // duyet qua tung chapter => lay ra tat ca lesson cua chapter
+        for (ChapterEntity chapterEntity : chapterOfCourse) {
+            ChapterDTO chapterDTO = new ChapterDTO();
+            chapterDTO.setId(chapterEntity.getId());
+            chapterDTO.setTitle(chapterEntity.getTitle());
+            // get all lesson by chapter id
+            List<LessonEntity> lessonOfChapter =lessonRepository.findByChapterIdAndIsPublishTrue(chapterEntity.getId());
+            List<LessonDTO> lessons = new ArrayList<>();
+            for (LessonEntity lessonEntity : lessonOfChapter) {
+                LessonDTO lessonDTO = new LessonDTO();
+                lessonDTO.setId(lessonEntity.getId());
+                lessonDTO.setTitle(lessonEntity.getTitle());
+                lessonDTO.setType(lessonEntity.getType());
+                // set duration
+                if(lessonEntity.getType().equals(LessonType.VIDEO)) {
+//                    lessonDTO.setDuration(lessonEntity.getDuration());
+                    // join qua bang video de lay ra duration
+                    VideoLessonEntity video = videoLessonRepository.findByLessonId(lessonEntity.getId());
+                    if(video != null) {
+                        lessonDTO.setDuration(video.getDuration());
+                    }
+                }
+                lessons.add(lessonDTO);
+            }
+
+            chapterDTO.setLessons(lessons);
+
+//            chapterDTO.setProgress(chapterEntity.getProgress());
+            chapters.add(chapterDTO);
+        }
+
+        if(authentication == null || !authentication.isAuthenticated()) {
+            CourseCurriculumDTO courseCurriculumDTO = new CourseCurriculumDTO();
+            courseCurriculumDTO.setChapters(chapters);
+            return courseCurriculumDTO;
+        }
+
+        String username = authentication.getName();
+        StudentEntity student = studentRepository.findByUsername(username);
+        if(student == null) {
+            CourseCurriculumDTO courseCurriculumDTO = new CourseCurriculumDTO();
+            courseCurriculumDTO.setChapters(chapters);
+            return courseCurriculumDTO;
+        }
+
+        // find chapter progress of student
+        chapters.forEach(chapterDTO -> {
+            // find chapter progress of student
+            ChapterProgressEntity chapterProgress = chapterProgressRepository.findByChapterIdAndStudentId(chapterDTO.getId() ,student.getId());
+            ChapterProgressDTO chapterProgressDTO = new ChapterProgressDTO();
+            if(chapterProgress != null) {
+                chapterProgressDTO.setStatus(chapterProgress.getStatus());
+                chapterProgressDTO.setCompletedAt(chapterProgress.getCompletedAt());
+                chapterProgressDTO.setProgressPercent(chapterProgress.getProgressPercent());
+
+                // set progress cho lesson
+                List<LessonDTO> lessons = chapterDTO.getLessons();
+                lessons.forEach(lessonDTO -> {
+                    LessonProgressEntity lessonProgress = lessonProgressRepository.findByLessonIdAndChapterProgressId(lessonDTO.getId(), chapterProgress.getId());
+                    LessonProgressDTO lessonProgressDTO = new LessonProgressDTO();
+                    if(lessonProgress != null) {
+                        lessonProgressDTO.setStatus(lessonProgress.getStatus());
+                        lessonProgressDTO.setCompletedAt(lessonProgress.getCompletedAt());
+                        lessonProgressDTO.setLastAccessedAt(lessonProgress.getLastAccessedAt());
+                    }
+                    lessonDTO.setProgress(lessonProgressDTO);
+                });
+            }
+            chapterDTO.setProgress(chapterProgressDTO);
+        });
+
+
+        // find lesson progress of student
+        CourseCurriculumDTO courseCurriculumDTO = new CourseCurriculumDTO();
+        courseCurriculumDTO.setChapters(chapters);
+        return courseCurriculumDTO;
     }
 
     private CourseDTO processDiscountPrice(CourseDTO course) {

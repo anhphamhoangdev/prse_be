@@ -1,5 +1,6 @@
 package com.hcmute.prse_be.rest;
 
+import com.hcmute.prse_be.dtos.CourseCurriculumDTO;
 import com.hcmute.prse_be.dtos.CourseFeedbackDTO;
 import com.hcmute.prse_be.response.Response;
 import com.hcmute.prse_be.service.CourseService;
@@ -52,6 +53,30 @@ public class CourseAPI {
             data.put("totalItems", feedbacks.getTotalElements());
             data.put("hasNext", feedbacks.hasNext());
 
+
+            return Response.success(data);
+
+        } catch (Exception e) {
+            return Response.error("Không tìm thấy khóa học");
+        }
+    }
+
+
+    @GetMapping("{id}/curriculum")
+    public JSONObject getCourseCurriculum(
+            @PathVariable("id") Long courseId,
+            Authentication authentication
+    )
+    {
+        LogService.getgI().info("[CourseAPI] getCourseCurriculum : " + courseId);
+
+        try {
+
+            CourseCurriculumDTO courseCurriculum  = courseService.getCourseCurriculum(courseId, authentication);
+
+            JSONObject data = new JSONObject();
+
+            data.put("chapters", courseCurriculum);
 
             return Response.success(data);
 

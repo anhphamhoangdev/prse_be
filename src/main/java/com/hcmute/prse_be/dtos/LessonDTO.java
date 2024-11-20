@@ -10,5 +10,7 @@ public class LessonDTO {
 
     private String type;
 
-    private String duration;
+    private Integer duration;
+
+    private LessonProgressDTO progress;
 }
