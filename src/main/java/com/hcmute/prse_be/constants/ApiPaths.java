@@ -31,5 +31,5 @@ public class ApiPaths {
     public static final String REGISTER_ACCOUNT = "/register";
     public static final String LOGIN = "/login";
     public static final String GET_PROFILE = "/profile";
-
+    public static final String UPDATE_AVATAR = "/update-avatar";
 }

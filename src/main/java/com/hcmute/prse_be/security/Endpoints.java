@@ -49,7 +49,14 @@ public class Endpoints {
 //            "/users/**"
     };
 
+    public static final String[] STUDENT_POST_END_POINT = {
+            "/api/student/update-avatar",
+//            "/users",
+//            "/users/**"
+    };
+
     public static final String[] ADMIN_POST_END_POINT = {
 //            "/books",
     };
+
 }
