@@ -17,4 +17,6 @@ public interface StudentService {
 
     void sendActiveEmail(String email, String activeCode);
 
+    void saveAvatarStudent(String urlAvatar, String username);
+
 }

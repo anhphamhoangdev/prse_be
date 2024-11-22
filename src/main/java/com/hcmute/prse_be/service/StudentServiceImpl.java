@@ -127,6 +127,15 @@ public class StudentServiceImpl implements StudentService{
         emailService.sendMessage("easyeduwebsite@gmail.com", email, subject, text);
     }
 
+    @Override
+    public void saveAvatarStudent(String urlAvatar, String username) {
+        StudentEntity student = studentRepository.findByUsername(username);
+        if(student != null){
+            student.setAvatarUrl(urlAvatar);
+            studentRepository.save(student);
+        }
+    }
+
     private boolean validateNewStudent(StudentEntity studentEntity) {
 
         return
