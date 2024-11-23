@@ -63,7 +63,6 @@ public interface CourseRepository extends JpaRepository<CourseEntity, Long> {
             )
             FROM CourseEntity c
             LEFT JOIN CourseDiscountEntity cd ON c.id = cd.courseId
-            WHERE c.isDiscount = true 
             AND c.isPublish = true 
             AND c.originalPrice > 0
             AND cd.isActive = true
@@ -187,6 +186,7 @@ public interface CourseRepository extends JpaRepository<CourseEntity, Long> {
     WHERE c.id = :courseId
 """)
     CourseBasicDTO findCourseBasicById(@Param("courseId") Long courseId);
+
 
 
 

@@ -293,6 +293,38 @@ public class CourseServiceImpl implements CourseService {
         return courseCurriculumDTO;
     }
 
+    @Override
+    public boolean checkCourseAccess(Long courseId, Authentication authentication) {
+        if(authentication == null || !authentication.isAuthenticated()) {
+            return false;
+        }
+
+        String username = authentication.getName();
+        StudentEntity student = studentRepository.findByUsername(username);
+        if(student == null) {
+            return false;
+        }
+
+        return enrollmentRepository.existsByStudentIdAndCourseIdAndIsActiveTrue(student.getId(), courseId);
+    }
+
+    @Override
+    public VideoLessonEntity getVideoLesson(Long courseId, Long chapterId, Long lessonId) {
+        return videoLessonRepository.findVideoLessonByCourseAndChapterAndLesson(
+                courseId, chapterId, lessonId
+        );
+    }
+
+    @Override
+    public LessonProgressEntity getLessonProgress(Long chapterId, Long lessonId) {
+        return lessonProgressRepository.findByLessonIdAndChapterProgressId(lessonId, chapterId);
+    }
+
+    @Override
+    public void saveLessonProgress(LessonProgressEntity lessonProgress) {
+        lessonProgressRepository.save(lessonProgress);
+    }
+
     private CourseDTO processDiscountPrice(CourseDTO course) {
         if (Boolean.TRUE.equals(course.getIsDiscount())) {
             courseDiscountRepository.findLatestValidDiscount(course.getId(), LocalDateTime.now())

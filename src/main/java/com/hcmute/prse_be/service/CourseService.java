@@ -5,6 +5,8 @@ import com.hcmute.prse_be.dtos.CourseCurriculumDTO;
 import com.hcmute.prse_be.dtos.CourseDTO;
 import com.hcmute.prse_be.dtos.CourseFeedbackDTO;
 import com.hcmute.prse_be.entity.CourseEntity;
+import com.hcmute.prse_be.entity.LessonProgressEntity;
+import com.hcmute.prse_be.entity.VideoLessonEntity;
 import com.hcmute.prse_be.response.CoursePageResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.security.core.Authentication;
@@ -32,4 +34,12 @@ public interface CourseService {
     Page<CourseFeedbackDTO> getCourseFeedbacks(Long courseId, int page, int size);
 
     CourseCurriculumDTO getCourseCurriculum(Long courseId, Authentication authentication);
+
+    boolean checkCourseAccess(Long courseId, Authentication authentication);
+
+    VideoLessonEntity getVideoLesson(Long courseId, Long chapterId, Long lessonId);
+
+    LessonProgressEntity getLessonProgress(Long chapterId, Long lessonId);
+
+    void saveLessonProgress(LessonProgressEntity lessonProgress);
 }
