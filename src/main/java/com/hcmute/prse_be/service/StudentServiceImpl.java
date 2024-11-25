@@ -32,6 +32,11 @@ public class StudentServiceImpl implements StudentService{
     }
 
     @Override
+    public StudentEntity findById(Long id) {
+        return studentRepository.findById(id).orElse(null);
+    }
+
+    @Override
     public StudentEntity findByUsername(String username) {
         return studentRepository.findByUsername(username);
     }

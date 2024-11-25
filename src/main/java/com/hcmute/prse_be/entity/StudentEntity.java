@@ -44,6 +44,8 @@ public class StudentEntity {
 
     private String avatarUrl;
 
+    private boolean isInstructor = false;
+
     @PrePersist
     public void prePersist() {
         LocalDateTime now = LocalDateTime.now();

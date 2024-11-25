@@ -4,6 +4,7 @@ import com.hcmute.prse_be.dtos.CartItemDTO;
 import com.hcmute.prse_be.dtos.CheckoutDraftDTO;
 import com.hcmute.prse_be.entity.*;
 import com.hcmute.prse_be.repository.*;
+import com.hcmute.prse_be.util.JsonUtils;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -105,10 +106,15 @@ public class CheckoutServiceImpl implements CheckoutService{
         checkoutDraftEntity.setTotalDiscount(totalDiscount);
         checkoutDraftEntity.setTotalPriceAfterDiscount(totalPriceAfterDiscount);
         checkoutDraftEntity.setTransactionId("TEMP_"+ UUID.randomUUID()); // tạm thời set là transaction_id
+
         checkoutDraftEntity = checkoutDraftRepository.save(checkoutDraftEntity);
 
         CheckoutDraftDTO checkoutDraftDTO = toDTO(checkoutDraftEntity);
         checkoutDraftDTO.setItems(cartItemDTOS);
+
+        // luu tru lai response
+        checkoutDraftEntity.setResponseData(JsonUtils.Serialize(checkoutDraftDTO));
+        checkoutDraftRepository.save(checkoutDraftEntity);
 
         return checkoutDraftDTO;
     }
@@ -126,9 +132,8 @@ public class CheckoutServiceImpl implements CheckoutService{
         dto.setTotalDiscount(entity.getTotalDiscount());
         dto.setTotalPriceAfterDiscount(entity.getTotalPriceAfterDiscount());
         dto.setTransactionId(entity.getTransactionId());
-        dto.setCreatedAt(entity.getCreatedAt());
-        dto.setUpdatedAt(entity.getUpdatedAt());
-
+        dto.setCreatedAt(LocalDateTime.now().toString());
+        dto.setUpdatedAt(LocalDateTime.now().toString());
         return dto;
     }
 }

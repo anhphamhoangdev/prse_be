@@ -8,47 +8,44 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "checkout_draft")
+@Table(name = "payment_request_log")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class CheckoutDraftEntity {
+public class PaymentRequestLogEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "cart_id", nullable = false)
-    private Long cartId;
+    private Long checkoutDraftId;
 
     @Column(name = "student_id", nullable = false)
     private Long studentId;
 
-    @Column(nullable = false)
-    private Double totalPrice;
+    @Column(name = "payment_method_code") // luu code de de xem hon
+    private String paymentMethodCode;
 
-    @Column(nullable = false)
     private Integer point;
 
-    @Column(name = "discount_code_id")
-    private Long discountCodeId;
+    private Integer amount;
 
-    private Double totalDiscount;
+    private String status;
 
-    @Column(nullable = false)
-    private Double totalPriceAfterDiscount;
-
-    @Column(name = "transaction_id", unique = true, nullable = false)
+    @Column(name = "transaction_id")
     private String transactionId;
+
+    @Column(name = "request_data", columnDefinition = "TEXT")
+    private String requestData; // -- request tu client
+
+    @Column(name = "response_data", columnDefinition = "TEXT")
+    private String responseData; // -- response tu server
 
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
-
-    @Column(columnDefinition = "TEXT")
-    private String responseData;
 
     @PrePersist
     public void prePersist() {
@@ -61,4 +58,6 @@ public class CheckoutDraftEntity {
     public void preUpdate() {
         this.updatedAt = LocalDateTime.now();
     }
+
+
 }

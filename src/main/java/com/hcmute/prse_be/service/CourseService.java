@@ -6,6 +6,7 @@ import com.hcmute.prse_be.dtos.CourseDTO;
 import com.hcmute.prse_be.dtos.CourseFeedbackDTO;
 import com.hcmute.prse_be.entity.CourseEntity;
 import com.hcmute.prse_be.entity.LessonProgressEntity;
+import com.hcmute.prse_be.entity.StudentEntity;
 import com.hcmute.prse_be.entity.VideoLessonEntity;
 import com.hcmute.prse_be.response.CoursePageResponse;
 import org.springframework.data.domain.Page;
@@ -15,8 +16,10 @@ import java.util.List;
 
 public interface CourseService {
     List<CourseDTO> getFreeCourse(Integer page, Integer size);
+    Page<CourseDTO> getMyCourse(StudentEntity studentEntity, Integer page, Integer size);
+    Page<CourseDTO> getDiscountCourse(Integer page, Integer size, Authentication authentication);
+    Page<CourseDTO> getHotCourses(Integer page, Integer size, Authentication authentication);
 
-    List<CourseDTO> getDiscountCourse(Integer page, Integer size);
 
     CoursePageResponse getCoursesBySubCategory(String keyword, Integer page);
 
@@ -42,4 +45,5 @@ public interface CourseService {
     LessonProgressEntity getLessonProgress(Long chapterId, Long lessonId);
 
     void saveLessonProgress(LessonProgressEntity lessonProgress);
+
 }

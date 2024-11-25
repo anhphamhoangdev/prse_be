@@ -27,23 +27,23 @@ public class CourseDTO {
 
 
     public CourseDTO(
-            Long id,
-            Long instructorId,
-            String title,
-            String shortDescription,
-            String description,
-            String imageUrl,
-            String language,
-            Double originalPrice,
-            Double discountPrice,
-            Double averageRating,
-            Integer totalStudents,
-            Integer totalViews,
-            Boolean isPublish,
-            Boolean isHot,
-            Boolean isDiscount,
-            LocalDateTime createdAt,
-            LocalDateTime updatedAt
+            Long id,                // Long
+            Long instructorId,      // Long
+            String title,          // String
+            String shortDescription, // String
+            String description,    // String
+            String imageUrl,       // String
+            String language,       // String
+            Double originalPrice,  // Double
+            Double discountPrice, // Double - thay đổi từ int sang Double
+            Double averageRating,  // Double
+            Integer totalStudents, // Integer
+            Integer totalViews,    // Integer
+            Boolean isPublish,     // Boolean
+            Boolean isHot,         // Boolean
+            Boolean isDiscount,    // Boolean
+            LocalDateTime createdAt, // LocalDateTime
+            LocalDateTime updatedAt  // LocalDateTime
     ) {
         this.id = id;
         this.instructorId = instructorId;

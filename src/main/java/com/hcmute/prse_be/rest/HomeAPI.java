@@ -10,6 +10,7 @@ import com.hcmute.prse_be.service.LogService;
 import net.minidev.json.JSONArray;
 import net.minidev.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -69,11 +70,25 @@ public class HomeAPI {
     }
 
     @GetMapping(ApiPaths.HOME_DISCOUNT_COURSE)
-    public JSONObject getDiscountCourse() {
+    public JSONObject getDiscountCourse(Authentication authentication, Integer page) {
         LogService.getgI().info("[HOME] " + ApiPaths.HOME_DISCOUNT_COURSE);
         JSONObject response = new JSONObject();
         try {
-            response.put("courses", courseService.getDiscountCourse(0, PaginationNumber.HOME_COURSE_PER_PAGE));
+
+            response.put("courses", courseService.getDiscountCourse(page, PaginationNumber.HOME_COURSE_PER_PAGE, authentication));
+        } catch (Exception e) {
+            response.put("courses", new JSONArray());
+        }
+        return Response.success(response);
+    }
+
+    @GetMapping(ApiPaths.HOME_HOT_COURSE)
+    public JSONObject getHotCourse(Authentication authentication, Integer page) {
+        LogService.getgI().info("[HOME] " + ApiPaths.HOME_HOT_COURSE);
+        JSONObject response = new JSONObject();
+        try {
+
+            response.put("courses", courseService.getHotCourses(page, PaginationNumber.HOME_COURSE_PER_PAGE, authentication));
         } catch (Exception e) {
             response.put("courses", new JSONArray());
         }

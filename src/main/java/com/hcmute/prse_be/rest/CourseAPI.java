@@ -3,12 +3,15 @@ package com.hcmute.prse_be.rest;
 import com.hcmute.prse_be.constants.ErrorMsg;
 import com.hcmute.prse_be.constants.StatusType;
 import com.hcmute.prse_be.dtos.CourseCurriculumDTO;
+import com.hcmute.prse_be.dtos.CourseDTO;
 import com.hcmute.prse_be.dtos.CourseFeedbackDTO;
 import com.hcmute.prse_be.entity.LessonProgressEntity;
+import com.hcmute.prse_be.entity.StudentEntity;
 import com.hcmute.prse_be.entity.VideoLessonEntity;
 import com.hcmute.prse_be.response.Response;
 import com.hcmute.prse_be.service.CourseService;
 import com.hcmute.prse_be.service.LogService;
+import com.hcmute.prse_be.service.StudentService;
 import net.minidev.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -18,6 +21,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/course")
@@ -26,9 +30,13 @@ public class CourseAPI {
     private final CourseService courseService;
 
 
+    private final StudentService studentService;
+
+
     @Autowired
-    public CourseAPI(CourseService courseService) {
+    public CourseAPI(CourseService courseService, StudentService studentService) {
         this.courseService = courseService;
+        this.studentService = studentService;
     }
 
     @GetMapping("{id}")
@@ -172,6 +180,27 @@ public class CourseAPI {
 
         } catch (Exception e) {
             return ResponseEntity.ok(Response.success(data));
+        }
+    }
+
+    @GetMapping("/my-courses")
+    public ResponseEntity<JSONObject> getMyCourses(Authentication authentication, @RequestParam(defaultValue = "0") int page,
+                                                   @RequestParam(defaultValue = "12") int size) {
+        LogService.getgI().info("[CourseAPI] getMyCourses");
+
+        try {
+            // Lấy thông tin người dùng từ authentication
+            StudentEntity studentEntity = studentService.findByUsername(authentication.getName());
+
+            // Lấy danh sách khóa học của người dùng
+            Page<CourseDTO> courses = courseService.getMyCourse(studentEntity, page, size);
+
+            JSONObject data = new JSONObject();
+            data.put("courses", courses);
+            return ResponseEntity.ok(Response.success(data));
+
+        } catch (Exception e) {
+            return ResponseEntity.ok(Response.error(ErrorMsg.SOMETHING_WENT_WRONG));
         }
     }
 }

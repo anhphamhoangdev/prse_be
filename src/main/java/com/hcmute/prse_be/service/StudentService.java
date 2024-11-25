@@ -5,6 +5,8 @@ import net.minidev.json.JSONObject;
 
 public interface StudentService {
 
+    StudentEntity findById(Long id);
+
     StudentEntity findByUsername(String username);
 
     boolean existsByUsername(String username);

@@ -8,10 +8,7 @@ import com.hcmute.prse_be.entity.*;
 import com.hcmute.prse_be.repository.*;
 import com.hcmute.prse_be.response.CoursePageResponse;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.*;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
@@ -19,6 +16,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class CourseServiceImpl implements CourseService {
@@ -65,13 +63,60 @@ public class CourseServiceImpl implements CourseService {
         return courseRepository.findAllByIsPublishTrueAndOriginalPrice(pageable).getContent();
     }
 
+    @Override
+    public Page<CourseDTO> getMyCourse(StudentEntity studentEntity, Integer page, Integer size) {
+        int currentPage = (page != null) ? page : 0;
+        int pageSize = (size != null) ? size : PaginationNumber.COURSE_SUB_CATEGORY_PER_PAGE;
+        Pageable pageable = PageRequest.of(currentPage, pageSize);
+
+        return courseRepository.findAllMyCourses(studentEntity.getId() ,pageable);
+    }
+
 
     @Override
-    public List<CourseDTO> getDiscountCourse(Integer page, Integer size) {
+    public Page<CourseDTO> getDiscountCourse(Integer page, Integer size, Authentication authentication) {
         int currentPage = (page != null) ? page : 0;
         int pageSize = (size != null) ? size : PaginationNumber.HOME_COURSE_PER_PAGE;
         Pageable pageable = PageRequest.of(currentPage, pageSize);
-        return courseRepository.findAllActiveDiscountedCourses(LocalDateTime.now(),pageable).getContent();
+        LocalDateTime now = LocalDateTime.now();
+
+        Page<CourseDTO> courseDTOs;
+        if(authentication == null || !authentication.isAuthenticated()) {
+            courseDTOs = courseRepository.findAllActiveDiscountedCourses(now ,pageable);
+        } else {
+            StudentEntity student = studentRepository.findByUsername(authentication.getName());
+            courseDTOs = courseRepository.findAllActiveDiscountedCoursesNotEnrolled(student.getId(), now, pageable);
+        }
+
+        // Update discount prices
+        List<CourseDTO> updatedContent = courseDTOs.getContent().stream()
+                .peek(course -> courseDiscountRepository.findLatestValidDiscount(course.getId(), now).ifPresent(discount -> course.setDiscountPrice(discount.getDiscountPrice())))
+                .collect(Collectors.toList());
+
+        return new PageImpl<>(updatedContent, pageable, courseDTOs.getTotalElements());
+    }
+
+    @Override
+    public Page<CourseDTO> getHotCourses(Integer page, Integer size, Authentication authentication) {
+        int currentPage = (page != null) ? page : 0;
+        int pageSize = (size != null) ? size : PaginationNumber.HOME_COURSE_PER_PAGE;
+        Pageable pageable = PageRequest.of(currentPage, pageSize);
+        LocalDateTime now = LocalDateTime.now();
+
+        Page<CourseDTO> courseDTOs;
+        if(authentication == null || !authentication.isAuthenticated()) {
+            courseDTOs = courseRepository.findAllActiveHotCourses(pageable);
+        } else {
+            StudentEntity student = studentRepository.findByUsername(authentication.getName());
+            courseDTOs = courseRepository.findAllActiveHotCoursesNotEnrolled(student.getId(), pageable);
+        }
+
+        // Update discount prices
+        List<CourseDTO> updatedContent = courseDTOs.getContent().stream()
+                .peek(course -> courseDiscountRepository.findLatestValidDiscount(course.getId(), now).ifPresent(discount -> course.setDiscountPrice(discount.getDiscountPrice())))
+                .collect(Collectors.toList());
+
+        return new PageImpl<>(updatedContent, pageable, courseDTOs.getTotalElements());
     }
 
     @Override

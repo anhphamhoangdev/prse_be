@@ -44,8 +44,11 @@ public class CustomUserDetailsServiceImpl implements CustomUserDetailsService{
         Collection<GrantedAuthority> authorities = new ArrayList<>();
         authorities.add(new SimpleGrantedAuthority("STUDENT"));
 
-        User user = new User(student.getUsername(), student.getPasswordHash(), authorities);
+        if(student.isInstructor())
+        {
+            authorities.add(new SimpleGrantedAuthority("INSTRUCTOR"));
+        }
 
-        return user;
+        return new User(student.getUsername(), student.getPasswordHash(), authorities);
     }
 }

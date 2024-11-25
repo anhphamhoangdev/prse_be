@@ -17,6 +17,6 @@ public class CheckoutDraftDTO {
     private Double totalPriceAfterDiscount;
     private String transactionId;
     private List<CartItemDTO> items;  // Thêm items
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
+    private String createdAt;
+    private String updatedAt;
 }

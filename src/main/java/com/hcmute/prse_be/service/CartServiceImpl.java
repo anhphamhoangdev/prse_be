@@ -3,10 +3,9 @@ package com.hcmute.prse_be.service;
 import com.hcmute.prse_be.dtos.CartDTO;
 import com.hcmute.prse_be.dtos.CartItemDTO;
 import com.hcmute.prse_be.entity.*;
-import com.hcmute.prse_be.repository.CartItemRepository;
-import com.hcmute.prse_be.repository.CartRepository;
-import com.hcmute.prse_be.repository.CourseDiscountRepository;
-import com.hcmute.prse_be.repository.CourseRepository;
+import com.hcmute.prse_be.repository.*;
+import com.hcmute.prse_be.response.Response;
+import net.minidev.json.JSONObject;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -20,12 +19,14 @@ public class CartServiceImpl implements CartService{
     private final CartRepository cartRepository;
     private final CourseRepository courseRepository;
     private final CartItemRepository cartItemRepository;
+    private final EnrollmentRepository enrollmentRepository;
 
-    public CartServiceImpl(CourseDiscountRepository courseDiscountRepository, CartRepository cartRepository, CourseRepository courseRepository, CartItemRepository cartItemRepository) {
+    public CartServiceImpl(CourseDiscountRepository courseDiscountRepository, CartRepository cartRepository, CourseRepository courseRepository, CartItemRepository cartItemRepository, EnrollmentRepository enrollmentRepository) {
         this.courseDiscountRepository = courseDiscountRepository;
         this.cartRepository = cartRepository;
         this.courseRepository = courseRepository;
         this.cartItemRepository = cartItemRepository;
+        this.enrollmentRepository = enrollmentRepository;
     }
 
     @Override
@@ -96,7 +97,41 @@ public class CartServiceImpl implements CartService{
     }
 
     @Override
-    public void addItemToCart(StudentEntity studentEntity, Long courseId) {
+    public JSONObject addItemToCart(StudentEntity studentEntity, Long courseId) {
+        CartEntity cartEntity = cartRepository.findByStudentId(studentEntity.getId()).orElse(null);
+        if (cartEntity == null) {
+            cartEntity = new CartEntity();
+            cartEntity.setStudentId(studentEntity.getId());
+            cartRepository.save(cartEntity);
+        }
+
+        CourseEntity courseEntity = courseRepository.findById(courseId).orElse(null);
+
+        // check coi course co ton tai va da publish chua
+        if(courseEntity == null || !courseEntity.getIsPublish())
+        {
+            return Response.error("Không tìm thấy khóa học");
+        }
+
+
+        // check coi course da co trong cart chua
+        if(cartItemRepository.findByCartIdAndCourseId(cartEntity.getId(), courseId) != null)
+        {
+            return Response.error("Khóa học đã có trong giỏ hàng");
+        }
+
+        // check xem hoc vien co mua course nay chua
+        if(enrollmentRepository.existsByStudentIdAndCourseIdAndIsActiveTrue(studentEntity.getId(), courseId))
+        {
+            return Response.error("Bạn đã mua khoá học này");
+        }
+
+        CartItemEntity cartItemEntity = new CartItemEntity();
+        cartItemEntity.setCartId(cartEntity.getId());
+        cartItemEntity.setCourseId(courseId);
+        cartItemRepository.save(cartItemEntity);
+
+        return Response.success();
     }
 
     @Override
@@ -109,6 +144,28 @@ public class CartServiceImpl implements CartService{
         }
 
         cartItemRepository.findById(cartItemId).ifPresent(cartItemRepository::delete);
+
+    }
+
+    @Override
+    public long getCartItemCount(Long studentId) {
+        return cartRepository.findByStudentId(studentId)
+                .map(cart -> cartItemRepository.countByCartId(cart.getId()))
+                .orElse(0L);
+    }
+
+    @Override
+    public void clearCart(StudentEntity studentEntity) {
+        CartEntity cartEntity = cartRepository.findByStudentId(studentEntity.getId()).orElse(null);
+        if (cartEntity == null) {
+            cartEntity = new CartEntity();
+            cartEntity.setStudentId(studentEntity.getId());
+            cartRepository.save(cartEntity);
+        }
+
+        List<CartItemEntity> cartItems = cartItemRepository.findByCartId(cartEntity.getId());
+
+        cartItemRepository.deleteAll(cartItems);
 
     }
 }

@@ -2,20 +2,17 @@ package com.hcmute.prse_be.config;
 
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class CloudinaryConfig {
-    @Value("dojqvvqeq")
-    private String cloudName;
 
-    @Value("687655914675995")
-    private String apiKey;
+    private final String cloudName = Config.getParam("cloudinary", "cloud_name");
 
-    @Value("x8M2p8Rs861LDKdwfHAsjJHMUGs")
-    private String apiSecret;
+    private final String apiKey = Config.getParam("cloudinary", "api_key");
+
+    private final String apiSecret = Config.getParam("cloudinary", "api_secret");
 
     @Bean
     public Cloudinary cloudinary() {

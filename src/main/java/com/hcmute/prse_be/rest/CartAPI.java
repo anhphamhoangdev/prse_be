@@ -13,6 +13,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/cart")
 public class CartAPI {
@@ -53,11 +55,27 @@ public class CartAPI {
         return ResponseEntity.ok(Response.success(jsonObject));
     }
 
+    @PostMapping()
+    public ResponseEntity<JSONObject> addToCart(
+            Authentication authentication,
+            @RequestBody Map<String, Long> data
+    ) {
+
+        if (authentication == null) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Response.error("Chưa đăng nhập"));
+        }
+
+        StudentEntity studentEntity = studentService.findByUsername(authentication.getName());
+        if(studentEntity == null) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Response.error("Không tìm thấy thông tin người dùng"));
+        }
+
+        return ResponseEntity.ok(cartService.addItemToCart(studentEntity, data.get("courseId")));
 
 
 
 
-    // POST /api/v1/cart/add/{courseId} - Thêm khóa học vào giỏ hàng
+    }
 
 
 
@@ -82,5 +100,27 @@ public class CartAPI {
         cartService.removeItemFromCart(studentEntity, itemId);
 
         return ResponseEntity.ok(Response.success());
+    }
+
+
+    @GetMapping("/count")
+    public ResponseEntity<JSONObject> getCartItemCount(
+            Authentication authentication
+    ) {
+
+        if(authentication == null) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Response.error("Chưa đăng nhập"));
+        }
+
+
+        StudentEntity studentEntity = studentService.findByUsername(authentication.getName());
+        if(studentEntity == null) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Response.error("Không tìm thấy thông tin người dùng"));
+        }
+
+        long count = cartService.getCartItemCount(studentEntity.getId());
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.put("count", count);
+        return ResponseEntity.ok(Response.success(jsonObject));
     }
 }

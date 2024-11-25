@@ -1,0 +1,176 @@
+package com.hcmute.prse_be.service;
+
+import com.hcmute.prse_be.constants.PaymentRequestLogStatus;
+import com.hcmute.prse_be.entity.*;
+import com.hcmute.prse_be.repository.*;
+import com.hcmute.prse_be.request.PaymentItemRequest;
+import com.hcmute.prse_be.request.PaymentRequest;
+import com.hcmute.prse_be.request.PaymentUpdateStatusRequest;
+import com.hcmute.prse_be.security.Endpoints;
+import com.hcmute.prse_be.util.ConvertUtils;
+import com.hcmute.prse_be.util.JsonUtils;
+import net.minidev.json.JSONObject;
+import org.springframework.stereotype.Service;
+import vn.payos.PayOS;
+import vn.payos.type.CheckoutResponseData;
+import vn.payos.type.ItemData;
+import vn.payos.type.PaymentData;
+
+import java.time.LocalDateTime;
+
+
+@Service
+public class PaymentServiceImpl implements PaymentService{
+
+    private final PayOS payOS;
+    private final PaymentMethodRepository paymentMethodRepository;
+    private final PaymentRequestLogRepository paymentRequestLogRepository;
+    private final CheckoutDraftRepository checkoutDraftRepository;
+    private final CartService cartService;
+
+
+    // return url + cancelled url
+    private final String returnUrl = Endpoints.FRONT_END_HOST +"/payment/success";
+    private final String cancelUrl = Endpoints.FRONT_END_HOST +"/payment/cancel";
+    private final PaymentLogRepository paymentLogRepository;
+    private final StudentRepository studentRepository;
+    private final EnrollmentRepository enrollmentRepository;
+
+    public PaymentServiceImpl(PayOS payOS, PaymentMethodRepository paymentMethodRepository, PaymentRequestLogRepository paymentRequestLogRepository, CheckoutDraftRepository checkoutDraftRepository, CartService cartService, PaymentLogRepository paymentLogRepository, StudentRepository studentRepository, EnrollmentRepository enrollmentRepository) {
+        this.payOS = payOS;
+        this.paymentMethodRepository = paymentMethodRepository;
+        this.paymentRequestLogRepository = paymentRequestLogRepository;
+        this.checkoutDraftRepository = checkoutDraftRepository;
+        this.cartService = cartService;
+        this.paymentLogRepository = paymentLogRepository;
+        this.studentRepository = studentRepository;
+        this.enrollmentRepository = enrollmentRepository;
+    }
+
+
+    @Override
+    public JSONObject createPayment(PaymentRequest paymentRequest, StudentEntity studentEntity) throws Exception {
+
+        Long paymentMethodId = paymentRequest.getPaymentMethodId();
+        // get payment method ra
+        PaymentMethodEntity paymentMethodEntity = paymentMethodRepository.findById(paymentMethodId).orElse(null);
+
+
+        if(paymentMethodEntity == null) {
+            throw new Exception("Không tìm thấy phương thức thanh toán");
+        }
+
+        // tao request
+        PaymentRequestLogEntity paymentRequestLogEntity = new PaymentRequestLogEntity();
+        paymentRequestLogEntity.setCheckoutDraftId(paymentRequest.getCheckoutDraftId());
+        paymentRequestLogEntity.setStudentId(studentEntity.getId());
+        paymentRequestLogEntity.setPaymentMethodCode(paymentMethodEntity.getCode());
+        paymentRequestLogEntity.setAmount(paymentRequest.getTotalAmount());
+        paymentRequestLogEntity.setStatus(PaymentRequestLogStatus.NEW);
+        paymentRequestLogEntity.setRequestData(JsonUtils.Serialize(paymentRequest));
+
+        // save request
+        paymentRequestLogEntity = paymentRequestLogRepository.save(paymentRequestLogEntity);
+
+        Long orderCode = paymentRequestLogEntity.getId();
+
+        String description = "STDID_" + studentEntity.getId() + "_ORDER_" + orderCode;
+
+        String returnUrl = this.returnUrl; // gan tam
+        String cancelUrl = this.cancelUrl; // gan tam
+
+        final int price = paymentRequest.getTotalAmount();
+
+        PaymentData paymentData = PaymentData
+                .builder()
+                .buyerName(studentEntity.getFullName())
+                .buyerEmail(studentEntity.getEmail())
+                .buyerPhone(studentEntity.getPhoneNumber())
+                .orderCode(orderCode)
+                .description(description)
+                .amount(price)
+                .returnUrl(returnUrl)
+                .cancelUrl(cancelUrl)
+                .build();
+
+
+        for (int i = 0; i < paymentRequest.getItems().size(); i++) {
+            ItemData item = ItemData
+                    .builder()
+                    .name(paymentRequest.getItems().get(i).getTitle())
+                    .price(ConvertUtils.toInt(paymentRequest.getItems().get(i).getPrice()))
+                    .quantity(1)
+                    .build();
+            paymentData.addItem(item);
+        }
+
+        CheckoutResponseData data = payOS.createPaymentLink(paymentData);
+
+        if (data != null) {
+            JSONObject jsonObject = new JSONObject();
+            jsonObject.put("payment_info", data);
+            paymentRequestLogEntity.setResponseData(JsonUtils.Serialize(jsonObject));
+            paymentRequestLogEntity.setTransactionId(createTransactionId(orderCode, studentEntity.getId().toString()));
+            CheckoutDraftEntity checkoutDraftEntity = checkoutDraftRepository.findById(paymentRequest.getCheckoutDraftId()).orElse(null);
+            if (checkoutDraftEntity != null) {
+                checkoutDraftEntity.setTransactionId(paymentRequestLogEntity.getTransactionId());
+                checkoutDraftRepository.save(checkoutDraftEntity);
+            }
+            paymentRequestLogRepository.save(paymentRequestLogEntity);
+            return jsonObject;
+        }
+
+        return null;
+    }
+
+    @Override
+    public void updatePaymentStatus(PaymentUpdateStatusRequest data) {
+        // orderCode = paymentRequestLogEntity.getId()
+        Long orderCode = ConvertUtils.toLong(data.getOrderCode());
+        PaymentRequestLogEntity paymentRequestLogEntity = paymentRequestLogRepository.findById(orderCode).orElse(null);
+        if(paymentRequestLogEntity != null) {
+            paymentRequestLogEntity.setStatus(data.getStatus());
+            paymentRequestLogRepository.save(paymentRequestLogEntity);
+        }
+
+        // create payment log if success
+        if(data.getStatus().equals(PaymentRequestLogStatus.PAID)){
+            PaymentLogEntity paymentLogEntity = new PaymentLogEntity();
+            paymentLogEntity.setPaymentRequestLogId(orderCode);
+            paymentLogEntity.setStudentId(paymentRequestLogEntity.getStudentId());
+            paymentLogEntity.setPaymentMethodCode(paymentRequestLogEntity.getPaymentMethodCode());
+            paymentLogEntity.setAmount(paymentRequestLogEntity.getAmount());
+            paymentLogEntity.setRequestData(JsonUtils.Serialize(data));
+            paymentLogEntity.setTransactionId(paymentRequestLogEntity.getTransactionId());
+
+            PaymentRequest paymentRequest = JsonUtils.DeSerialize(paymentRequestLogEntity.getRequestData(), PaymentRequest.class);
+
+
+            paymentLogEntity.setItems(JsonUtils.Serialize(paymentRequest.getItems()));
+            paymentLogEntity = paymentLogRepository.save(paymentLogEntity);
+
+            StudentEntity studentEntity = studentRepository.findById(paymentRequestLogEntity.getStudentId()).orElse(null);
+            if (studentEntity != null) {
+                for (PaymentItemRequest item : paymentRequest.getItems()) {
+
+                    LogService.getgI().info("====> Enroll course: " + item.getId() + " size : " + paymentRequest.getItems().size() + "");
+                    EnrollmentEntity enrollmentEntity = new EnrollmentEntity();
+                    enrollmentEntity.setStudentId(studentEntity.getId());
+                    enrollmentEntity.setCourseId(item.getCourseId());
+                    enrollmentEntity.setEnrolledAt(LocalDateTime.now());
+                    enrollmentEntity.setIsActive(true);
+                    enrollmentEntity.setIsRating(false);
+                    enrollmentEntity.setPaymentLogId(paymentLogEntity.getId());
+                    enrollmentRepository.save(enrollmentEntity);
+                }
+                cartService.clearCart(studentEntity);
+            }
+        }
+    }
+
+
+
+    private String createTransactionId(Long orderCode, String studentId) {
+        return "PAYOS" + "_STDID" + studentId + "_OID" + orderCode;
+    }
+}
