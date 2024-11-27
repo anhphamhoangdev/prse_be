@@ -52,7 +52,8 @@ public class Endpoints {
     public static final String[] STUDENT_GET_END_POINT = {
             "/api/student/profile",
             "/api/cart/**",
-            "/api/course/my-courses"
+            "/api/course/my-courses",
+
 //            "/users",
 //            "/users/**"
     };
@@ -61,12 +62,18 @@ public class Endpoints {
             "/api/student/update-avatar",
             "/api/checkout/create",
             "/api/payment/create",
+            "/api/chat"
 //            "/users",
 //            "/users/**"
     };
 
     public static final String[] ADMIN_POST_END_POINT = {
 //            "/books",
+    };
+
+    public static final String[] INSTRUCTOR_GET_END_POINT = {
+//            "/books",
+            "/api/instructor/**",
     };
 
 }

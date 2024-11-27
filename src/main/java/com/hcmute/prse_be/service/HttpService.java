@@ -4,172 +4,178 @@ import com.hcmute.prse_be.util.JsonUtils;
 import net.minidev.json.JSONArray;
 import net.minidev.json.JSONObject;
 import net.minidev.json.parser.JSONParser;
-import net.minidev.json.parser.ParseException;
+import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.util.UriBuilder;
 import org.springframework.web.util.UriComponentsBuilder;
 import reactor.core.publisher.Mono;
 
-import java.net.URI;
+import java.util.List;
+import java.util.Map;
 
 @Service
 public class HttpService {
-
     private final WebClient webClient;
-
-    private final JSONParser jsonParser;
-
 
     public HttpService(WebClient.Builder webClientBuilder) {
         this.webClient = webClientBuilder.build();
-        this.jsonParser = new JSONParser(JSONParser.DEFAULT_PERMISSIVE_MODE);
-
     }
 
+    /**
+     * Gửi GET request đơn giản
+     */
     public Mono<JSONObject> sendGet(String url) {
         LogService.getgI().info("[sendGet] : " + url);
+
         return webClient.get()
                 .uri(url)
-                .retrieve()
-                .bodyToMono(String.class)
-                .flatMap(this::parseResponse)
-                .doOnSuccess(jsonObject -> {
-                    LogService.getgI().info("[sendGet] RESPONSE : " + jsonObject.toString());
-                })
-                .doOnError((e) -> {
-                        LogService.getgI().info("[sendGet] RESPONSE : " + e.getMessage() );
-                });
-    }
-
-    public Mono<JSONObject> sendGetWithRequestParams(String url, JSONObject requestParams) {
-        LogService.getgI().info("[sendGetWithRequestParams] : " + url );
-        LogService.getgI().info("[sendGetWithRequestParams] Request Params : " + JsonUtils.Serialize(requestParams));
-        return webClient.get()
-                .uri(uriBuilder -> {
-                    URI baseUri = URI.create(url);
-                    UriBuilder builder = UriComponentsBuilder.fromUri(baseUri);
-
-                    requestParams.forEach((key, value) ->
-                            builder.queryParam(key, value.toString()));
-
-                    URI finalUri = builder.build();
-                    LogService.getgI().info("[sendGetWithRequestParams] Final URL: " + finalUri);
-                    return finalUri;
-                })
                 .retrieve()
                 .bodyToMono(String.class)
                 .flatMap(this::parseResponse)
                 .doOnSuccess(jsonObject ->
-                        LogService.getgI().info("[sendGetWithRequestParams] RESPONSE : " + jsonObject.toString())
-                )
-                .doOnError(e -> LogService.getgI().info(e.getMessage())
-                );
+                        LogService.getgI().info("[sendGet] RESPONSE : " + jsonObject.toString()))
+                .doOnError(e ->
+                        LogService.getgI().info("[sendGet] ERROR : " + e.getMessage()));
     }
 
-    public Mono<JSONObject> sendGetWithRequestParamsAndHeader(String url, JSONObject requestParams, JSONObject requestHeader) {
-        LogService.getgI().info("[sendGetWithRequestParamsAndHeader] : " + url );
-        LogService.getgI().info("[sendGetWithRequestParamsAndHeader] Request Params : " + JsonUtils.Serialize(requestParams));
-        LogService.getgI().info("[sendGetWithRequestParamsAndHeader] Request Header : " + JsonUtils.Serialize(requestHeader));
+    /**
+     * Gửi GET request với params
+     */
+    public Mono<JSONObject> sendGetWithParams(String url, JSONObject params) {
+        LogService.getgI().info("[sendGetWithParams] : " + url);
+        LogService.getgI().info("[sendGetWithParams] Request Params : " + JsonUtils.Serialize(params));
+
+        String finalUrl = buildUrlWithParams(url, params);
+        LogService.getgI().info("[sendGetWithParams] Final URL: " + finalUrl);
+
         return webClient.get()
-                .uri(uriBuilder -> {
-                    URI baseUri = URI.create(url);
-                    UriBuilder builder = UriComponentsBuilder.fromUri(baseUri);
-
-                    requestParams.forEach((key, value) ->
-                            builder.queryParam(key, value.toString()));
-
-                    URI finalUri = builder.build();
-                    LogService.getgI().info("[sendGetWithRequestParamsAndHeader] Final URL: " + finalUri);
-                    return finalUri;
-                })
-                .headers(httpHeaders -> {
-                    requestHeader.forEach((key, value) ->
-                            httpHeaders.add(key, value.toString()));
-                })
+                .uri(finalUrl)
                 .retrieve()
                 .bodyToMono(String.class)
                 .flatMap(this::parseResponse)
-                .doOnSuccess(jsonObject ->  LogService.getgI().info("[sendGetWithRequestParamsAndHeader] RESPONSE : " + jsonObject.toString()))
-                .doOnError(e -> LogService.getgI().info("[sendGetWithRequestParamsAndHeader] RESPONSE ERROR : " + e.getMessage()));
+                .doOnSuccess(jsonObject ->
+                        LogService.getgI().info("[sendGetWithParams] RESPONSE : " + jsonObject.toString()))
+                .doOnError(e ->
+                        LogService.getgI().info("[sendGetWithParams] ERROR : " + e.getMessage()));
     }
 
-    public Mono<JSONObject> sendPost(String url) {
+    /**
+     * Gửi GET request với params và headers
+     */
+    public Mono<JSONObject> sendGetWithParamsAndHeaders(String url, JSONObject params, JSONObject headers) {
+        LogService.getgI().info("[sendGetWithParamsAndHeaders] : " + url);
+        LogService.getgI().info("[sendGetWithParamsAndHeaders] Request Params : " + JsonUtils.Serialize(params));
+        LogService.getgI().info("[sendGetWithParamsAndHeaders] Request Headers : " + JsonUtils.Serialize(headers));
+
+        String finalUrl = buildUrlWithParams(url, params);
+        LogService.getgI().info("[sendGetWithParamsAndHeaders] Final URL: " + finalUrl);
+
+        return webClient.get()
+                .uri(finalUrl)
+                .headers(httpHeaders -> addHeaders(httpHeaders, headers))
+                .retrieve()
+                .bodyToMono(String.class)
+                .flatMap(this::parseResponse)
+                .doOnSuccess(jsonObject ->
+                        LogService.getgI().info("[sendGetWithParamsAndHeaders] RESPONSE : " + jsonObject.toString()))
+                .doOnError(e ->
+                        LogService.getgI().info("[sendGetWithParamsAndHeaders] ERROR : " + e.getMessage()));
+    }
+
+    /**
+     * Gửi POST request với body
+     */
+    public Mono<JSONObject> sendPost(String url, JSONObject requestBody) {
         LogService.getgI().info("[sendPost] : " + url);
-        return webClient.post()
-                .uri(url)
-                .retrieve()
-                .bodyToMono(String.class)
-                .flatMap(this::parseResponse)
-                .doOnSuccess(jsonObject -> {
-                    LogService.getgI().info("[sendPost] RESPONSE : " + jsonObject.toString());
-                })
-                .doOnError((e) -> {
-                    LogService.getgI().info("[sendPost] RESPONSE : " + e.getMessage() );
-                });
-    }
+        LogService.getgI().info("[sendPost] Request Body : " + JsonUtils.Serialize(requestBody));
 
-    public Mono<JSONObject> sendPostWithRequestBody(String url, JSONObject requestBody)
-    {
-        LogService.getgI().info("[sendPostWithRequestBody] : " + url);
-        LogService.getgI().info("[sendPostWithRequestBody] Request Body : " + JsonUtils.Serialize(requestBody));
         return webClient.post()
                 .uri(url)
                 .bodyValue(requestBody)
                 .retrieve()
                 .bodyToMono(String.class)
                 .flatMap(this::parseResponse)
-                .doOnSuccess(jsonObject -> {
-                    LogService.getgI().info("[sendPostWithRequestBody] RESPONSE : " + jsonObject.toString());
+                .map(response -> {
+                    LogService.getgI().info("[sendPostWithRequestBody] RESPONSE : " + response.toString());
+                    return response;
                 })
-                .doOnError((e) -> {
-                    LogService.getgI().info("[sendPostWithRequestBody] RESPONSE : " + e.getMessage() );
+                .onErrorMap(e -> {
+                    LogService.getgI().info("[sendPostWithRequestBody] ERROR : " + e.getMessage());
+                    return e;
                 });
     }
 
-    public Mono<JSONObject> sendPostWithRequestBodyAndHeader(String url, JSONObject requestBody, JSONObject requestHeader)
-    {
-        LogService.getgI().info("[sendPostWithRequestBodyAndHeader] : " + url);
-        LogService.getgI().info("[sendPostWithRequestBodyAndHeader] Request Body : " + JsonUtils.Serialize(requestBody));
-        LogService.getgI().info("[sendPostWithRequestBodyAndHeader] Request Header : " + JsonUtils.Serialize(requestHeader));
+    /**
+     * Gửi POST request với body và headers
+     */
+    public Mono<JSONObject> sendPostWithHeaders(String url, JSONObject requestBody, JSONObject headers) {
+        LogService.getgI().info("[sendPostWithHeaders] : " + url);
+        LogService.getgI().info("[sendPostWithHeaders] Request Body : " + JsonUtils.Serialize(requestBody));
+        LogService.getgI().info("[sendPostWithHeaders] Request Headers : " + JsonUtils.Serialize(headers));
+
         return webClient.post()
                 .uri(url)
                 .bodyValue(requestBody)
-                .headers(httpHeaders -> {
-                    requestHeader.forEach((key, value) ->
-                            httpHeaders.add(key, value.toString()));
-                })
+                .headers(httpHeaders -> addHeaders(httpHeaders, headers))
                 .retrieve()
                 .bodyToMono(String.class)
                 .flatMap(this::parseResponse)
-                .doOnSuccess(jsonObject -> {
-                    LogService.getgI().info("[sendPostWithRequestBodyAndHeader] RESPONSE : " + jsonObject.toString());
-                })
-                .doOnError((e) -> {
-                    LogService.getgI().info("[sendPostWithRequestBodyAndHeader] RESPONSE : " + e.getMessage() );
-                });
+                .doOnSuccess(jsonObject ->
+                        LogService.getgI().info("[sendPostWithHeaders] RESPONSE : " + jsonObject.toString()))
+                .doOnError(e ->
+                        LogService.getgI().info("[sendPostWithHeaders] ERROR : " + e.getMessage()));
     }
 
+    /**
+     * Helper method để build URL với params
+     */
+    private String buildUrlWithParams(String baseUrl, JSONObject params) {
+        UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(baseUrl);
+
+        params.forEach((key, value) ->
+                builder.queryParam(key, value.toString()));
+
+        return builder.build().toUriString();
+    }
+
+    /**
+     * Helper method để thêm headers
+     */
+    private void addHeaders(HttpHeaders httpHeaders, JSONObject headers) {
+        headers.forEach((key, value) ->
+                httpHeaders.add(key, value.toString()));
+    }
+
+    /**
+     * Helper method để parse response
+     */
+    /**
+     * Helper method để parse response
+     */
     private Mono<JSONObject> parseResponse(String response) {
-        return Mono.fromCallable(() -> {
-            try {
-                Object parsedObject = jsonParser.parse(response);
-                JSONObject result = new JSONObject();
-
-                if (parsedObject instanceof JSONObject) {
-                    result = (JSONObject) parsedObject;
-                } else if (parsedObject instanceof JSONArray) {
-                    result.put("data", parsedObject);
-                } else {
-                    throw new RuntimeException("Unexpected response type: " + parsedObject.getClass().getName());
-                }
-
-                return result;
-            } catch (ParseException e) {
-                LogService.getgI().error(e);
-                throw new RuntimeException("Failed to parse JSON response", e);
+        try {
+            if (response == null || response.trim().isEmpty()) {
+                LogService.getgI().info("[parseResponse] Empty response");
+                return Mono.error(new RuntimeException("Empty response"));
             }
-        });
-    }
 
+            JSONParser parser = new JSONParser(JSONParser.DEFAULT_PERMISSIVE_MODE);
+            Object parsedObj = parser.parse(response);
+
+            if (parsedObj instanceof Map) {
+                JSONObject jsonObject = new JSONObject();
+                jsonObject.putAll((Map<String, ?>) parsedObj);
+                return Mono.just(jsonObject);
+            }
+
+            // Wrap non-object responses
+            JSONObject wrappedResponse = new JSONObject();
+            wrappedResponse.put("data", parsedObj);
+            return Mono.just(wrappedResponse);
+
+        } catch (Exception e) {
+            LogService.getgI().info("[parseResponse] Error: " + e.getMessage() + " | Response: " + response);
+            return Mono.error(new RuntimeException("Failed to parse response: " + e.getMessage()));
+        }
+    }
 }

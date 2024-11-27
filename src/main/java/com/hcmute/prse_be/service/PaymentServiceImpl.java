@@ -35,8 +35,11 @@ public class PaymentServiceImpl implements PaymentService{
     private final PaymentLogRepository paymentLogRepository;
     private final StudentRepository studentRepository;
     private final EnrollmentRepository enrollmentRepository;
+    private final CourseRepository courseRepository;
+    private final InstructorRepository instructorRepository;
+    private final InstructorPlatformTransactionRepository instructorPlatformTransactionRepository;
 
-    public PaymentServiceImpl(PayOS payOS, PaymentMethodRepository paymentMethodRepository, PaymentRequestLogRepository paymentRequestLogRepository, CheckoutDraftRepository checkoutDraftRepository, CartService cartService, PaymentLogRepository paymentLogRepository, StudentRepository studentRepository, EnrollmentRepository enrollmentRepository) {
+    public PaymentServiceImpl(PayOS payOS, PaymentMethodRepository paymentMethodRepository, PaymentRequestLogRepository paymentRequestLogRepository, CheckoutDraftRepository checkoutDraftRepository, CartService cartService, PaymentLogRepository paymentLogRepository, StudentRepository studentRepository, EnrollmentRepository enrollmentRepository, CourseRepository courseRepository, InstructorRepository instructorRepository, InstructorPlatformTransactionRepository instructorPlatformTransactionRepository) {
         this.payOS = payOS;
         this.paymentMethodRepository = paymentMethodRepository;
         this.paymentRequestLogRepository = paymentRequestLogRepository;
@@ -45,6 +48,9 @@ public class PaymentServiceImpl implements PaymentService{
         this.paymentLogRepository = paymentLogRepository;
         this.studentRepository = studentRepository;
         this.enrollmentRepository = enrollmentRepository;
+        this.courseRepository = courseRepository;
+        this.instructorRepository = instructorRepository;
+        this.instructorPlatformTransactionRepository = instructorPlatformTransactionRepository;
     }
 
 
@@ -152,8 +158,6 @@ public class PaymentServiceImpl implements PaymentService{
             StudentEntity studentEntity = studentRepository.findById(paymentRequestLogEntity.getStudentId()).orElse(null);
             if (studentEntity != null) {
                 for (PaymentItemRequest item : paymentRequest.getItems()) {
-
-                    LogService.getgI().info("====> Enroll course: " + item.getId() + " size : " + paymentRequest.getItems().size() + "");
                     EnrollmentEntity enrollmentEntity = new EnrollmentEntity();
                     enrollmentEntity.setStudentId(studentEntity.getId());
                     enrollmentEntity.setCourseId(item.getCourseId());
@@ -162,6 +166,32 @@ public class PaymentServiceImpl implements PaymentService{
                     enrollmentEntity.setIsRating(false);
                     enrollmentEntity.setPaymentLogId(paymentLogEntity.getId());
                     enrollmentRepository.save(enrollmentEntity);
+
+                    // kiem course de update total student va money cho instructor
+                    CourseEntity courseEntity = courseRepository.findById(item.getCourseId()).orElse(null);
+                    if(courseEntity != null) {
+                        courseEntity.setTotalStudents(courseEntity.getTotalStudents() + 1);
+                        courseEntity = courseRepository.save(courseEntity);
+                        InstructorEntity instructorEntity = instructorRepository.findById(courseEntity.getInstructorId()).orElse(null);
+                        if(instructorEntity != null) {
+
+                            // update cho instructor
+                            instructorEntity.setTotalStudent(instructorEntity.getTotalStudent() + 1);
+                            instructorEntity.setMoney(instructorEntity.getMoney() + item.getPrice() * 0.7);
+                            instructorEntity = instructorRepository.save(instructorEntity);
+
+
+                            // update log cho instructor - platform
+                            InstructorPlatformTransactionEntity instructorPlatformTransactionEntity = new InstructorPlatformTransactionEntity();
+                            instructorPlatformTransactionEntity.setInstructorId(instructorEntity.getId());
+                            instructorPlatformTransactionEntity.setInstructorMoney(item.getPrice() * 0.7);
+                            instructorPlatformTransactionEntity.setPlatformMoney(item.getPrice() * 0.3);
+                            instructorPlatformTransactionEntity.setCourseId(courseEntity.getId());
+                            instructorPlatformTransactionEntity.setStudentId(studentEntity.getId());
+                            instructorPlatformTransactionEntity.setSellPrice(item.getPrice());
+                            instructorPlatformTransactionRepository.save(instructorPlatformTransactionEntity);
+                        }
+                    }
                 }
                 cartService.clearCart(studentEntity);
             }
