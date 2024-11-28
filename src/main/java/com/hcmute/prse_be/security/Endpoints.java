@@ -19,8 +19,11 @@ public class Endpoints {
 
             "/api/test/**",
 
-            "/api/course/**"
+            "/api/course/**",
 
+            "/api/upload/status/{threadId}",
+            "/api/upload/getAllStatuses",
+            "api/upload/status/instructor/{instructorId}",
 
 
 //            "/books",
@@ -38,6 +41,7 @@ public class Endpoints {
             "api/student/existsByEmail",
             "api/student/existsByPhoneNumber",
             "api/student/login",
+            "api/upload/**",
 
 //            "/user/login",
 //            "/test/**"
@@ -57,6 +61,12 @@ public class Endpoints {
 
     public static final String[] ADMIN_POST_END_POINT = {
 //            "/books",
+    };
+    public static final String[] UPLOAD_POST_END_POINT = {
+            "/api/upload/preview-video",
+            "/api/upload/video",
+//            "/users",
+//            "/users/**"
     };
 
 }
