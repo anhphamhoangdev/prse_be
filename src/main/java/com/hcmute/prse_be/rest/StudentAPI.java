@@ -150,14 +150,14 @@ public class StudentAPI {
     }
 
     @PostMapping(ApiPaths.UPDATE_AVATAR)
-    public JSONObject updateAvatar(@RequestParam MultipartFile file)
+    public JSONObject updateAvatar(@RequestParam MultipartFile file, Authentication authentication)
     {
         try{
-            Map uploadAvatar  = cloudinaryService.uploadFile(file, ImageFolderName.STUDENT_AVATAR_FOLDER);
-            String imageUrl = (String) uploadAvatar.get("url");
+            String imageUrl = cloudinaryService.uploadImage(file, ImageFolderName.STUDENT_AVATAR_FOLDER);
+            studentService.saveAvatarStudent(imageUrl, authentication.getName());
             JSONObject response = new JSONObject();
             response.put("avatarUrl",imageUrl);
-            return response;
+            return Response.success(response);
         } catch (Exception e) {
             return Response.error(ErrorMsg.SOMETHING_WENT_WRONG + e.getMessage());
         }

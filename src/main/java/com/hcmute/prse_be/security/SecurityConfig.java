@@ -57,17 +57,37 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of(Endpoints.FRONT_END_HOST));
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS")); // Thêm OPTIONS
-        configuration.setAllowedHeaders(List.of("*"));
-        configuration.setExposedHeaders(List.of("*")); // Thêm exposed headers
-        configuration.setAllowCredentials(true);  // Thêm allow credentials
-        configuration.setMaxAge(3600L);  // Thêm max age
+
+        // Thêm nhiều origins
+        configuration.setAllowedOrigins(Arrays.asList(
+                Endpoints.FRONT_END_HOST,
+                "https://api-merchant.payos.vn",    // PayOS API domain
+                "https://pay.payos.vn"              // PayOS payment domain
+        ));
+
+        // Hoặc cho phép tất cả origins (không recommended cho production)
+        // configuration.setAllowedOrigins(Arrays.asList("*"));
+
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(Arrays.asList(
+                "Origin",
+                "Content-Type",
+                "Accept",
+                "Authorization",
+                "X-Requested-With",
+                "x-client-id",        // PayOS headers
+                "x-api-key",          // PayOS headers
+                "Charset"
+        ));
+        configuration.setExposedHeaders(List.of("*"));
+        configuration.setAllowCredentials(true);
+        configuration.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;
     }
+
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -75,10 +95,13 @@ public class SecurityConfig {
                 .authorizeHttpRequests(config -> {
                     config
                             .requestMatchers(HttpMethod.GET, Endpoints.PUBLIC_GET_END_POINT).permitAll()
+                            .requestMatchers("/ws/**").permitAll() // Cho phép truy cập WebSocket
+
                             .requestMatchers(HttpMethod.POST, Endpoints.PUBLIC_POST_END_POINT).permitAll()
                             .requestMatchers(HttpMethod.GET, Endpoints.STUDENT_GET_END_POINT).hasAuthority("STUDENT")
                             .requestMatchers(HttpMethod.POST, Endpoints.STUDENT_POST_END_POINT).hasAuthority("STUDENT")
                             .requestMatchers(HttpMethod.POST, Endpoints.ADMIN_POST_END_POINT).hasAuthority("ADMIN")
+                            .requestMatchers(HttpMethod.GET, Endpoints.INSTRUCTOR_GET_END_POINT).hasAuthority("INSTRUCTOR")
                             .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // Thêm cho CORS preflight
                             .anyRequest().authenticated(); // Thêm default rule
                 })

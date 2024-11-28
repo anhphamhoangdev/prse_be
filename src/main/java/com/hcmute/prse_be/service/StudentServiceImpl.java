@@ -3,7 +3,9 @@ package com.hcmute.prse_be.service;
 import com.hcmute.prse_be.config.Config;
 import com.hcmute.prse_be.constants.Constant;
 import com.hcmute.prse_be.constants.ErrorMsg;
+import com.hcmute.prse_be.entity.CartEntity;
 import com.hcmute.prse_be.entity.StudentEntity;
+import com.hcmute.prse_be.repository.CartRepository;
 import com.hcmute.prse_be.repository.StudentRepository;
 import com.hcmute.prse_be.response.Response;
 import com.hcmute.prse_be.util.GenerateUtils;
@@ -19,12 +21,24 @@ public class StudentServiceImpl implements StudentService{
     private final EmailService emailService;
     private final StudentRepository studentRepository;
     private final BCryptPasswordEncoder passwordEncoder;
+    private final CartRepository cartRepository;
 
 
-    public StudentServiceImpl(EmailService emailService, StudentRepository studentRepository, BCryptPasswordEncoder passwordEncoder) {
+    public StudentServiceImpl(EmailService emailService, StudentRepository studentRepository, BCryptPasswordEncoder passwordEncoder, CartRepository cartRepository) {
         this.emailService = emailService;
         this.studentRepository = studentRepository;
         this.passwordEncoder = passwordEncoder;
+        this.cartRepository = cartRepository;
+    }
+
+    @Override
+    public StudentEntity findById(Long id) {
+        return studentRepository.findById(id).orElse(null);
+    }
+
+    @Override
+    public StudentEntity findByUsername(String username) {
+        return studentRepository.findByUsername(username);
     }
 
     @Override
@@ -105,6 +119,15 @@ public class StudentServiceImpl implements StudentService{
             student.setIsActive(true);
             student = studentRepository.save(student);
 
+            // tao cart
+            CartEntity cartEntity = new CartEntity();
+            cartEntity.setStudentId(student.getId());
+
+            // save
+            student = studentRepository.save(student);
+            cartRepository.save(cartEntity);
+
+
             response.put("student", student);
 
             return Response.success(response);
@@ -125,6 +148,15 @@ public class StudentServiceImpl implements StudentService{
         String url = front_end_host+"/activate/"+email+"/"+activeCode;
         text+=("<br/> <a href="+url+">"+url+"</a> ");
         emailService.sendMessage("easyeduwebsite@gmail.com", email, subject, text);
+    }
+
+    @Override
+    public void saveAvatarStudent(String urlAvatar, String username) {
+        StudentEntity student = studentRepository.findByUsername(username);
+        if(student != null){
+            student.setAvatarUrl(urlAvatar);
+            studentRepository.save(student);
+        }
     }
 
     private boolean validateNewStudent(StudentEntity studentEntity) {

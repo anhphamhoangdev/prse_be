@@ -1,15 +1,26 @@
 package com.hcmute.prse_be.rest;
 
+import com.hcmute.prse_be.constants.ErrorMsg;
+import com.hcmute.prse_be.constants.StatusType;
 import com.hcmute.prse_be.dtos.CourseCurriculumDTO;
+import com.hcmute.prse_be.dtos.CourseDTO;
 import com.hcmute.prse_be.dtos.CourseFeedbackDTO;
+import com.hcmute.prse_be.entity.LessonProgressEntity;
+import com.hcmute.prse_be.entity.StudentEntity;
+import com.hcmute.prse_be.entity.VideoLessonEntity;
 import com.hcmute.prse_be.response.Response;
 import com.hcmute.prse_be.service.CourseService;
 import com.hcmute.prse_be.service.LogService;
+import com.hcmute.prse_be.service.StudentService;
 import net.minidev.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDateTime;
 
 @RestController
 @RequestMapping("/api/course")
@@ -18,9 +29,13 @@ public class CourseAPI {
     private final CourseService courseService;
 
 
+    private final StudentService studentService;
+
+
     @Autowired
-    public CourseAPI(CourseService courseService) {
+    public CourseAPI(CourseService courseService, StudentService studentService) {
         this.courseService = courseService;
+        this.studentService = studentService;
     }
 
     @GetMapping("{id}")
@@ -82,6 +97,109 @@ public class CourseAPI {
 
         } catch (Exception e) {
             return Response.error("Không tìm thấy khóa học");
+        }
+    }
+
+    @GetMapping("/{courseId}/{chapterId}/{lessonId}/video")
+    public ResponseEntity<JSONObject> getVideoLesson(
+            @PathVariable("courseId") Long courseId,
+            @PathVariable("chapterId") Long chapterId,
+            @PathVariable("lessonId") Long lessonId,
+            Authentication authentication
+    ) {
+        LogService.getgI().info("[CourseAPI] getVideoLesson : courseId=" + courseId + ", chapterId=" + chapterId + ", lessonId=" + lessonId);
+
+        try {
+
+            // check coi no co vao khoa hoc chua neu chua thi tra ve forbidden
+            if (!courseService.checkCourseAccess(courseId, authentication)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Response.error("Không có quyền truy cập khóa học"));
+            }
+
+            // Lấy video lesson theo courseId, chapterId, lessonId
+            VideoLessonEntity videoLesson = courseService.getVideoLesson(courseId, chapterId, lessonId);
+
+            // Nếu không tìm thấy video lesson thì trả về not found
+            if(videoLesson == null)
+            {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Response.error("Không tìm thấy video lesson"));
+            }
+
+            JSONObject data = new JSONObject();
+            data.put("currentLesson", videoLesson);
+
+            return ResponseEntity.ok(Response.success(data));
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Response.error("Không tìm thấy video lesson"));
+        }
+    }
+
+    // submit lesson
+    @PostMapping("/video/submit")
+    public ResponseEntity<JSONObject> submitLesson(@RequestBody JSONObject data, Authentication authentication) {
+        LogService.getgI().info("[CourseAPI] submitLesson : " + data.toJSONString());
+
+        try {
+            // Lấy thông tin từ request
+            Long courseId = Long.parseLong(data.getAsString("courseId"));
+            Long chapterId = Long.parseLong(data.getAsString("chapterId"));
+            Long lessonId = Long.parseLong(data.getAsString("lessonId"));
+
+            // check coi no co vao khoa hoc chua neu chua thi tra ve forbidden
+            if (!courseService.checkCourseAccess(courseId, authentication)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Response.error("Không có quyền truy cập khóa học"));
+            }
+
+            // Lấy video lesson theo courseId, chapterId, lessonId
+            VideoLessonEntity videoLesson = courseService.getVideoLesson(courseId, chapterId, lessonId);
+
+            // Nếu không tìm thấy video lesson thì trả về not found
+            if(videoLesson == null)
+            {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Response.error("Không tìm thấy video lesson"));
+            }
+
+            // Lấy thông tin lesson progress
+            LessonProgressEntity lessonProgress = courseService.getLessonProgress(chapterId, lessonId);
+
+            if(lessonProgress == null)
+            {
+                lessonProgress = new LessonProgressEntity();
+                lessonProgress.setChapterProgressId(chapterId);
+                lessonProgress.setLessonId(lessonId);
+                lessonProgress.setLastAccessedAt(LocalDateTime.now());
+            }
+
+            lessonProgress.setStatus(StatusType.COMPLEDTED);
+
+            courseService.saveLessonProgress(lessonProgress);
+
+            return ResponseEntity.ok(Response.success());
+
+        } catch (Exception e) {
+            return ResponseEntity.ok(Response.success(data));
+        }
+    }
+
+    @GetMapping("/my-courses")
+    public ResponseEntity<JSONObject> getMyCourses(Authentication authentication, @RequestParam(defaultValue = "0") int page,
+                                                   @RequestParam(defaultValue = "12") int size) {
+        LogService.getgI().info("[CourseAPI] getMyCourses");
+
+        try {
+            // Lấy thông tin người dùng từ authentication
+            StudentEntity studentEntity = studentService.findByUsername(authentication.getName());
+
+            // Lấy danh sách khóa học của người dùng
+            Page<CourseDTO> courses = courseService.getMyCourse(studentEntity, page, size);
+
+            JSONObject data = new JSONObject();
+            data.put("courses", courses);
+            return ResponseEntity.ok(Response.success(data));
+
+        } catch (Exception e) {
+            return ResponseEntity.ok(Response.error(ErrorMsg.SOMETHING_WENT_WRONG));
         }
     }
 }

@@ -21,6 +21,8 @@ public class Endpoints {
 
             "/api/course/**",
 
+            "/api/payment-method",
+
 
 
 //            "/books",
@@ -38,6 +40,10 @@ public class Endpoints {
             "api/student/existsByEmail",
             "api/student/existsByPhoneNumber",
             "api/student/login",
+            "api/test/**",
+            "api/payment/callbackUrl",
+            "api/payment/confirm-webhook",
+            "api/payment/update-status",
 
 //            "/user/login",
 //            "/test/**"
@@ -45,12 +51,18 @@ public class Endpoints {
 
     public static final String[] STUDENT_GET_END_POINT = {
             "/api/student/profile",
+            "/api/cart/**",
+            "/api/course/my-courses",
+
 //            "/users",
 //            "/users/**"
     };
 
     public static final String[] STUDENT_POST_END_POINT = {
             "/api/student/update-avatar",
+            "/api/checkout/create",
+            "/api/payment/create",
+            "/api/chat"
 //            "/users",
 //            "/users/**"
     };
@@ -59,5 +71,9 @@ public class Endpoints {
 //            "/books",
     };
 
+    public static final String[] INSTRUCTOR_GET_END_POINT = {
+//            "/books",
+            "/api/instructor/**",
+    };
 
 }

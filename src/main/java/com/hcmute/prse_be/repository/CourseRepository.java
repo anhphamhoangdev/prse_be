@@ -40,37 +40,101 @@ public interface CourseRepository extends JpaRepository<CourseEntity, Long> {
             """)
     Page<CourseDTO> findAllByIsPublishTrueAndOriginalPrice(Pageable pageable);
 
+    @Query("""
+    SELECT new com.hcmute.prse_be.dtos.CourseDTO(
+        c.id, c.instructorId, c.title, c.shortDescription, c.description,
+        c.imageUrl, c.language, c.originalPrice, cd.discountPrice, c.averageRating,
+        c.totalStudents, c.totalViews, c.isPublish, c.isHot, c.isDiscount,
+        c.createdAt, c.updatedAt
+    )
+    FROM CourseEntity c
+    JOIN CourseDiscountEntity cd ON c.id = cd.courseId
+    WHERE c.isPublish = true 
+    AND c.originalPrice > 0
+    AND cd.id IN (
+        SELECT cd2.id
+        FROM CourseDiscountEntity cd2
+        WHERE cd2.courseId = c.id
+        AND cd2.startDate <= :currentDateTime
+        AND cd2.endDate >= :currentDateTime
+        ORDER BY cd2.createdAt DESC
+    )
+""")
+    Page<CourseDTO> findAllActiveDiscountedCourses(
+            @Param("currentDateTime") LocalDateTime currentDateTime,
+            Pageable pageable
+    );
 
     @Query("""
-            SELECT new com.hcmute.prse_be.dtos.CourseDTO(
-                c.id,
-                c.instructorId,
-                c.title,
-                c.shortDescription,
-                c.description,
-                c.imageUrl,
-                c.language,
-                c.originalPrice,
-                cd.discountPrice,
-                c.averageRating,
-                c.totalStudents,
-                c.totalViews,
-                c.isPublish,
-                c.isHot,
-                c.isDiscount,
-                c.createdAt,
-                c.updatedAt
-            )
-            FROM CourseEntity c
-            LEFT JOIN CourseDiscountEntity cd ON c.id = cd.courseId
-            WHERE c.isDiscount = true 
-            AND c.isPublish = true 
-            AND c.originalPrice > 0
-            AND cd.isActive = true
-            AND cd.startDate <= :currentDateTime
-            AND cd.endDate >= :currentDateTime
-            """)
-    Page<CourseDTO> findAllActiveDiscountedCourses(LocalDateTime currentDateTime, Pageable pageable);
+        SELECT new com.hcmute.prse_be.dtos.CourseDTO(
+            c.id, c.instructorId, c.title, c.shortDescription, c.description,
+            c.imageUrl, c.language, c.originalPrice, c.originalPrice, c.averageRating,
+            c.totalStudents, c.totalViews, c.isPublish, c.isHot, c.isDiscount,
+            c.createdAt, c.updatedAt
+        )
+        FROM CourseEntity c
+        WHERE c.isPublish = true 
+        AND c.originalPrice > 0
+        AND c.isHot = true
+        """)
+    Page<CourseDTO> findAllActiveHotCourses(
+            Pageable pageable
+    );
+
+    @Query("""
+    SELECT new com.hcmute.prse_be.dtos.CourseDTO(
+        c.id, c.instructorId, c.title, c.shortDescription, c.description,
+        c.imageUrl, c.language, c.originalPrice, cd.discountPrice, c.averageRating,
+        c.totalStudents, c.totalViews, c.isPublish, c.isHot, c.isDiscount,
+        c.createdAt, c.updatedAt
+    )
+    FROM CourseEntity c
+    JOIN CourseDiscountEntity cd ON c.id = cd.courseId
+    WHERE NOT EXISTS (
+        SELECT 1 FROM EnrollmentEntity e
+        WHERE e.courseId = c.id
+        AND e.studentId = :studentId
+        AND e.isActive = true
+    )
+    AND c.isPublish = true
+    AND c.originalPrice > 0
+    AND cd.id IN (
+        SELECT cd2.id
+        FROM CourseDiscountEntity cd2
+        WHERE cd2.courseId = c.id
+        AND cd2.startDate <= :currentDateTime
+        AND cd2.endDate >= :currentDateTime
+        ORDER BY cd2.createdAt DESC
+    )
+""")
+    Page<CourseDTO> findAllActiveDiscountedCoursesNotEnrolled(
+            @Param("studentId") Long studentId,
+            @Param("currentDateTime") LocalDateTime currentDateTime,
+            Pageable pageable
+    );
+
+    @Query("""
+        SELECT new com.hcmute.prse_be.dtos.CourseDTO(
+            c.id, c.instructorId, c.title, c.shortDescription, c.description,
+            c.imageUrl, c.language, c.originalPrice, c.originalPrice, c.averageRating,
+            c.totalStudents, c.totalViews, c.isPublish, c.isHot, c.isDiscount,
+            c.createdAt, c.updatedAt
+        )
+        FROM CourseEntity c
+        WHERE NOT EXISTS (
+            SELECT 1 FROM EnrollmentEntity e 
+            WHERE e.courseId = c.id 
+            AND e.studentId = :studentId
+            AND e.isActive = true
+        )
+        AND c.isPublish = true 
+        AND c.originalPrice > 0
+        AND c.isHot = true
+        """)
+    Page<CourseDTO> findAllActiveHotCoursesNotEnrolled(
+            @Param("studentId") Long studentId,
+            Pageable pageable
+    );
 
 
     @Query(value = """
@@ -187,6 +251,34 @@ public interface CourseRepository extends JpaRepository<CourseEntity, Long> {
     WHERE c.id = :courseId
 """)
     CourseBasicDTO findCourseBasicById(@Param("courseId") Long courseId);
+
+    @Query("""
+        SELECT new com.hcmute.prse_be.dtos.CourseDTO(
+            c.id,
+            c.instructorId,
+            c.title, 
+            c.shortDescription,
+            c.description,
+            c.imageUrl,
+            c.language,
+            c.originalPrice,
+            c.originalPrice,
+            c.averageRating,
+            c.totalStudents,
+            c.totalViews,
+            c.isPublish,
+            c.isHot,
+            c.isDiscount,
+            c.createdAt,
+            c.updatedAt
+        )
+        FROM CourseEntity c
+        JOIN EnrollmentEntity e ON c.id = e.courseId
+        WHERE e.studentId = :studentId
+        AND e.isActive = true
+        """)
+    Page<CourseDTO> findAllMyCourses(@Param("studentId") Long studentId, Pageable pageable);
+
 
 
 
