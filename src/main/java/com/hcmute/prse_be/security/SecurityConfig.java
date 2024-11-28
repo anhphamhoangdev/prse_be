@@ -78,7 +78,6 @@ public class SecurityConfig {
                             .requestMatchers(HttpMethod.POST, Endpoints.PUBLIC_POST_END_POINT).permitAll()
                             .requestMatchers(HttpMethod.GET, Endpoints.STUDENT_GET_END_POINT).hasAuthority("STUDENT")
                             .requestMatchers(HttpMethod.POST, Endpoints.STUDENT_POST_END_POINT).hasAuthority("STUDENT")
-                            .requestMatchers(HttpMethod.POST, Endpoints.UPLOAD_POST_END_POINT).permitAll()
                             .requestMatchers(HttpMethod.POST, Endpoints.ADMIN_POST_END_POINT).hasAuthority("ADMIN")
                             .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // Thêm cho CORS preflight
                             .anyRequest().authenticated(); // Thêm default rule

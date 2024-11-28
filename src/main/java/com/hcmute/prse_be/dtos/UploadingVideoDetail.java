@@ -1,4 +1,4 @@
-package com.hcmute.prse_be.entity;
+package com.hcmute.prse_be.dtos;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -9,7 +9,7 @@ import java.util.Map;
 @Getter
 @Setter
 @AllArgsConstructor
-public class UploadStatusEntity {
+public class UploadingVideoDetail {
     private String threadId;
     private String status;
     private String title;
@@ -19,7 +19,7 @@ public class UploadStatusEntity {
     private double progress;
     private String instructorId;
 
-    public UploadStatusEntity(String threadId, String status) {
+    public UploadingVideoDetail(String threadId, String status) {
         this.threadId = threadId;
         this.status = status;
         this.createdAt = LocalDateTime.now();
