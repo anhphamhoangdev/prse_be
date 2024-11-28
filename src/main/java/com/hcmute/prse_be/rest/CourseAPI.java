@@ -171,7 +171,7 @@ public class CourseAPI {
                 lessonProgress.setLastAccessedAt(LocalDateTime.now());
             }
 
-            lessonProgress.setStatus(StatusType.COMPLEDTED);
+            lessonProgress.setStatus(StatusType.COMPLETED);
 
             courseService.saveLessonProgress(lessonProgress);
 
