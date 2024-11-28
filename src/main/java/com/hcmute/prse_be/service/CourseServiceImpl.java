@@ -6,6 +6,7 @@ import com.hcmute.prse_be.constants.PaginationNumber;
 import com.hcmute.prse_be.dtos.*;
 import com.hcmute.prse_be.entity.*;
 import com.hcmute.prse_be.repository.*;
+import com.hcmute.prse_be.request.CourseFormDataRequest;
 import com.hcmute.prse_be.response.CoursePageResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.*;
@@ -368,6 +369,27 @@ public class CourseServiceImpl implements CourseService {
     @Override
     public void saveLessonProgress(LessonProgressEntity lessonProgress) {
         lessonProgressRepository.save(lessonProgress);
+    }
+
+    @Override
+    public CourseEntity createCourse(CourseFormDataRequest courseFormData, InstructorEntity instructor) {
+        CourseEntity course = new CourseEntity();
+        course.setTitle(courseFormData.getTitle());
+        course.setDescription(courseFormData.getDescription());
+        course.setShortDescription(courseFormData.getShortDescription());
+        course.setLanguage(courseFormData.getLanguage());
+        course.setOriginalPrice(courseFormData.getOriginalPrice());
+        course.setIsDiscount(courseFormData.getIsDiscount());
+        course.setIsHot(courseFormData.getIsHot());
+        course.setIsPublish(courseFormData.getIsPublish());
+        course.setPreviewVideoDuration(courseFormData.getPreviewVideoDuration());
+        course.setInstructorId(instructor.getId());
+        return courseRepository.save(course);
+    }
+
+    @Override
+    public CourseEntity saveCourse(CourseEntity course) {
+        return courseRepository.save(course);
     }
 
     private CourseDTO processDiscountPrice(CourseDTO course) {

@@ -4,10 +4,8 @@ import com.hcmute.prse_be.dtos.CourseBasicDTO;
 import com.hcmute.prse_be.dtos.CourseCurriculumDTO;
 import com.hcmute.prse_be.dtos.CourseDTO;
 import com.hcmute.prse_be.dtos.CourseFeedbackDTO;
-import com.hcmute.prse_be.entity.CourseEntity;
-import com.hcmute.prse_be.entity.LessonProgressEntity;
-import com.hcmute.prse_be.entity.StudentEntity;
-import com.hcmute.prse_be.entity.VideoLessonEntity;
+import com.hcmute.prse_be.entity.*;
+import com.hcmute.prse_be.request.CourseFormDataRequest;
 import com.hcmute.prse_be.response.CoursePageResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.security.core.Authentication;
@@ -46,4 +44,7 @@ public interface CourseService {
 
     void saveLessonProgress(LessonProgressEntity lessonProgress);
 
+    CourseEntity createCourse(CourseFormDataRequest courseFormData, InstructorEntity instructor);
+
+    CourseEntity saveCourse(CourseEntity course);
 }

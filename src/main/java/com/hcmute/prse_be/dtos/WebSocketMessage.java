@@ -33,4 +33,15 @@ public class WebSocketMessage {
                 LocalDateTime.now().toString()
         );
     }
+
+    // UPLOAD_COMPLETE
+    public static WebSocketMessage uploadComplete(String message, Object data) {
+        return new WebSocketMessage(
+                "UPLOAD_COMPLETE",
+                message,
+                data,
+                "SUCCESS",
+                LocalDateTime.now().toString()
+        );
+    }
 }
