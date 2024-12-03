@@ -6,5 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 
 public interface LessonRepository extends JpaRepository<LessonEntity, Long> {
-    List<LessonEntity> findByChapterIdAndIsPublishTrue(Long chapterId);
+    List<LessonEntity> findByChapterIdAndIsPublishTrueOrderByOrderIndexAsc(Long chapterId);
+
+    List<LessonEntity> findByChapterIdOrderByOrderIndexAsc(Long chapterId);
 }

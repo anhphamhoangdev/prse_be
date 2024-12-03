@@ -1,7 +1,9 @@
 package com.hcmute.prse_be.service;
 
 import com.hcmute.prse_be.constants.ErrorMsg;
+import com.hcmute.prse_be.entity.AdminEntity;
 import com.hcmute.prse_be.entity.StudentEntity;
+import com.hcmute.prse_be.repository.AdminRepository;
 import com.hcmute.prse_be.repository.StudentRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.GrantedAuthority;
@@ -18,10 +20,12 @@ import java.util.Collection;
 public class CustomUserDetailsServiceImpl implements CustomUserDetailsService{
 
     private final StudentRepository studentRepository;
+    private final AdminRepository adminRepository;
 
     @Autowired
-    public CustomUserDetailsServiceImpl(StudentRepository studentRepository) {
+    public CustomUserDetailsServiceImpl(StudentRepository studentRepository, AdminRepository adminRepository) {
         this.studentRepository = studentRepository;
+        this.adminRepository = adminRepository;
     }
 
 
@@ -32,23 +36,25 @@ public class CustomUserDetailsServiceImpl implements CustomUserDetailsService{
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-
-        StudentEntity student = findByUsername(username);
-
-        if(student == null)
-        {
-            throw new UsernameNotFoundException(ErrorMsg.STUDENT_USERNAME_NOT_EXIST);
+        // Check Student first
+        StudentEntity student = studentRepository.findByUsername(username);
+        if(student != null) {
+            Collection<GrantedAuthority> authorities = new ArrayList<>();
+            authorities.add(new SimpleGrantedAuthority("STUDENT"));
+            if(student.isInstructor()) {
+                authorities.add(new SimpleGrantedAuthority("INSTRUCTOR"));
+            }
+            return new User(student.getUsername(), student.getPasswordHash(), authorities);
         }
 
-        // set tam (bua sau neu co trong instructor se gan them quyen vao)
-        Collection<GrantedAuthority> authorities = new ArrayList<>();
-        authorities.add(new SimpleGrantedAuthority("STUDENT"));
-
-        if(student.isInstructor())
-        {
-            authorities.add(new SimpleGrantedAuthority("INSTRUCTOR"));
+        AdminEntity admin = adminRepository.findByEmail(username);
+        if(admin != null) {
+            Collection<GrantedAuthority> authorities = new ArrayList<>();
+            authorities.add(new SimpleGrantedAuthority("ADMIN"));
+            return new User(admin.getEmail(), admin.getPasswordHash(), authorities);
         }
 
-        return new User(student.getUsername(), student.getPasswordHash(), authorities);
+        // If not found in both tables
+        throw new UsernameNotFoundException(ErrorMsg.STUDENT_USERNAME_NOT_EXIST);
     }
 }

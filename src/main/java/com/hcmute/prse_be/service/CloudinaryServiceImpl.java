@@ -28,18 +28,22 @@ public class CloudinaryServiceImpl implements CloudinaryService{
     }
 
     @Override
-    public Map<String, Object> uploadVideo(MultipartFile file, String folderName) throws IOException {
+    public Map uploadVideo(MultipartFile file, String folderName) throws IOException {
         if (file.isEmpty()) {
+            LogService.getgI().info("File is empty");
             throw new IllegalArgumentException("File is empty");
         }
         String contentType = file.getContentType();
         if (contentType == null || !contentType.startsWith("video/")) {
+            LogService.getgI().info("Invalid file type");
             throw new IllegalArgumentException("Invalid file type");
         }
-        return cloudinary.uploader().upload(file.getBytes(),
+        Map uploadResult = cloudinary.uploader().upload(file.getBytes(),
                 ObjectUtils.asMap(
                         "resource_type", "video",
                         "folder", folderName
                 ));
+        LogService.getgI().info("Video uploaded successfully. URL: " + uploadResult.get("url"));
+        return uploadResult;
     }
 }

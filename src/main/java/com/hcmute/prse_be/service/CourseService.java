@@ -30,6 +30,8 @@ public interface CourseService {
     );
 
 
+    CourseEntity getCourse(Long courseId);
+
     CourseBasicDTO getDetailCourse(Long id, Authentication authentication);
 
     Page<CourseFeedbackDTO> getCourseFeedbacks(Long courseId, int page, int size);
@@ -47,4 +49,16 @@ public interface CourseService {
     CourseEntity createCourse(CourseFormDataRequest courseFormData, InstructorEntity instructor);
 
     CourseEntity saveCourse(CourseEntity course);
+
+    List<CourseEntity> getCoursesByInstructorId(Long id);
+
+    List<ChapterEntity> getChaptersByCourseId(Long courseId);
+
+    List<LessonEntity> getLessonsByChapterId(Long chapterId);
+
+    List<LessonEntity> getAllLessonByChapterId(Long chapterId);
+
+    ChapterEntity getChapterById(Long chapterId);
+
+    LessonEntity saveLesson(LessonEntity lessonEntity);
 }

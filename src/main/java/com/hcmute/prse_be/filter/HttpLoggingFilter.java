@@ -48,7 +48,10 @@ public class HttpLoggingFilter extends OncePerRequestFilter {
 
     private void logRequest(HttpServletRequest request, RepeatableContentCachingRequestWrapper requestWrapper) throws IOException {
         String body = requestWrapper.readInputAndDuplicate();
-        if (request.getRequestURI() != null && request.getRequestURI().contains("api/driver/doFinishGo")){
+        if (request.getRequestURI() != null && (
+                request.getRequestURI().contains("api/driver/doFinishGo") ||
+                        request.getRequestURI().contains("api/instructor/upload-preview-video")
+        )){
             return;
         }
         logger.info("REQUEST " + request.getRequestURI() + ": " + body.replaceAll("\\s", ""));

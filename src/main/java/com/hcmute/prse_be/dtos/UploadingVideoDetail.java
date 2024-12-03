@@ -13,11 +13,12 @@ public class UploadingVideoDetail {
     private String threadId;
     private String status;
     private String title;
+    private String imageUrl;
     private Map<String, Object> uploadResult;
     private String errorMessage;
     private LocalDateTime createdAt;
     private double progress;
-    private String instructorId;
+    private Long instructorId;
 
     public UploadingVideoDetail(String threadId, String status) {
         this.threadId = threadId;

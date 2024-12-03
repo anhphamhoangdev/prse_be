@@ -33,7 +33,7 @@ public class CourseEntity {
 
     private String previewVideoUrl;
 
-    private String previewVideoDuration;
+    private Double previewVideoDuration;
 
     private String language;
 

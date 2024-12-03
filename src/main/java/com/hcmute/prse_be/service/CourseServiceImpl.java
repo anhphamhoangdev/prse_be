@@ -37,9 +37,10 @@ public class CourseServiceImpl implements CourseService {
     private final ChapterProgressRepository chapterProgressRepository;
     private final LessonProgressRepository lessonProgressRepository;
     private final VideoLessonRepository videoLessonRepository;
+    private final CourseSubCategoryRepository courseSubCategoryRepository;
 
     @Autowired
-    public CourseServiceImpl(CourseRepository courseRepository, CourseDiscountRepository courseDiscountRepository, InstructorRepository instructorRepository, CourseObjectiveRepository courseObjectiveRepository, SubCategoryRepository subCategoryRepository, CoursePrerequisiteRepository coursePrerequisiteRepository, StudentRepository studentRepository, EnrollmentRepository enrollmentRepository, CourseFeedbackRepository courseFeedbackRepository, ChapterRepository chapterRepository, LessonRepository lessonRepository, ChapterProgressRepository chapterProgressRepository, LessonProgressRepository lessonProgressRepository, VideoLessonRepository videoLessonRepository) {
+    public CourseServiceImpl(CourseRepository courseRepository, CourseDiscountRepository courseDiscountRepository, InstructorRepository instructorRepository, CourseObjectiveRepository courseObjectiveRepository, SubCategoryRepository subCategoryRepository, CoursePrerequisiteRepository coursePrerequisiteRepository, StudentRepository studentRepository, EnrollmentRepository enrollmentRepository, CourseFeedbackRepository courseFeedbackRepository, ChapterRepository chapterRepository, LessonRepository lessonRepository, ChapterProgressRepository chapterProgressRepository, LessonProgressRepository lessonProgressRepository, VideoLessonRepository videoLessonRepository, CourseSubCategoryRepository courseSubCategoryRepository) {
         this.courseRepository = courseRepository;
         this.courseDiscountRepository = courseDiscountRepository;
         this.instructorRepository = instructorRepository;
@@ -54,6 +55,7 @@ public class CourseServiceImpl implements CourseService {
         this.chapterProgressRepository = chapterProgressRepository;
         this.lessonProgressRepository = lessonProgressRepository;
         this.videoLessonRepository = videoLessonRepository;
+        this.courseSubCategoryRepository = courseSubCategoryRepository;
     }
 
     @Override
@@ -180,6 +182,11 @@ public class CourseServiceImpl implements CourseService {
     }
 
     @Override
+    public CourseEntity getCourse(Long courseId) {
+        return courseRepository.findById(courseId).orElse(null);
+    }
+
+    @Override
     public CourseBasicDTO getDetailCourse(Long id, Authentication authentication) {
 
         // kiem khoa hoc va set 1 vai thong tin
@@ -267,7 +274,7 @@ public class CourseServiceImpl implements CourseService {
             chapterDTO.setId(chapterEntity.getId());
             chapterDTO.setTitle(chapterEntity.getTitle());
             // get all lesson by chapter id
-            List<LessonEntity> lessonOfChapter =lessonRepository.findByChapterIdAndIsPublishTrue(chapterEntity.getId());
+            List<LessonEntity> lessonOfChapter =lessonRepository.findByChapterIdAndIsPublishTrueOrderByOrderIndexAsc(chapterEntity.getId());
             List<LessonDTO> lessons = new ArrayList<>();
             for (LessonEntity lessonEntity : lessonOfChapter) {
                 LessonDTO lessonDTO = new LessonDTO();
@@ -384,12 +391,69 @@ public class CourseServiceImpl implements CourseService {
         course.setIsPublish(courseFormData.getIsPublish());
         course.setPreviewVideoDuration(courseFormData.getPreviewVideoDuration());
         course.setInstructorId(instructor.getId());
-        return courseRepository.save(course);
+        course = courseRepository.save(course);
+
+        for (Long subCategoryId : courseFormData.getSubCategoryIds()) {
+            SubCategoryEntity subCategory = subCategoryRepository.findById(subCategoryId).orElse(null);
+            if (subCategory != null) {
+                CourseSubCategoryEntity courseSubCategory = new CourseSubCategoryEntity();
+                courseSubCategory.setCourseId(course.getId());
+                courseSubCategory.setSubCategoryId(subCategoryId);
+                courseSubCategoryRepository.save(courseSubCategory);
+            }
+        }
+
+        for (String objective : courseFormData.getObjectives()) {
+            CourseObjectiveEntity courseObjective = new CourseObjectiveEntity();
+            courseObjective.setCourseId(course.getId());
+            courseObjective.setObjective(objective);
+            courseObjectiveRepository.save(courseObjective);
+        }
+
+        for (String prerequisite : courseFormData.getPrerequisites()) {
+            CoursePrerequisiteEntity coursePrerequisite = new CoursePrerequisiteEntity();
+            coursePrerequisite.setCourseId(course.getId());
+            coursePrerequisite.setPrerequisite(prerequisite);
+            coursePrerequisiteRepository.save(coursePrerequisite);
+        }
+
+        return course;
     }
 
     @Override
     public CourseEntity saveCourse(CourseEntity course) {
         return courseRepository.save(course);
+    }
+
+    @Override
+    public List<CourseEntity> getCoursesByInstructorId(Long id) {
+
+        return courseRepository.findAllByInstructorId(id);
+    }
+
+    @Override
+    public List<ChapterEntity> getChaptersByCourseId(Long courseId) {
+        return chapterRepository.findByCourseIdOrderByOrderIndexAsc(courseId);
+    }
+
+    @Override
+    public List<LessonEntity> getLessonsByChapterId(Long chapterId) {
+        return lessonRepository.findByChapterIdAndIsPublishTrueOrderByOrderIndexAsc(chapterId);
+    }
+
+    @Override
+    public List<LessonEntity> getAllLessonByChapterId(Long chapterId) {
+        return lessonRepository.findByChapterIdOrderByOrderIndexAsc(chapterId);
+    }
+
+    @Override
+    public ChapterEntity getChapterById(Long chapterId) {
+        return chapterRepository.findById(chapterId).orElse(null);
+    }
+
+    @Override
+    public LessonEntity saveLesson(LessonEntity lessonEntity) {
+        return lessonRepository.save(lessonEntity);
     }
 
     private CourseDTO processDiscountPrice(CourseDTO course) {

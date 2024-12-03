@@ -2,6 +2,8 @@ package com.hcmute.prse_be.request;
 
 import lombok.Data;
 
+import java.util.List;
+
 @Data
 public class CourseFormDataRequest {
 
@@ -21,5 +23,12 @@ public class CourseFormDataRequest {
 
     private Boolean isPublish;
 
-    private String previewVideoDuration;
+    private Double previewVideoDuration;
+
+    private List<Long> subCategoryIds;
+
+    private List<String> prerequisites;
+
+    private List<String> objectives;
+
 }

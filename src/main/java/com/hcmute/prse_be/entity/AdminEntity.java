@@ -1,24 +1,32 @@
 package com.hcmute.prse_be.entity;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
-@Getter
-@Setter
 @Entity
-@Table(name = "course_prerequisites")
-public class CoursePrerequisiteEntity {
+@Table(name = "admin")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class AdminEntity {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private Long courseId;
+    private String email;
 
-    @Column(nullable = false)
-    private String prerequisite;
+    private String passwordHash;
+
+    private String fullName;
+
+    private boolean isAdmin = true;
+
+    private boolean isActive = true;
 
     private LocalDateTime createdAt;
 

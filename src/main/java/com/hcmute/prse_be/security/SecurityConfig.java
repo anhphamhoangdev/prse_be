@@ -96,7 +96,6 @@ public class SecurityConfig {
                     config
                             .requestMatchers(HttpMethod.GET, Endpoints.PUBLIC_GET_END_POINT).permitAll()
                             .requestMatchers("/ws/**").permitAll() // Cho phép truy cập WebSocket
-
                             .requestMatchers(HttpMethod.POST, Endpoints.PUBLIC_POST_END_POINT).permitAll()
                             .requestMatchers(HttpMethod.GET, Endpoints.STUDENT_GET_END_POINT).hasAuthority("STUDENT")
                             .requestMatchers(HttpMethod.POST, Endpoints.STUDENT_POST_END_POINT).hasAuthority("STUDENT")

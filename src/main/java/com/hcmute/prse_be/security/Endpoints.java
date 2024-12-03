@@ -44,6 +44,7 @@ public class Endpoints {
             "api/payment/callbackUrl",
             "api/payment/confirm-webhook",
             "api/payment/update-status",
+            "api/admin/login",
 
 //            "/user/login",
 //            "/test/**"
@@ -69,6 +70,7 @@ public class Endpoints {
 
     public static final String[] ADMIN_POST_END_POINT = {
 //            "/books",
+            "/api/admin/profile",
     };
 
     public static final String[] INSTRUCTOR_GET_END_POINT = {

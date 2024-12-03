@@ -44,4 +44,14 @@ public class WebSocketMessage {
                 LocalDateTime.now().toString()
         );
     }
+
+    public static WebSocketMessage uploadStarted(String message, Object data) {
+        return new WebSocketMessage(
+                "UPLOAD_STARTED",
+                message, // title
+                data, // data : message
+                "INFO",
+                LocalDateTime.now().toString()
+        );
+    }
 }

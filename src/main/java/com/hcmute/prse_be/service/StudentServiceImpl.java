@@ -3,8 +3,10 @@ package com.hcmute.prse_be.service;
 import com.hcmute.prse_be.config.Config;
 import com.hcmute.prse_be.constants.Constant;
 import com.hcmute.prse_be.constants.ErrorMsg;
+import com.hcmute.prse_be.entity.AdminEntity;
 import com.hcmute.prse_be.entity.CartEntity;
 import com.hcmute.prse_be.entity.StudentEntity;
+import com.hcmute.prse_be.repository.AdminRepository;
 import com.hcmute.prse_be.repository.CartRepository;
 import com.hcmute.prse_be.repository.StudentRepository;
 import com.hcmute.prse_be.response.Response;
@@ -20,13 +22,15 @@ public class StudentServiceImpl implements StudentService{
 
     private final EmailService emailService;
     private final StudentRepository studentRepository;
+    private final AdminRepository adminRepository;
     private final BCryptPasswordEncoder passwordEncoder;
     private final CartRepository cartRepository;
 
 
-    public StudentServiceImpl(EmailService emailService, StudentRepository studentRepository, BCryptPasswordEncoder passwordEncoder, CartRepository cartRepository) {
+    public StudentServiceImpl(EmailService emailService, StudentRepository studentRepository, AdminRepository adminRepository, BCryptPasswordEncoder passwordEncoder, CartRepository cartRepository) {
         this.emailService = emailService;
         this.studentRepository = studentRepository;
+        this.adminRepository = adminRepository;
         this.passwordEncoder = passwordEncoder;
         this.cartRepository = cartRepository;
     }
@@ -48,7 +52,7 @@ public class StudentServiceImpl implements StudentService{
 
     @Override
     public boolean existsByEmail(String email) {
-        return studentRepository.existsByEmail(email);
+        return studentRepository.existsByEmail(email) || adminRepository.existsByEmail(email);
     }
 
     @Override
