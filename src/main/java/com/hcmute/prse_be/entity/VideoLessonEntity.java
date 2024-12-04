@@ -25,7 +25,7 @@ public class VideoLessonEntity {
     private String videoUrl;
 
     @Column(name = "duration", nullable = false)
-    private Integer duration;
+    private Double duration;
 
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

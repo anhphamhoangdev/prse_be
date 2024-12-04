@@ -61,4 +61,9 @@ public interface CourseService {
     ChapterEntity getChapterById(Long chapterId);
 
     LessonEntity saveLesson(LessonEntity lessonEntity);
+
+    VideoLessonEntity saveVideoLesson(VideoLessonEntity videoLessonEntity);
+
+    ChapterEntity saveChapter(ChapterEntity chapterEntity);
+
 }

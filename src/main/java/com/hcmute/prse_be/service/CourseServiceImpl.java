@@ -456,6 +456,17 @@ public class CourseServiceImpl implements CourseService {
         return lessonRepository.save(lessonEntity);
     }
 
+    @Override
+    public VideoLessonEntity saveVideoLesson(VideoLessonEntity videoLessonEntity) {
+        LogService.getgI().info("saveVideoLesson starting...");
+        return videoLessonRepository.save(videoLessonEntity);
+    }
+
+    @Override
+    public ChapterEntity saveChapter(ChapterEntity chapterEntity) {
+        return chapterRepository.save(chapterEntity);
+    }
+
     private CourseDTO processDiscountPrice(CourseDTO course) {
         if (Boolean.TRUE.equals(course.getIsDiscount())) {
             courseDiscountRepository.findLatestValidDiscount(course.getId(), LocalDateTime.now())

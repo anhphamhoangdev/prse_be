@@ -5,9 +5,7 @@ import com.hcmute.prse_be.constants.ErrorMsg;
 import com.hcmute.prse_be.constants.ImageFolderName;
 import com.hcmute.prse_be.dtos.*;
 import com.hcmute.prse_be.entity.*;
-import com.hcmute.prse_be.request.AddNewLessonRequest;
-import com.hcmute.prse_be.request.CourseFormDataRequest;
-import com.hcmute.prse_be.request.UpdateCourseRequest;
+import com.hcmute.prse_be.request.*;
 import com.hcmute.prse_be.response.Response;
 import com.hcmute.prse_be.service.*;
 import com.hcmute.prse_be.util.ConvertUtils;
@@ -267,9 +265,10 @@ public class InstructorAPI {
                 try {
                     // Thực hiện upload video
                     Map uploadResult = cloudinaryService.uploadVideo(file, folderName);
+                    LogService.getgI().info("Video uploaded successfully. URL: " + JsonUtils.Serialize(uploadResult));
                     uploadStatus.setStatus("COMPLETED");
 
-                    String videoUrl = (String) uploadResult.get("url");
+                    String videoUrl = (String) uploadResult.get("secure_url");
                     uploadStatus.setUploadResult(uploadResult);
 
                     // Cập nhật thông tin khóa học ở đây
@@ -468,7 +467,7 @@ public class InstructorAPI {
                 List<LessonInstructorEditDTO> lessonInstructorEditDTOS = new ArrayList<>();
                 for (ChapterEntity chapter : chapters) {
                     if (chapter.getId().equals(chapterInstructorEditDTO.getId())) {
-                        List<LessonEntity> lessons = courseService.getLessonsByChapterId(chapter.getId());
+                        List<LessonEntity> lessons = courseService.getAllLessonByChapterId(chapter.getId());
                         for (LessonEntity lesson : lessons) {
                             LessonInstructorEditDTO lessonInstructorEditDTO = new LessonInstructorEditDTO();
                             lessonInstructorEditDTO.setId(lesson.getId());
@@ -581,7 +580,7 @@ public class InstructorAPI {
             }
 
 
-            List<LessonEntity> lessons = courseService.getLessonsByChapterId(chapterId);
+            List<LessonEntity> lessons = courseService.getAllLessonByChapterId(chapterId);
             for (LessonEntity lesson : lessons) {
                 if (lesson.getId().equals(lessonId)) {
                     JSONObject response = new JSONObject();
@@ -629,7 +628,7 @@ public class InstructorAPI {
             }
 
 
-            List<LessonEntity> lessons = courseService.getLessonsByChapterId(chapterId);
+            List<LessonEntity> lessons = courseService.getAllLessonByChapterId(chapterId);
             for (LessonEntity lesson : lessons) {
                 if (lesson.getId().equals(lessonId)) {
                     JSONObject response = new JSONObject();
@@ -679,7 +678,7 @@ public class InstructorAPI {
             }
 
 
-            List<LessonEntity> lessons = courseService.getLessonsByChapterId(chapterId);
+            List<LessonEntity> lessons = courseService.getAllLessonByChapterId(chapterId);
             for (LessonEntity lesson : lessons) {
                 if (lesson.getId().equals(lessonId)) {
                     JSONObject response = new JSONObject();
@@ -727,6 +726,7 @@ public class InstructorAPI {
                         .body(Response.error("Không tìm thấy thông tin chương"));
             }
 
+
             List<LessonEntity> lessons = courseService.getLessonsByChapterId(chapterId);
 
             LessonEntity lessonEntity = new LessonEntity();
@@ -742,6 +742,226 @@ public class InstructorAPI {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Response.error("Có lỗi xảy ra khi"));
+        }
+    }
+
+    @PostMapping("/courses/{courseId}/chapter/{chapterId}/lesson/{lessonId}/video/upload")
+    public ResponseEntity<JSONObject> uploadLessonVideo(
+            @RequestParam("video") MultipartFile file,
+            @PathVariable Long courseId,
+            @PathVariable Long chapterId,
+            @PathVariable Long lessonId,
+            Authentication authentication) {
+        try {
+            LogService.getgI().info("[InstructorAPI] uploadLessonVideo...");
+            String username = authentication.getName();
+            StudentEntity student = studentService.findByUsername(username);
+            if (student == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Response.error("Không tìm thấy thông tin người dùng"));
+            }
+
+            InstructorEntity instructor = instructorService.getInstructorByStudentId(student.getId());
+            if (instructor == null || !instructor.getIsActive()) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Response.error("Không tìm thấy thông tin giáo viên"));
+            }
+
+            // Validate course ownership
+            CourseEntity course = courseService.getCourse(ConvertUtils.toLong(courseId));
+            if (course == null || !course.getInstructorId().equals(instructor.getId())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Response.error("Không có quyền truy cập khóa học này"));
+            }
+
+            // Validate chapter
+            ChapterEntity chapterEntity = courseService.getChapterById(chapterId);
+            if(chapterEntity == null || !chapterEntity.getCourseId().equals(courseId)) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Response.error("Không tìm thấy thông tin chương"));
+            }
+
+            List<LessonEntity> lessons = courseService.getAllLessonByChapterId(chapterId);
+            for (LessonEntity lesson : lessons) {
+                if (lesson.getId().equals(lessonId)) {
+                    JSONObject response = new JSONObject();
+
+                    // lay ra duoc video lesson roi => bat dau luu tru
+                    VideoLessonEntity videoLessonEntity = courseService.getVideoLesson(courseId, chapterId, lessonId);
+
+                    if(videoLessonEntity == null) {
+                        videoLessonEntity = new VideoLessonEntity();
+                    }
+
+                    // Check if video is already uploaded
+                    String threadId = UUID.randomUUID().toString();
+                    UploadingVideoDetail uploadStatus = new UploadingVideoDetail(threadId, "PENDING");
+                    uploadStatus.setInstructorId(instructor.getId());
+                    uploadStatus.setTitle("Video cho bài học: " + lesson.getTitle());
+
+
+                    // save to cache
+                    UploadingVideoCache.getInstance().getUploadingVideo().put(threadId, uploadStatus);
+
+                    // Folder structure: course/{courseId}/chapter/{chapterId}/lesson/{lessonId}
+                    String folderName = String.format("%s/%s/chapter/%s/lesson/%s",
+                            ImageFolderName.COURSE,
+                            course.getId(),
+                            chapterId,
+                            lessonId);
+
+                    LogService.getgI().info("Uploading video... : " + folderName);
+
+                    VideoLessonEntity finalVideoLessonEntity = videoLessonEntity;
+                    CompletableFuture.supplyAsync(() -> {
+                        try {
+                            // Thực hiện upload video
+                            Map uploadResult = cloudinaryService.uploadVideo(file, folderName);
+                            uploadStatus.setStatus("COMPLETED");
+
+                            String videoUrl = (String) uploadResult.get("secure_url");
+                            uploadStatus.setUploadResult(uploadResult);
+
+                            // Cập nhật thông tin khóa học ở đây
+                            finalVideoLessonEntity.setLessonId(lessonId);
+//
+                            finalVideoLessonEntity.setDuration(ConvertUtils.toDouble(uploadResult.get("duration")));
+
+                            finalVideoLessonEntity.setVideoUrl(videoUrl);
+                            courseService.saveVideoLesson(finalVideoLessonEntity);
+
+                            // Gửi thông báo cho giáo viên
+                            WebSocketMessage messageSuccess = WebSocketMessage.uploadComplete(
+                                    "Khóa học: " + course.getTitle(),
+                                    "Video "+lesson.getTitle()+" đã được upload thành công"
+
+                            );
+                            webSocketService.sendToInstructor(instructor.getId(), "/uploads", messageSuccess);
+
+                            return uploadResult;
+                        } catch (Exception e) {
+                            uploadStatus.setStatus("FAILED");
+                            uploadStatus.setErrorMessage(e.getMessage());
+                            return null;
+                        } finally {
+                            UploadingVideoCache.getInstance().getUploadingVideo().remove(threadId);
+                        }
+                    });
+                    return ResponseEntity.ok(Response.success(response));
+                }
+            }
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Response.error("Không tìm thấy thông tin"));
+        } catch (Exception e) {
+            LogService.getgI().error(e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Response.error("Có lỗi xảy ra khi tải lên video"));
+        }
+    }
+
+    @PostMapping("/courses/{courseId}/curriculum/chapters")
+    public ResponseEntity<JSONObject> addChapter(
+            @PathVariable Long courseId,
+            @RequestBody CreateChapterRequest request,
+            Authentication authentication) {
+        try {
+            // Validate user
+            String username = authentication.getName();
+            StudentEntity student = studentService.findByUsername(username);
+            if (student == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Response.error("Không tìm thấy thông tin người dùng"));
+            }
+
+            // Validate instructor
+            InstructorEntity instructor = instructorService.getInstructorByStudentId(student.getId());
+            if (instructor == null || !instructor.getIsActive()) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Response.error("Không tìm thấy thông tin giáo viên"));
+            }
+
+            // Validate course ownership
+            CourseEntity course = courseService.getCourse(courseId);
+            if (course == null || !course.getInstructorId().equals(instructor.getId())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Response.error("Không có quyền truy cập khóa học này"));
+            }
+
+            // Create new chapter
+            ChapterEntity chapter = new ChapterEntity();
+            chapter.setCourseId(courseId);
+            chapter.setTitle(request.getTitle());
+            chapter.setOrderIndex(request.getOrderIndex());
+
+            // Save to database
+            ChapterEntity savedChapter = courseService.saveChapter(chapter);
+
+            // Map to response
+            JSONObject response = new JSONObject();
+            ChapterInstructorEditDTO chapterInstructorEditDTO = new ChapterInstructorEditDTO();
+            chapterInstructorEditDTO.setId(savedChapter.getId());
+            chapterInstructorEditDTO.setTitle(savedChapter.getTitle());
+            chapterInstructorEditDTO.setOrderIndex(savedChapter.getOrderIndex());
+            chapterInstructorEditDTO.setLessons(Collections.emptyList());  // Chapter mới không có lessons
+
+
+            response.put("chapter", chapterInstructorEditDTO);
+
+            return ResponseEntity.ok(Response.success(response));
+
+        } catch (Exception e) {
+            LogService.getgI().error(e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Response.error("Có lỗi xảy ra khi thêm chương mới"));
+        }
+    }
+
+    @PutMapping("/courses/{courseId}/chapter/{chapterId}")
+    public ResponseEntity<JSONObject> updateChapter(
+            @PathVariable Long courseId,
+            @PathVariable Long chapterId,
+            @RequestBody UpdateChapterRequest request,
+            Authentication authentication) {
+        try {
+            // Validate user
+            String username = authentication.getName();
+            StudentEntity student = studentService.findByUsername(username);
+            if (student == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Response.error("Không tìm thấy thông tin người dùng"));
+            }
+
+            // Validate instructor
+            InstructorEntity instructor = instructorService.getInstructorByStudentId(student.getId());
+            if (instructor == null || !instructor.getIsActive()) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Response.error("Không tìm thấy thông tin giáo viên"));
+            }
+
+            // Validate course ownership
+            CourseEntity course = courseService.getCourse(courseId);
+            if (course == null || !course.getInstructorId().equals(instructor.getId())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Response.error("Không có quyền truy cập khóa học này"));
+            }
+
+            // Get and validate chapter
+            ChapterEntity chapter = courseService.getChapterById(chapterId);
+            if (chapter == null || !chapter.getCourseId().equals(courseId)) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Response.error("Không tìm thấy thông tin chương"));
+            }
+
+            // Update chapter
+            chapter.setTitle(request.getChapter().getTitle());
+            chapter.setOrderIndex(request.getChapter().getOrderIndex());
+            courseService.saveChapter(chapter);
+            return ResponseEntity.ok(Response.success());
+
+        } catch (Exception e) {
+            LogService.getgI().error(e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Response.error("Có lỗi xảy ra khi cập nhật chương"));
         }
     }
 
