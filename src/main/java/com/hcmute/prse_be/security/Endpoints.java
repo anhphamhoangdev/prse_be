@@ -68,10 +68,20 @@ public class Endpoints {
 //            "/users/**"
     };
 
+    public static final String[] ADMIN_GET_END_POINT = {
+            "/api/admin/**",
+    };
+
     public static final String[] ADMIN_POST_END_POINT = {
 //            "/books",
-            "/api/admin/profile",
+            "/api/admin/**",
     };
+
+    public static final String[] ADMIN_PUT_END_POINT = {
+//            "/books",
+            "/api/admin/**",
+    };
+
 
     public static final String[] INSTRUCTOR_GET_END_POINT = {
 //            "/books",

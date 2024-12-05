@@ -12,9 +12,13 @@ import com.hcmute.prse_be.repository.StudentRepository;
 import com.hcmute.prse_be.response.Response;
 import com.hcmute.prse_be.util.GenerateUtils;
 import net.minidev.json.JSONObject;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.Objects;
 
 @Service
@@ -162,6 +166,45 @@ public class StudentServiceImpl implements StudentService{
             studentRepository.save(student);
         }
     }
+
+    @Override
+    public long getCountStudent() {
+        return studentRepository.count();
+    }
+
+
+    @Override
+    public long countByYearAndMonth(int currentYear, int currentMonth) {
+        return studentRepository.countByYearAndMonth(currentYear, currentMonth);
+    }
+
+    @Override
+    public Page<StudentEntity> findAllWithFilters(String search, String status, String role, int page, int size) {
+        // Convert string filters to Boolean
+        Boolean statusFilter = status.equals("ALL") ? null : status.equals("ACTIVE");
+        Boolean roleFilter = role.equals("ALL") ? null : role.equals("INSTRUCTOR");
+
+        // Create pageable object
+        Pageable pageable = PageRequest.of(page, size);
+
+        try {
+            return studentRepository.findAllWithFilters(
+                    search.trim().isEmpty() ? null : search.trim(),
+                    statusFilter,
+                    roleFilter,
+                    pageable
+            );
+        } catch (Exception e) {
+            LogService.getgI().info("Error when finding students with filters");
+            return null;
+        }
+    }
+
+    @Override
+    public StudentEntity save(StudentEntity studentEntity) {
+        return studentRepository.save(studentEntity);
+    }
+
 
     private boolean validateNewStudent(StudentEntity studentEntity) {
 

@@ -10,6 +10,7 @@ import com.hcmute.prse_be.response.CoursePageResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.security.core.Authentication;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 public interface CourseService {
@@ -66,4 +67,7 @@ public interface CourseService {
 
     ChapterEntity saveChapter(ChapterEntity chapterEntity);
 
+    long getCountCourse();
+
+    long countByYearAndMonth(int currentYear, int currentMonth);
 }

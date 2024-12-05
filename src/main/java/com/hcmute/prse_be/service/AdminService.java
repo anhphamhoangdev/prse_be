@@ -8,4 +8,6 @@ public interface AdminService {
     boolean existsByEmail(String email);
     AdminEntity save(AdminEntity adminEntity);
 
+    Double getTotalRevenue();
+    Double getTotalRevenueByMonth(int month, int year);
 }

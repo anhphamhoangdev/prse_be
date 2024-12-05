@@ -282,6 +282,7 @@ public interface CourseRepository extends JpaRepository<CourseEntity, Long> {
 
     List<CourseEntity> findAllByInstructorId(Long id);
 
-
-
+    // calculate the number of courses registered in the current month
+    @Query("SELECT COUNT(s) FROM CourseEntity s WHERE YEAR(s.createdAt) = :year AND MONTH(s.createdAt) = :month")
+    long countByYearAndMonth(@Param("year") int year, @Param("month") int month);
 }

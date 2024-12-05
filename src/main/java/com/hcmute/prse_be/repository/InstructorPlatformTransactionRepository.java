@@ -56,4 +56,14 @@ public interface InstructorPlatformTransactionRepository extends JpaRepository<I
             Pageable pageable
     );
 
+    @Query("SELECT SUM(t.platformMoney) FROM InstructorPlatformTransactionEntity t")
+    Double getTotalPlatformMoney();
+
+    @Query("SELECT SUM(t.platformMoney) FROM InstructorPlatformTransactionEntity t " +
+            "WHERE YEAR(t.createdAt) = :year AND MONTH(t.createdAt) = :month")
+    Double getTotalPlatformMoneyByYearAndMonth(
+            @Param("year") int year,
+            @Param("month") int month
+    );
+
 }

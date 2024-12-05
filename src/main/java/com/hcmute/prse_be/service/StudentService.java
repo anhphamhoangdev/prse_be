@@ -2,6 +2,9 @@ package com.hcmute.prse_be.service;
 
 import com.hcmute.prse_be.entity.StudentEntity;
 import net.minidev.json.JSONObject;
+import org.springframework.data.domain.Page;
+
+import java.time.LocalDateTime;
 
 public interface StudentService {
 
@@ -23,4 +26,17 @@ public interface StudentService {
 
     void saveAvatarStudent(String urlAvatar, String username);
 
+    long getCountStudent();
+
+    long countByYearAndMonth(int currentYear, int currentMonth);
+
+    Page<StudentEntity> findAllWithFilters(
+            String search,
+            String status,
+            String role,
+            int page,
+            int size
+    );
+
+    StudentEntity save(StudentEntity studentEntity);
 }

@@ -134,10 +134,11 @@ public class PaymentServiceImpl implements PaymentService{
         // orderCode = paymentRequestLogEntity.getId()
         Long orderCode = ConvertUtils.toLong(data.getOrderCode());
         PaymentRequestLogEntity paymentRequestLogEntity = paymentRequestLogRepository.findById(orderCode).orElse(null);
-        if(paymentRequestLogEntity != null) {
-            paymentRequestLogEntity.setStatus(data.getStatus());
-            paymentRequestLogRepository.save(paymentRequestLogEntity);
+        if(paymentRequestLogEntity == null || !paymentRequestLogEntity.getStatus().equals(PaymentRequestLogStatus.NEW)) {
+            return;
         }
+        paymentRequestLogEntity.setStatus(data.getStatus());
+        paymentRequestLogRepository.save(paymentRequestLogEntity);
 
         // create payment log if success
         if(data.getStatus().equals(PaymentRequestLogStatus.PAID)){

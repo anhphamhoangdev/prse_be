@@ -467,6 +467,17 @@ public class CourseServiceImpl implements CourseService {
         return chapterRepository.save(chapterEntity);
     }
 
+    @Override
+    public long getCountCourse() {
+        return courseRepository.count();
+    }
+
+    @Override
+    public long countByYearAndMonth(int currentYear, int currentMonth) {
+        return courseRepository.countByYearAndMonth(currentYear, currentMonth);
+    }
+
+
     private CourseDTO processDiscountPrice(CourseDTO course) {
         if (Boolean.TRUE.equals(course.getIsDiscount())) {
             courseDiscountRepository.findLatestValidDiscount(course.getId(), LocalDateTime.now())

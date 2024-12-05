@@ -58,5 +58,14 @@ public class InstructorServiceImpl implements InstructorService{
         );
     }
 
+    @Override
+    public long getCountInstructor() {
+        return instructorRepository.count();
+    }
+
+    @Override
+    public long countByYearAndMonth(int currentYear, int currentMonth) {
+        return instructorRepository.countByYearAndMonth(currentYear, currentMonth);
+    }
 
 }
