@@ -37,6 +37,8 @@ public interface CourseService {
 
     Page<CourseFeedbackDTO> getCourseFeedbacks(Long courseId, int page, int size);
 
+    List<CourseFeedbackDTO> getAllCourseFeedbacks(Long courseId);
+
     CourseCurriculumDTO getCourseCurriculum(Long courseId, Authentication authentication);
 
     boolean checkCourseAccess(Long courseId, Authentication authentication);
@@ -70,4 +72,12 @@ public interface CourseService {
     long getCountCourse();
 
     long countByYearAndMonth(int currentYear, int currentMonth);
+
+    EnrollmentEntity findEnrollmentByStudentAndCourse(StudentEntity student, CourseEntity course);
+
+    void saveEnrollment(EnrollmentEntity enrollment);
+
+    void saveFeedback(CourseFeedbackEntity feedback);
+
+    void updateCourseAverageRating(CourseEntity course);
 }

@@ -40,13 +40,18 @@ public class CloudinaryServiceImpl implements CloudinaryService{
             LogService.getgI().info("Invalid file type");
             throw new IllegalArgumentException("Invalid file type");
         }
+        try {
+            Map uploadResult = cloudinary.uploader().upload(file.getBytes(),
+                    ObjectUtils.asMap(
+                            "resource_type", "video",
+                            "folder", folderName
+                    ));
+            return uploadResult;
+        }catch (Exception e){
+            LogService.getgI().error(e);
+            throw new IllegalArgumentException("Error when uploading video: " + e.getMessage());
+        }
 
-        Map uploadResult = cloudinary.uploader().upload(file.getBytes(),
-                ObjectUtils.asMap(
-                        "resource_type", "video",
-                        "folder", folderName
-                ));
-        LogService.getgI().info("Video uploaded successfully. URL: " + uploadResult.get("url"));
-        return uploadResult;
+
     }
 }

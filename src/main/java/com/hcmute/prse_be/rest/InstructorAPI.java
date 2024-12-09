@@ -11,6 +11,7 @@ import com.hcmute.prse_be.service.*;
 import com.hcmute.prse_be.util.ConvertUtils;
 import com.hcmute.prse_be.util.JsonUtils;
 import net.minidev.json.JSONObject;
+import org.apache.commons.logging.Log;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -797,12 +798,12 @@ public class InstructorAPI {
                     String threadId = UUID.randomUUID().toString();
                     UploadingVideoDetail uploadStatus = new UploadingVideoDetail(threadId, "PENDING");
                     uploadStatus.setInstructorId(instructor.getId());
+                    uploadStatus.setLessonId(lessonId);
                     uploadStatus.setTitle("Video cho bài học: " + lesson.getTitle());
 
 
                     // save to cache
                     UploadingVideoCache.getInstance().getUploadingVideo().put(threadId, uploadStatus);
-
                     // Folder structure: course/{courseId}/chapter/{chapterId}/lesson/{lessonId}
                     String folderName = String.format("%s/%s/chapter/%s/lesson/%s",
                             ImageFolderName.COURSE,
@@ -815,32 +816,58 @@ public class InstructorAPI {
                     VideoLessonEntity finalVideoLessonEntity = videoLessonEntity;
                     CompletableFuture.supplyAsync(() -> {
                         try {
-                            // Thực hiện upload video
+                            // Start progress simulation in separate thread
+                            Thread progressSimulator = new Thread(() -> {
+                                try {
+                                    double progress = 0;
+                                    while (progress < 95 && "UPLOADING".equals(uploadStatus.getStatus())) {
+                                        // Simulate slower progress as we get closer to 95%
+                                        double increment = (95 - progress) / 20;
+                                        progress += increment;
+                                        uploadStatus.setProgress(progress);
+                                        LogService.getgI().info("Progress: " + progress);
+                                        Thread.sleep(1000); // Update every second
+                                    }
+                                } catch (InterruptedException e) {
+                                    Thread.currentThread().interrupt();
+                                }
+                            });
+
+                            // Start progress simulation
+                            uploadStatus.setStatus("UPLOADING");
+                            progressSimulator.start();
+
+                            // Actual upload process
+                            LogService.getgI().info("PASSED 0");
                             Map uploadResult = cloudinaryService.uploadVideo(file, folderName);
+
+                            // Upload completed
                             uploadStatus.setStatus("COMPLETED");
+                            uploadStatus.setProgress(100.0);
+                            LogService.getgI().info("PASSED 1");
 
                             String videoUrl = (String) uploadResult.get("secure_url");
+                            LogService.getgI().info("PASSED 2");
                             uploadStatus.setUploadResult(uploadResult);
+                            LogService.getgI().info("PASSED 3");
 
-                            // Cập nhật thông tin khóa học ở đây
+                            // Update course information
                             finalVideoLessonEntity.setLessonId(lessonId);
-//
                             finalVideoLessonEntity.setDuration(ConvertUtils.toDouble(uploadResult.get("duration")));
-
                             finalVideoLessonEntity.setVideoUrl(videoUrl);
                             courseService.saveVideoLesson(finalVideoLessonEntity);
 
-                            // Gửi thông báo cho giáo viên
+                            // Send notification to teacher
                             WebSocketMessage messageSuccess = WebSocketMessage.uploadComplete(
                                     "Khóa học: " + course.getTitle(),
-                                    "Video "+lesson.getTitle()+" đã được upload thành công"
-
+                                    "Video " + lesson.getTitle() + " đã được upload thành công"
                             );
                             webSocketService.sendToInstructor(instructor.getId(), "/uploads", messageSuccess);
 
                             return uploadResult;
                         } catch (Exception e) {
                             uploadStatus.setStatus("FAILED");
+                            uploadStatus.setProgress(0.0);
                             uploadStatus.setErrorMessage(e.getMessage());
                             return null;
                         } finally {
@@ -965,4 +992,64 @@ public class InstructorAPI {
         }
     }
 
+    @GetMapping("/courses/{courseId}/chapter/{chapterId}/lesson/{lessonId}/video/upload-status")
+    public ResponseEntity<JSONObject> videoUploadStatus(
+            @PathVariable Long courseId,
+            @PathVariable Long chapterId,
+            @PathVariable Long lessonId,
+            Authentication authentication) {
+        try {
+
+            // Validate user
+            String username = authentication.getName();
+            StudentEntity student = studentService.findByUsername(username);
+            if (student == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Response.error("Không tìm thấy thông tin người dùng"));
+            }
+
+            // Validate instructor
+            InstructorEntity instructor = instructorService.getInstructorByStudentId(student.getId());
+            if (instructor == null || !instructor.getIsActive()) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Response.error("Không tìm thấy thông tin giáo viên"));
+            }
+
+            // Validate course ownership
+            CourseEntity course = courseService.getCourse(courseId);
+            if (course == null || !course.getInstructorId().equals(instructor.getId())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Response.error("Không có quyền truy cập khóa học này"));
+            }
+
+            // Lấy instance của UploadingVideoCache
+            JSONObject status = new JSONObject();
+            UploadingVideoCache cache = UploadingVideoCache.getInstance();
+
+            // Kiểm tra có video nào đang upload với lessonId này không
+            boolean isUploading = cache.getUploadingVideo().values().stream()
+                    .anyMatch(detail -> detail.getLessonId().equals(lessonId));
+
+            if (isUploading) {
+                double progress = cache.getUploadingVideo().values().stream()
+                        .filter(detail -> detail.getLessonId().equals(lessonId))
+                        .findFirst()
+                        .map(UploadingVideoDetail::getProgress)
+                        .orElse(0.0);
+
+                status.put("isUploading", true);
+                status.put("progress", progress );
+            } else {
+
+                status.put("isUploading", false);
+                status.put("progress", 0.0);  // Set progress = 0 khi không uploading
+            }
+
+            return ResponseEntity.ok(Response.success(status));
+        } catch (Exception e) {
+            LogService.getgI().error(e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Response.error("Có lỗi xảy ra khi lấy trạng thái upload"));
+        }
+    }
 }

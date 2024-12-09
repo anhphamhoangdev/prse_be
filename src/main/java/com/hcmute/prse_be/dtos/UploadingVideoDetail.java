@@ -19,6 +19,7 @@ public class UploadingVideoDetail {
     private LocalDateTime createdAt;
     private double progress;
     private Long instructorId;
+    private Long lessonId;
 
     public UploadingVideoDetail(String threadId, String status) {
         this.threadId = threadId;

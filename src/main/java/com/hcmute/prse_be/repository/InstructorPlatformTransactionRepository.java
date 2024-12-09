@@ -39,6 +39,31 @@ public interface InstructorPlatformTransactionRepository extends JpaRepository<I
     );
 
     @Query(value = """
+    WITH RECURSIVE months AS (
+        SELECT DATE_FORMAT(:startDate, '%Y-%m-01') as date
+        UNION ALL
+        SELECT DATE_ADD(date, INTERVAL 1 MONTH)
+        FROM months
+        WHERE DATE_ADD(date, INTERVAL 1 MONTH) < DATE_ADD(DATE_FORMAT(:endDate, '%Y-%m-01'), INTERVAL 1 MONTH)
+    )
+    SELECT 
+        DATE_FORMAT(m.date, '%b') as month,
+        COALESCE(SUM(t.platform_money), 0) as revenue
+    FROM months m
+    LEFT JOIN instructor_platform_transactions t ON 
+        DATE_FORMAT(t.created_at, '%Y-%m') = DATE_FORMAT(m.date, '%Y-%m')
+    WHERE m.date <= DATE_FORMAT(:endDate, '%Y-%m-01')
+    GROUP BY m.date, DATE_FORMAT(m.date, '%b')
+    ORDER BY m.date ASC
+""", nativeQuery = true)
+    List<Object[]> getPlatformRevenueStatistics(
+            @Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate
+    );
+
+
+
+    @Query(value = """
     SELECT NEW com.hcmute.prse_be.dtos.RecentEnrollmentDTO(
         s.fullName,
         s.avatarUrl,

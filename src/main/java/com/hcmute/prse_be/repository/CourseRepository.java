@@ -217,6 +217,7 @@ public interface CourseRepository extends JpaRepository<CourseEntity, Long> {
         c.id,
         c.title,
         c.description,
+        c.shortDescription,
         c.imageUrl,
         c.language,
         c.originalPrice,

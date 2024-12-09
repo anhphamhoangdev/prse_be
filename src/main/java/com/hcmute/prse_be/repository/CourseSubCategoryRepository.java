@@ -1,5 +1,6 @@
 package com.hcmute.prse_be.repository;
 
+import com.hcmute.prse_be.dtos.CategoryStatisticDTO;
 import com.hcmute.prse_be.dtos.CourseDTO;
 import com.hcmute.prse_be.entity.CourseSubCategoryEntity;
 import org.springframework.data.domain.Page;
@@ -8,6 +9,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+
+import java.util.List;
 
 @Repository
 public interface CourseSubCategoryRepository extends JpaRepository<CourseSubCategoryEntity, Long> {
@@ -86,4 +89,17 @@ public interface CourseSubCategoryRepository extends JpaRepository<CourseSubCate
             @Param("rating") Integer rating,
             Pageable pageable
     );
+
+    @Query("""
+    SELECT new com.hcmute.prse_be.dtos.CategoryStatisticDTO(
+        sc.name, 
+        COUNT(csc.courseId)
+    )
+    FROM CourseSubCategoryEntity csc
+    JOIN SubCategoryEntity sc ON csc.subCategoryId = sc.id
+    WHERE csc.isActive = true AND sc.isActive = true
+    GROUP BY sc.name
+    ORDER BY COUNT(csc.courseId) DESC
+""")
+    List<CategoryStatisticDTO> getCourseDistributionByCategory();
 }

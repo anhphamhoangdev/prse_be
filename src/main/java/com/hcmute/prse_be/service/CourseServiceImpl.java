@@ -258,6 +258,17 @@ public class CourseServiceImpl implements CourseService {
     }
 
     @Override
+    public List<CourseFeedbackDTO> getAllCourseFeedbacks(Long courseId) {
+        List<CourseFeedbackEntity> feedbacks = courseFeedbackRepository.findAllVisibleFeedbacks(courseId);
+        if (feedbacks != null) {
+            return feedbacks.stream()
+                    .map(CourseFeedbackDTO::convertToDTO)
+                    .collect(Collectors.toList());
+        }
+        return new ArrayList<>();
+    }
+
+    @Override
     public CourseCurriculumDTO getCourseCurriculum(Long courseId, Authentication authentication) {
 
         boolean isAuthentication = authentication != null && authentication.isAuthenticated();
@@ -475,6 +486,29 @@ public class CourseServiceImpl implements CourseService {
     @Override
     public long countByYearAndMonth(int currentYear, int currentMonth) {
         return courseRepository.countByYearAndMonth(currentYear, currentMonth);
+    }
+
+    @Override
+    public EnrollmentEntity findEnrollmentByStudentAndCourse(StudentEntity student, CourseEntity course) {
+        return enrollmentRepository.findByStudentIdAndCourseIdAndIsActiveTrue(student.getId(), course.getId());
+    }
+
+    @Override
+    public void saveEnrollment(EnrollmentEntity enrollment) {
+        enrollmentRepository.save(enrollment);
+    }
+
+    @Override
+    public void saveFeedback(CourseFeedbackEntity feedback) {
+        courseFeedbackRepository.save(feedback);
+    }
+
+    @Override
+    public void updateCourseAverageRating(CourseEntity course) {
+            // Lấy trung bình rating từ tất cả enrollment có rating
+            Double averageRating = enrollmentRepository.calculateAverageRatingByCourseId(course.getId());
+            course.setAverageRating(averageRating);
+            courseRepository.save(course);
     }
 
 

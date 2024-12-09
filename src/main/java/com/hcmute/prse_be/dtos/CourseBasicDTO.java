@@ -12,6 +12,7 @@ public class CourseBasicDTO {
     private Long id;
     private String title;
     private String description;
+    private String shortDescription;
     private String imageUrl;
     private String language;
     private Double originalPrice;
@@ -34,6 +35,7 @@ public class CourseBasicDTO {
             Long id,
             String title,
             String description,
+            String shortDescription,
             String imageUrl,
             String language,
             Double originalPrice,
@@ -48,6 +50,7 @@ public class CourseBasicDTO {
         this.id = id;
         this.title = title;
         this.description = description;
+        this.shortDescription = shortDescription;
         this.imageUrl = imageUrl;
         this.language = language;
         this.originalPrice = originalPrice;

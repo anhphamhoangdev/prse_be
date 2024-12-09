@@ -5,13 +5,12 @@ import com.hcmute.prse_be.constants.StatusType;
 import com.hcmute.prse_be.dtos.CourseCurriculumDTO;
 import com.hcmute.prse_be.dtos.CourseDTO;
 import com.hcmute.prse_be.dtos.CourseFeedbackDTO;
-import com.hcmute.prse_be.entity.LessonProgressEntity;
-import com.hcmute.prse_be.entity.StudentEntity;
-import com.hcmute.prse_be.entity.VideoLessonEntity;
+import com.hcmute.prse_be.entity.*;
 import com.hcmute.prse_be.response.Response;
 import com.hcmute.prse_be.service.CourseService;
 import com.hcmute.prse_be.service.LogService;
 import com.hcmute.prse_be.service.StudentService;
+import com.hcmute.prse_be.util.ConvertUtils;
 import net.minidev.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -200,6 +199,92 @@ public class CourseAPI {
 
         } catch (Exception e) {
             return ResponseEntity.ok(Response.error(ErrorMsg.SOMETHING_WENT_WRONG));
+        }
+    }
+
+    // submit feedback
+    @PostMapping("/feedback")
+    public ResponseEntity<JSONObject> submitFeedback(@RequestBody JSONObject data, Authentication authentication) {
+        LogService.getgI().info("[CourseAPI] submitFeedback: " + data.toJSONString());
+        try {
+            // Lấy thông tin từ request
+            Long courseId = Long.parseLong(data.getAsString("courseId"));
+            int rating = Integer.parseInt(data.getAsString("rating"));
+            String comment = data.getAsString("comment");
+
+            // Validate rating
+            if (rating < 1 || rating > 5) {
+                return ResponseEntity.badRequest()
+                        .body(Response.error("Đánh giá phải từ 1 đến 5 sao"));
+            }
+
+            // Check quyền truy cập khóa học
+            if (!courseService.checkCourseAccess(courseId, authentication)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Response.error("Bạn cần phải tham gia khóa học để đánh giá"));
+            }
+
+            // Kiểm tra xem khóa học có tồn tại không
+            CourseEntity course = courseService.getCourse(courseId);
+            if (course == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Response.error("Không tìm thấy khóa học"));
+            }
+
+            // Lấy user hiện tại
+            StudentEntity student = studentService.findByUsername(authentication.getName());
+
+            // Kiem tra enrollment da co rating chua, neu co roi thi update lai, neu chua thi save lai
+            EnrollmentEntity enrollment = courseService.findEnrollmentByStudentAndCourse(student, course);
+            if (enrollment != null) {
+                if (enrollment.getRating() != null) {
+                    enrollment.setRating(ConvertUtils.toDouble(rating));
+                    enrollment.setIsRating(true);
+                }
+                else {
+                    enrollment.setRating(ConvertUtils.toDouble(rating));
+                }
+                courseService.saveEnrollment(enrollment);
+            }
+
+            // Tạo feedback mới
+            CourseFeedbackEntity feedback = new CourseFeedbackEntity();
+            feedback.setCourseId(courseId);
+            feedback.setStudentId(student.getId());
+            feedback.setRating(ConvertUtils.toDouble(rating));
+            feedback.setComment(comment);
+            feedback.setStudentAvatarUrl(student.getAvatarUrl());
+            feedback.setStudentName(student.getFullName());
+
+            // Lưu feedback
+            courseService.saveFeedback(feedback);
+
+            // Cập nhật rating trung bình của khóa học
+            courseService.updateCourseAverageRating(course);
+
+            return ResponseEntity.ok(Response.success());
+
+        } catch (NumberFormatException e) {
+            return ResponseEntity.badRequest()
+                    .body(Response.error("Dữ liệu không hợp lệ"));
+        } catch (Exception e) {
+            LogService.getgI().error(e);
+            return ResponseEntity.internalServerError()
+                    .body(Response.error("Có lỗi xảy ra khi gửi đánh giá"));
+        }
+    }
+
+    @GetMapping("/{courseId}/all-feedbacks")
+    public ResponseEntity<JSONObject> getAllCourseFeedbacks(@PathVariable Long courseId) {
+        LogService.getgI().info("[CourseAPI] getAllCourseFeedbacks : " + courseId);
+        try {
+            // Lấy danh sách feedback của khóa học
+            JSONObject data = new JSONObject();
+            data.put("feedbacks", courseService.getAllCourseFeedbacks(courseId));
+            return ResponseEntity.ok(Response.success(data));
+
+        } catch (Exception e) {
+            return ResponseEntity.ok(Response.error("Không tìm thấy khóa học"));
         }
     }
 }

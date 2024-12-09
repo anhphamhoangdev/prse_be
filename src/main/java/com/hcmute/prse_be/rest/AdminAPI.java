@@ -3,7 +3,10 @@ package com.hcmute.prse_be.rest;
 
 import com.hcmute.prse_be.constants.ApiPaths;
 import com.hcmute.prse_be.constants.ErrorMsg;
+import com.hcmute.prse_be.dtos.CategoryStatisticDTO;
+import com.hcmute.prse_be.dtos.RevenueStatisticsDTO;
 import com.hcmute.prse_be.entity.AdminEntity;
+import com.hcmute.prse_be.entity.InstructorEntity;
 import com.hcmute.prse_be.entity.StudentEntity;
 import com.hcmute.prse_be.request.LoginRequest;
 import com.hcmute.prse_be.response.JwtResponse;
@@ -24,6 +27,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @RequestMapping("/api/admin")
@@ -166,6 +170,63 @@ public class AdminAPI {
             return ResponseEntity.ok(Response.success(response));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Response.error(ErrorMsg.SOMETHING_WENT_WRONG + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/revenue")
+    public ResponseEntity<JSONObject> getRevenueStatistics(
+            @RequestParam(defaultValue = "6") int monthsCount,
+            Authentication authentication
+    ) {
+        try {
+            // Verify student
+            String email = authentication.getName();
+            AdminEntity admin = adminService.findByEmail(email);
+            if (admin == null) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Response.error(ErrorMsg.STUDENT_USERNAME_NOT_EXIST));
+            }
+
+            // Get revenue statistics
+            List<RevenueStatisticsDTO> statistics = adminService.getRevenueStatistics(
+                    monthsCount
+            );
+
+            // Build response
+            JSONObject response = new JSONObject();
+            response.put("revenue_statistics", statistics);
+
+            return ResponseEntity.ok(Response.success(response));
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Response.error(ErrorMsg.SOMETHING_WENT_WRONG));
+        }
+    }
+
+    @GetMapping("/category-distribution")
+    public ResponseEntity<JSONObject> getCategoryDistribution(
+            Authentication authentication
+    ) {
+        try {
+            // Verify student
+            String email = authentication.getName();
+            AdminEntity admin = adminService.findByEmail(email);
+            if (admin == null) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Response.error(ErrorMsg.STUDENT_USERNAME_NOT_EXIST));
+            }
+
+            // Get revenue statistics
+            List<CategoryStatisticDTO> statistics = adminService.getCourseDistribution();
+
+            // Build response
+            JSONObject response = new JSONObject();
+            response.put("category_distribution", statistics);
+
+            return ResponseEntity.ok(Response.success(response));
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Response.error(ErrorMsg.SOMETHING_WENT_WRONG));
         }
     }
 
