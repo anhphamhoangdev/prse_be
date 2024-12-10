@@ -55,20 +55,6 @@ public class CourseEntity {
 
     private LocalDateTime updatedAt;
 
-    // Một số helper methods hữu ích
-    public void incrementTotalViews() {
-        this.totalViews++;
-    }
-
-    public void incrementTotalStudents() {
-        this.totalStudents++;
-    }
-
-    public void updateAverageRating(Double newRating) {
-        if (newRating != null && newRating >= 0 && newRating <= 5) {
-            this.averageRating = newRating;
-        }
-    }
 
     @PrePersist
     public void prePersist() {

@@ -7,6 +7,11 @@ import com.hcmute.prse_be.entity.InstructorEntity;
 import java.util.List;
 
 public interface InstructorService {
+
+    long getTotalStudentOfInstructor(Long instructorId);
+
+    long getTotalCourseOfInstructor(Long instructorId);
+
     InstructorEntity getInstructorByStudentId(Long studentId);
 
     List<RevenueStatisticsDTO> getRevenueStatistics(Long instructorId, int monthsCount);

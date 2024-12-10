@@ -63,6 +63,10 @@ public class InstructorAPI {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Response.error("Không tìm thấy thông tin giáo viên"));
             }
 
+            // set total student and total course
+            instructor.setTotalStudent(ConvertUtils.toInt(instructorService.getTotalStudentOfInstructor(instructor.getId())));
+            instructor.setTotalCourse(ConvertUtils.toInt(instructorService.getTotalCourseOfInstructor(instructor.getId())));
+
             JSONObject response = new JSONObject();
             response.put("instructor", instructor);
             return ResponseEntity.ok(Response.success(response));

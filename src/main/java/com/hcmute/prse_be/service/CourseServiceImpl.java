@@ -189,6 +189,15 @@ public class CourseServiceImpl implements CourseService {
     @Override
     public CourseBasicDTO getDetailCourse(Long id, Authentication authentication) {
 
+
+        CourseEntity course = courseRepository.findById(id).orElse(null);
+        if(course == null) {
+            return null;
+        }
+
+        course.setTotalViews(course.getTotalViews() + 1);
+        courseRepository.save(course);
+
         // kiem khoa hoc va set 1 vai thong tin
         CourseBasicDTO courseBasic = courseRepository.findCourseBasicById(id);
 

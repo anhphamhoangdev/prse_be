@@ -25,6 +25,16 @@ public class InstructorServiceImpl implements InstructorService{
     }
 
     @Override
+    public long getTotalStudentOfInstructor(Long instructorId) {
+        return instructorRepository.countUniqueStudentsByInstructorId(instructorId);
+    }
+
+    @Override
+    public long getTotalCourseOfInstructor(Long instructorId) {
+        return instructorRepository.countCoursesByInstructorId(instructorId);
+    }
+
+    @Override
     public InstructorEntity getInstructorByStudentId(Long studentId) {
         return instructorRepository.findByStudentId(studentId);
     }

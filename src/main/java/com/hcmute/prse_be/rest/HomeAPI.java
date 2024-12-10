@@ -87,7 +87,6 @@ public class HomeAPI {
         LogService.getgI().info("[HOME] " + ApiPaths.HOME_HOT_COURSE);
         JSONObject response = new JSONObject();
         try {
-
             response.put("courses", courseService.getHotCourses(page, PaginationNumber.HOME_COURSE_PER_PAGE, authentication));
         } catch (Exception e) {
             response.put("courses", new JSONArray());
