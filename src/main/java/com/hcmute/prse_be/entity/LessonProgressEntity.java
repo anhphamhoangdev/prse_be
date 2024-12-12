@@ -18,8 +18,8 @@ public class LessonProgressEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "chapter_progress_id", nullable = false)
-    private Long chapterProgressId;
+    @Column(name = "studentId", nullable = false)
+    private Long studentId;
 
     @Column(name = "lesson_id", nullable = false)
     private Long lessonId;

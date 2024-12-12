@@ -338,24 +338,23 @@ public class CourseServiceImpl implements CourseService {
             // find chapter progress of student
             ChapterProgressEntity chapterProgress = chapterProgressRepository.findByChapterIdAndStudentId(chapterDTO.getId() ,student.getId());
             ChapterProgressDTO chapterProgressDTO = new ChapterProgressDTO();
-            if(chapterProgress != null) {
-                chapterProgressDTO.setStatus(chapterProgress.getStatus());
-                chapterProgressDTO.setCompletedAt(chapterProgress.getCompletedAt());
-                chapterProgressDTO.setProgressPercent(chapterProgress.getProgressPercent());
+//            chapterProgress = new ChapterProgressEntity();
+//            chapterProgressDTO.setStatus(chapterProgress.getStatus());
+//            chapterProgressDTO.setCompletedAt(chapterProgress.getCompletedAt());
+//            chapterProgressDTO.setProgressPercent(chapterProgress.getProgressPercent());
 
-                // set progress cho lesson
-                List<LessonDTO> lessons = chapterDTO.getLessons();
-                lessons.forEach(lessonDTO -> {
-                    LessonProgressEntity lessonProgress = lessonProgressRepository.findByLessonIdAndChapterProgressId(lessonDTO.getId(), chapterProgress.getId());
-                    LessonProgressDTO lessonProgressDTO = new LessonProgressDTO();
-                    if(lessonProgress != null) {
-                        lessonProgressDTO.setStatus(lessonProgress.getStatus());
-                        lessonProgressDTO.setCompletedAt(lessonProgress.getCompletedAt());
-                        lessonProgressDTO.setLastAccessedAt(lessonProgress.getLastAccessedAt());
-                    }
-                    lessonDTO.setProgress(lessonProgressDTO);
-                });
-            }
+            // set progress cho lesson
+            List<LessonDTO> lessons = chapterDTO.getLessons();
+            lessons.forEach(lessonDTO -> {
+                LessonProgressEntity lessonProgress = lessonProgressRepository.findByLessonIdAndStudentId(lessonDTO.getId(), student.getId());
+                LessonProgressDTO lessonProgressDTO = new LessonProgressDTO();
+                if(lessonProgress != null) {
+                    lessonProgressDTO.setStatus(lessonProgress.getStatus());
+                    lessonProgressDTO.setCompletedAt(lessonProgress.getCompletedAt());
+                    lessonProgressDTO.setLastAccessedAt(lessonProgress.getLastAccessedAt());
+                }
+                lessonDTO.setProgress(lessonProgressDTO);
+            });
             chapterDTO.setProgress(chapterProgressDTO);
         });
 
@@ -389,8 +388,8 @@ public class CourseServiceImpl implements CourseService {
     }
 
     @Override
-    public LessonProgressEntity getLessonProgress(Long chapterId, Long lessonId) {
-        return lessonProgressRepository.findByLessonIdAndChapterProgressId(lessonId, chapterId);
+    public LessonProgressEntity getLessonProgress(Long studentId, Long lessonId) {
+        return lessonProgressRepository.findByLessonIdAndStudentId(lessonId, studentId);
     }
 
     @Override

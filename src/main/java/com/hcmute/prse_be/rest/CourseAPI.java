@@ -159,13 +159,16 @@ public class CourseAPI {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Response.error("Không tìm thấy video lesson"));
             }
 
+            // lay thong tin user
+            StudentEntity student = studentService.findByUsername(authentication.getName());
+
             // Lấy thông tin lesson progress
             LessonProgressEntity lessonProgress = courseService.getLessonProgress(chapterId, lessonId);
 
             if(lessonProgress == null)
             {
                 lessonProgress = new LessonProgressEntity();
-                lessonProgress.setChapterProgressId(chapterId);
+                lessonProgress.setStudentId(student.getId());
                 lessonProgress.setLessonId(lessonId);
                 lessonProgress.setLastAccessedAt(LocalDateTime.now());
             }
