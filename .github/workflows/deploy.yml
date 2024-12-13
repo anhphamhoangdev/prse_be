@@ -69,4 +69,4 @@ jobs:
           script: |
             cd /home/ute/prse/be/
             source ./start.sh
-            restartapp
+            restart
