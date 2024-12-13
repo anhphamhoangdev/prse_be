@@ -68,5 +68,5 @@ jobs:
           password: ${{ secrets.VPS_PASSWORD }}
           port: 234
           script: |
-            cd /prse/be/
-            ./restartapp
+            cd /home/ute/prse/be/
+            restartapp
