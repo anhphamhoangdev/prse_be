@@ -68,5 +68,4 @@ jobs:
           command_timeout: "20m"
           script: |
             cd /home/ute/prse/be/
-            source ./start.sh
-            restart
+            ./start.sh restart
