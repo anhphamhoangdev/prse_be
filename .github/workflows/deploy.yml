@@ -1,4 +1,4 @@
-name: Deploy Spring Boot to VPS
+name: Debug Deploy Process
 
 on:
   push:
@@ -11,33 +11,39 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-        with:
-          fetch-depth: 2
 
       - name: Set up JDK
         uses: actions/setup-java@v2
         with:
-          java-version: '21'
+          java-version: '17'
           distribution: 'adopt'
-
-      - name: Cache Maven packages
-        uses: actions/cache@v2
-        with:
-          path: ~/.m2
-          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
-          restore-keys: ${{ runner.os }}-m2
-
-      - name: Check for dependency changes
-        id: check-deps
-        run: |
-          if git diff HEAD^ HEAD --name-only | grep "pom.xml"; then
-            echo "::set-output name=deps_changed::true"
-          else
-            echo "::set-output name=deps_changed::false"
-          fi
 
       - name: Build with Maven
         run: mvn clean package -DskipTests
+
+      - name: Check local build files
+        run: |
+          echo "Checking build files..."
+          ls -la target/
+          echo "Current directory:"
+          pwd
+
+      - name: Debug - Check Server Before Copy
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          password: ${{ secrets.VPS_PASSWORD }}
+          port: 234
+          script: |
+            echo "Current directory on server:"
+            pwd
+            echo "Checking target directory:"
+            ls -la /home/ute/prse/be/
+            echo "Disk space:"
+            df -h
+            echo "Memory usage:"
+            free -h
 
       - name: Deploy JAR file
         uses: appleboy/scp-action@master
@@ -48,19 +54,11 @@ jobs:
           port: 234
           source: "target/prse_be.jar"
           target: "/home/ute/prse/be/"
+          debug: true
+          timeout: "60s"
+          strip_components: 1
 
-      - name: Deploy libs
-        if: steps.check-deps.outputs.deps_changed == 'true'
-        uses: appleboy/scp-action@master
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USERNAME }}
-          password: ${{ secrets.VPS_PASSWORD }}
-          port: 234
-          source: "target/libs/*"
-          target: "/home/ute/prse/be/libs/"
-
-      - name: Restart Application
+      - name: Debug - Check Server After Copy
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.VPS_HOST }}
@@ -68,5 +66,18 @@ jobs:
           password: ${{ secrets.VPS_PASSWORD }}
           port: 234
           script: |
+            echo "Files in target directory after copy:"
+            ls -la /home/ute/prse/be/
+            echo "Checking file permissions:"
+            stat /home/ute/prse/be/prse_be.jar || echo "JAR file not found"
+            echo "Which restartapp:"
+            which restartapp || echo "restartapp command not found"
+            echo "Checking if we are in the correct shell:"
+            echo $SHELL
+            echo "Environment variables:"
+            env
+            echo "Trying to restart app:"
             cd /home/ute/prse/be/
-            restartapp
+            pwd
+            ls -la
+            restartapp || echo "Failed to run restartapp"
