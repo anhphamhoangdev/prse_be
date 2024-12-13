@@ -58,26 +58,15 @@ jobs:
           timeout: "60s"
           strip_components: 1
 
-      - name: Debug - Check Server After Copy
+      - name: Restart Application
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USERNAME }}
           password: ${{ secrets.VPS_PASSWORD }}
           port: 234
+          command_timeout: "20m"
           script: |
-            echo "Files in target directory after copy:"
-            ls -la /home/ute/prse/be/
-            echo "Checking file permissions:"
-            stat /home/ute/prse/be/prse_be.jar || echo "JAR file not found"
-            echo "Which restartapp:"
-            which restartapp || echo "restartapp command not found"
-            echo "Checking if we are in the correct shell:"
-            echo $SHELL
-            echo "Environment variables:"
-            env
-            echo "Trying to restart app:"
             cd /home/ute/prse/be/
-            pwd
-            ls -la
-            restartapp || echo "Failed to run restartapp"
+            source ./start.sh
+            restartapp
