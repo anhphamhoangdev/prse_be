@@ -1,0 +1,72 @@
+name: Deploy Spring Boot to VPS
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 2
+
+      - name: Set up JDK
+        uses: actions/setup-java@v2
+        with:
+          java-version: '21'
+          distribution: 'adopt'
+
+      - name: Cache Maven packages
+        uses: actions/cache@v2
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+
+      - name: Check for dependency changes
+        id: check-deps
+        run: |
+          if git diff HEAD^ HEAD --name-only | grep "pom.xml"; then
+            echo "::set-output name=deps_changed::true"
+          else
+            echo "::set-output name=deps_changed::false"
+          fi
+
+      - name: Build with Maven
+        run: mvn clean package -DskipTests
+
+      - name: Deploy JAR file
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          password: ${{ secrets.VPS_PASSWORD }}
+          port: 234
+          source: "target/prse_be.jar"
+          target: "/prse/be/"
+
+      - name: Deploy libs
+        if: steps.check-deps.outputs.deps_changed == 'true'
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          password: ${{ secrets.VPS_PASSWORD }}
+          port: 234
+          source: "target/libs/*"
+          target: "/prse/be/libs/"
+
+      - name: Restart Application
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          password: ${{ secrets.VPS_PASSWORD }}
+          port: 234
+          script: |
+            cd /prse/be/
+            ./restartapp

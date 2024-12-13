@@ -215,20 +215,13 @@ public interface CourseRepository extends JpaRepository<CourseEntity, Long> {
     @Query("""
     SELECT NEW com.hcmute.prse_be.dtos.CourseBasicDTO(
         c.id,
-        c.title,
+        c.title, 
         c.description,
         c.shortDescription,
         c.imageUrl,
         c.language,
         c.originalPrice,
-        CASE 
-            WHEN cd.discountPrice IS NOT NULL 
-            AND cd.isActive = true 
-            AND cd.startDate <= CURRENT_TIMESTAMP 
-            AND cd.endDate >= CURRENT_TIMESTAMP 
-            THEN cd.discountPrice 
-            ELSE NULL 
-        END,
+        c.originalPrice,
         c.averageRating,
         c.totalStudents,
         c.totalViews,
@@ -238,18 +231,6 @@ public interface CourseRepository extends JpaRepository<CourseEntity, Long> {
         c.instructorId
     )
     FROM CourseEntity c
-    LEFT JOIN CourseDiscountEntity cd ON c.id = cd.courseId
-    AND cd.isActive = true
-    AND cd.startDate <= CURRENT_TIMESTAMP
-    AND cd.endDate >= CURRENT_TIMESTAMP
-    AND cd.id = (
-        SELECT MAX(cd2.id)
-        FROM CourseDiscountEntity cd2
-        WHERE cd2.courseId = c.id
-        AND cd2.isActive = true
-        AND cd2.startDate <= CURRENT_TIMESTAMP
-        AND cd2.endDate >= CURRENT_TIMESTAMP
-    )
     WHERE c.id = :courseId
 """)
     CourseBasicDTO findCourseBasicById(@Param("courseId") Long courseId);

@@ -207,6 +207,12 @@ public class CourseServiceImpl implements CourseService {
             return null;
         }
 
+        // kiem discount ton tai
+        CourseDiscountEntity courseDiscountEntity =  courseDiscountRepository.findLatestValidDiscount(id, LocalDateTime.now()).orElse(null);
+        if(courseDiscountEntity != null) {
+            courseBasic.setDiscountPrice(courseDiscountEntity.getDiscountPrice());
+        }
+
         // lay ra thong tin instructor
         Optional<InstructorEntity> instructorOptional = instructorRepository.findById(courseBasic.getInstructor().getId());
         if (instructorOptional.isEmpty()) {
