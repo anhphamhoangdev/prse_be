@@ -47,7 +47,7 @@ jobs:
           password: ${{ secrets.VPS_PASSWORD }}
           port: 234
           source: "target/prse_be.jar"
-          target: "/prse/be/"
+          target: "/home/ute/prse/be/"
 
       - name: Deploy libs
         if: steps.check-deps.outputs.deps_changed == 'true'
@@ -58,7 +58,7 @@ jobs:
           password: ${{ secrets.VPS_PASSWORD }}
           port: 234
           source: "target/libs/*"
-          target: "/prse/be/libs/"
+          target: "/home/ute/prse/be/libs/"
 
       - name: Restart Application
         uses: appleboy/ssh-action@master
