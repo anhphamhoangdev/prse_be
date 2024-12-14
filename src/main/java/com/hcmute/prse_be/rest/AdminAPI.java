@@ -12,8 +12,8 @@ import com.hcmute.prse_be.request.LoginRequest;
 import com.hcmute.prse_be.response.JwtResponse;
 import com.hcmute.prse_be.response.Response;
 import com.hcmute.prse_be.service.*;
+import com.hcmute.prse_be.util.CalculateUtils;
 import com.hcmute.prse_be.util.ConvertUtils;
-import jakarta.persistence.Convert;
 import net.minidev.json.JSONObject;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
@@ -26,9 +26,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @RequestMapping("/api/admin")
 @RestController
@@ -135,23 +133,19 @@ public class AdminAPI {
 
             long userCurrentMonthRecords = studentService.countByYearAndMonth(currentYear, currentMonth);
             long userPreviousMonthRecords = studentService.countByYearAndMonth(previousYear, previousMonthValue);
-            double userGrowthRate = (userPreviousMonthRecords == 0) ? 0.0 :
-                    ConvertUtils.toDouble((userCurrentMonthRecords - userPreviousMonthRecords) / (double) userPreviousMonthRecords * 100);
+            double userGrowthRate = CalculateUtils.calculateGrowthRate(userCurrentMonthRecords, userPreviousMonthRecords);
 
             long courseCurrentMonthRecords = courseService.countByYearAndMonth(currentYear, currentMonth);
             long coursePreviousMonthRecords = courseService.countByYearAndMonth(previousYear, previousMonthValue);
-            double courseGrowthRate = (coursePreviousMonthRecords == 0) ? 0.0 :
-                    ConvertUtils.toDouble((courseCurrentMonthRecords - coursePreviousMonthRecords) / (double) coursePreviousMonthRecords * 100);
+            double courseGrowthRate = CalculateUtils.calculateGrowthRate(courseCurrentMonthRecords, coursePreviousMonthRecords);
 
             long instructorCurrentMonthRecords = instructorService.countByYearAndMonth(currentYear, currentMonth);
             long instructorPreviousMonthRecords = instructorService.countByYearAndMonth(previousYear, previousMonthValue);
-            double instructorGrowthRate = (instructorPreviousMonthRecords == 0) ? 0.0 :
-                    ConvertUtils.toDouble((instructorCurrentMonthRecords - instructorPreviousMonthRecords) / (double) instructorPreviousMonthRecords * 100);
+            double instructorGrowthRate = CalculateUtils.calculateGrowthRate(instructorCurrentMonthRecords, instructorPreviousMonthRecords);
 
             double totalRevenueCurrentMonth = adminService.getTotalRevenueByMonth(currentMonth, currentYear);
             double totalRevenuePreviousMonth = adminService.getTotalRevenueByMonth(previousMonthValue, previousYear);
-            double revenueGrowthRate = (totalRevenuePreviousMonth == 0) ? 0.0 :
-                    ConvertUtils.toDouble((totalRevenueCurrentMonth - totalRevenuePreviousMonth) / totalRevenuePreviousMonth * 100);
+            double revenueGrowthRate = CalculateUtils.calculateGrowthRate(totalRevenueCurrentMonth, totalRevenuePreviousMonth);
 
             JSONObject response = new JSONObject();
             response.put("totalUsers", totalUsers);
