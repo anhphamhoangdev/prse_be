@@ -70,6 +70,10 @@ jobs:
             cd /home/ute/prse/be/
             ./start.sh restart
 
+      - name: Set timestamp
+        id: timestamp
+        run: echo "timestamp=$(date +'%H%M%S_%d%m%y')" >> $GITHUB_OUTPUT
+
       - name: Copy JAR to versions directory
         uses: appleboy/scp-action@master
         with:
@@ -78,4 +82,7 @@ jobs:
           password: ${{ secrets.VPS_PASSWORD }}
           port: 234
           source: "target/prse_be.jar"
-          target: "/home/ute/prse/be/versions/prse_be_${GITHUB_SHA}.jar"
+          target: "/home/ute/prse/be/versions/"
+          strip_components: 1
+          overwrite: true
+          remote_path: "prse_be_${{ steps.timestamp.outputs.timestamp }}.jar"
