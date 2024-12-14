@@ -54,7 +54,8 @@ public class AdminServiceImpl implements AdminService{
 
     @Override
     public Double getTotalRevenueByMonth(int month, int year) {
-        return instructorPlatformTransactionRepository.getTotalPlatformMoneyByYearAndMonth(year, month);
+        Double revenue = instructorPlatformTransactionRepository.getTotalPlatformMoneyByYearAndMonth(year, month);
+        return revenue != null ? revenue : 0.0;
     }
 
     @Override
