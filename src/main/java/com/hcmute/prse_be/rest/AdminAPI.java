@@ -122,40 +122,36 @@ public class AdminAPI {
             }
 
             LocalDateTime now = LocalDateTime.now();
-            // Lấy thông tin tháng và năm hiện tại
             int currentYear = now.getYear();
             int currentMonth = now.getMonthValue();
-            // Tính toán tháng trước
             LocalDateTime previousMonth = now.minusMonths(1);
             int previousYear = previousMonth.getYear();
             int previousMonthValue = previousMonth.getMonthValue();
 
-            // overview total
             long totalUsers = studentService.getCountStudent();
             long totalCourses = courseService.getCountCourse();
             long totalInstructors = instructorService.getCountInstructor();
             double totalRevenue = adminService.getTotalRevenue();
 
-            // user growth rate
             long userCurrentMonthRecords = studentService.countByYearAndMonth(currentYear, currentMonth);
             long userPreviousMonthRecords = studentService.countByYearAndMonth(previousYear, previousMonthValue);
-            double userGrowthRate = ConvertUtils.toDouble((userCurrentMonthRecords - userPreviousMonthRecords) / (double) userPreviousMonthRecords * 100);
+            double userGrowthRate = (userPreviousMonthRecords == 0) ? 0.0 :
+                    ConvertUtils.toDouble((userCurrentMonthRecords - userPreviousMonthRecords) / (double) userPreviousMonthRecords * 100);
 
-            // total Courses growth rate
             long courseCurrentMonthRecords = courseService.countByYearAndMonth(currentYear, currentMonth);
             long coursePreviousMonthRecords = courseService.countByYearAndMonth(previousYear, previousMonthValue);
-            double courseGrowthRate = ConvertUtils.toDouble((courseCurrentMonthRecords - coursePreviousMonthRecords) / (double) coursePreviousMonthRecords * 100);
+            double courseGrowthRate = (coursePreviousMonthRecords == 0) ? 0.0 :
+                    ConvertUtils.toDouble((courseCurrentMonthRecords - coursePreviousMonthRecords) / (double) coursePreviousMonthRecords * 100);
 
-            // total Instructors growth rate
             long instructorCurrentMonthRecords = instructorService.countByYearAndMonth(currentYear, currentMonth);
             long instructorPreviousMonthRecords = instructorService.countByYearAndMonth(previousYear, previousMonthValue);
-            double instructorGrowthRate = ConvertUtils.toDouble((instructorCurrentMonthRecords - instructorPreviousMonthRecords) / (double) instructorPreviousMonthRecords * 100);
+            double instructorGrowthRate = (instructorPreviousMonthRecords == 0) ? 0.0 :
+                    ConvertUtils.toDouble((instructorCurrentMonthRecords - instructorPreviousMonthRecords) / (double) instructorPreviousMonthRecords * 100);
 
-            // total revenue growth rate
             double totalRevenueCurrentMonth = adminService.getTotalRevenueByMonth(currentMonth, currentYear);
             double totalRevenuePreviousMonth = adminService.getTotalRevenueByMonth(previousMonthValue, previousYear);
-            double revenueGrowthRate = ConvertUtils.toDouble((totalRevenueCurrentMonth - totalRevenuePreviousMonth) / totalRevenuePreviousMonth * 100);
-
+            double revenueGrowthRate = (totalRevenuePreviousMonth == 0) ? 0.0 :
+                    ConvertUtils.toDouble((totalRevenueCurrentMonth - totalRevenuePreviousMonth) / totalRevenuePreviousMonth * 100);
 
             JSONObject response = new JSONObject();
             response.put("totalUsers", totalUsers);
@@ -172,7 +168,6 @@ public class AdminAPI {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Response.error(ErrorMsg.SOMETHING_WENT_WRONG + e.getMessage()));
         }
     }
-
     @GetMapping("/revenue")
     public ResponseEntity<JSONObject> getRevenueStatistics(
             @RequestParam(defaultValue = "6") int monthsCount,
