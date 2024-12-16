@@ -23,6 +23,8 @@ public class Endpoints {
 
             "/api/payment-method",
 
+            "/api/banks/**"
+
 
 
 //            "/books",
