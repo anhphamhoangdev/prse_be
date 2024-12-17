@@ -1,11 +1,14 @@
 package com.hcmute.prse_be.service;
 
+import com.hcmute.prse_be.constants.WithDrawStatus;
+import com.hcmute.prse_be.dtos.AdminWithdrawDTO;
 import com.hcmute.prse_be.dtos.CategoryStatisticDTO;
+import com.hcmute.prse_be.dtos.InstructorWithdrawDTO;
 import com.hcmute.prse_be.dtos.RevenueStatisticsDTO;
 import com.hcmute.prse_be.entity.AdminEntity;
-import com.hcmute.prse_be.repository.AdminRepository;
-import com.hcmute.prse_be.repository.CourseSubCategoryRepository;
-import com.hcmute.prse_be.repository.InstructorPlatformTransactionRepository;
+import com.hcmute.prse_be.entity.InstructorEntity;
+import com.hcmute.prse_be.entity.WithDrawEntity;
+import com.hcmute.prse_be.repository.*;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -20,11 +23,15 @@ public class AdminServiceImpl implements AdminService{
     private final AdminRepository adminRepository;
     private final InstructorPlatformTransactionRepository instructorPlatformTransactionRepository;
     private final CourseSubCategoryRepository courseSubCategoryRepository;
+    private final WithdrawRepository withdrawRepository;
+    private final InstructorRepository instructorRepository;
 
-    public AdminServiceImpl(AdminRepository adminRepository, InstructorPlatformTransactionRepository instructorPlatformTransactionRepository, CourseSubCategoryRepository courseSubCategoryRepository) {
+    public AdminServiceImpl(AdminRepository adminRepository, InstructorPlatformTransactionRepository instructorPlatformTransactionRepository, CourseSubCategoryRepository courseSubCategoryRepository, WithdrawRepository withdrawRepository, InstructorRepository instructorRepository) {
         this.adminRepository = adminRepository;
         this.instructorPlatformTransactionRepository = instructorPlatformTransactionRepository;
         this.courseSubCategoryRepository = courseSubCategoryRepository;
+        this.withdrawRepository = withdrawRepository;
+        this.instructorRepository = instructorRepository;
     }
 
     @Override
@@ -107,5 +114,49 @@ public class AdminServiceImpl implements AdminService{
         }
 
         return topCategories;
+    }
+
+    @Override
+    public List<AdminWithdrawDTO> getAllPendinglWithdraws() {
+
+        List<WithDrawEntity> withDrawEntityList = withdrawRepository.findByStatusOrderByCreatedAtDesc(WithDrawStatus.PENDING);
+
+        return withDrawEntityList.stream()
+                .map(withdraw -> {
+                    // Lấy thông tin instructor
+                    InstructorEntity instructor = instructorRepository.findById(withdraw.getInstructorId()).orElse(null);
+
+                    // Tạo InstructorWithdrawDTO
+                    InstructorWithdrawDTO instructorDTO = new InstructorWithdrawDTO();
+                    if(instructor != null) {
+                        instructorDTO.setId(instructor.getId());
+                        instructorDTO.setName(instructor.getFullName());
+                        instructorDTO.setEmail("");
+                    }
+                    else
+                    {
+                        instructorDTO.setId(0L);
+                        instructorDTO.setName("Không xác định");
+                        instructorDTO.setEmail("Không xác định");
+
+                    }
+                    // Tạo AdminWithdrawDTO
+                    AdminWithdrawDTO dto = new AdminWithdrawDTO();
+                    dto.setId(withdraw.getId());
+                    dto.setInstructor(instructorDTO);
+                    dto.setAmount(withdraw.getAmount());
+                    dto.setType(withdraw.getType());
+                    dto.setStatus(withdraw.getStatus());
+                    dto.setBankCode(withdraw.getBankCode());
+                    dto.setBankName(withdraw.getBankName());
+                    dto.setAccountNumber(withdraw.getAccountNumber());
+                    dto.setAccountHolder(withdraw.getAccountHolder());
+                    dto.setRejectionReason(withdraw.getRejectionReason());
+                    dto.setCreatedAt(withdraw.getCreatedAt());
+                    dto.setUpdatedAt(withdraw.getUpdatedAt());
+
+                    return dto;
+                })
+                .collect(Collectors.toList());
     }
 }

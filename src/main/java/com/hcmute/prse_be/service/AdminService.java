@@ -1,5 +1,6 @@
 package com.hcmute.prse_be.service;
 
+import com.hcmute.prse_be.dtos.AdminWithdrawDTO;
 import com.hcmute.prse_be.dtos.CategoryStatisticDTO;
 import com.hcmute.prse_be.dtos.RevenueStatisticsDTO;
 import com.hcmute.prse_be.entity.AdminEntity;
@@ -18,4 +19,6 @@ public interface AdminService {
     List<RevenueStatisticsDTO> getRevenueStatistics(int monthsCount);
 
     List<CategoryStatisticDTO> getCourseDistribution();
+
+    List<AdminWithdrawDTO> getAllPendinglWithdraws();
 }

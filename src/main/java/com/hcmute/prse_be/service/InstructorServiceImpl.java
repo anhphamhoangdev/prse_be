@@ -74,6 +74,11 @@ public class InstructorServiceImpl implements InstructorService{
     }
 
     @Override
+    public void saveInstructor(InstructorEntity instructorEntity) {
+        instructorRepository.save(instructorEntity);
+    }
+
+    @Override
     public long countByYearAndMonth(int currentYear, int currentMonth) {
         return instructorRepository.countByYearAndMonth(currentYear, currentMonth);
     }

@@ -10,10 +10,10 @@ import java.time.LocalDateTime;
 @Data
 public class WithDrawEntity {
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private String id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-    private String instructorId;
+    private Long instructorId;
 
     private Double amount;
 

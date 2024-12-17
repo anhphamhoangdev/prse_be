@@ -3,6 +3,7 @@ package com.hcmute.prse_be.rest;
 
 import com.hcmute.prse_be.constants.ApiPaths;
 import com.hcmute.prse_be.constants.ErrorMsg;
+import com.hcmute.prse_be.dtos.AdminWithdrawDTO;
 import com.hcmute.prse_be.dtos.CategoryStatisticDTO;
 import com.hcmute.prse_be.dtos.RevenueStatisticsDTO;
 import com.hcmute.prse_be.entity.AdminEntity;
@@ -280,4 +281,26 @@ public class AdminAPI {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Response.error(ErrorMsg.SOMETHING_WENT_WRONG + e.getMessage()));
         }
     }
+
+    @GetMapping("/withdraws")
+    public ResponseEntity<JSONObject> getAllWithDraw(
+            Authentication authentication
+    ) {
+        try {
+            String email = authentication.getName();
+            AdminEntity admin = adminService.findByEmail(email);
+            if (admin == null) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Response.error(ErrorMsg.STUDENT_USERNAME_NOT_EXIST));
+            }
+
+            List<AdminWithdrawDTO> withdraws = adminService.getAllPendinglWithdraws();
+
+            JSONObject response = new JSONObject();
+            response.put("withdraws", withdraws);
+            return ResponseEntity.ok(Response.success(response));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Response.error(ErrorMsg.SOMETHING_WENT_WRONG + e.getMessage()));
+        }
+    }
+
 }

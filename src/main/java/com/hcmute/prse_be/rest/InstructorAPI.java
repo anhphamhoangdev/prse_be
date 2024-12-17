@@ -1,8 +1,6 @@
 package com.hcmute.prse_be.rest;
 
-import com.hcmute.prse_be.constants.ApiPaths;
-import com.hcmute.prse_be.constants.ErrorMsg;
-import com.hcmute.prse_be.constants.ImageFolderName;
+import com.hcmute.prse_be.constants.*;
 import com.hcmute.prse_be.dtos.*;
 import com.hcmute.prse_be.entity.*;
 import com.hcmute.prse_be.request.*;
@@ -36,13 +34,15 @@ public class InstructorAPI {
 
     private final WebSocketService webSocketService;
 
+    private final WithdrawService withdrawService;
 
-    public InstructorAPI(StudentService studentService, InstructorService instructorService, CloudinaryService cloudinaryService, CourseService courseService, WebSocketService webSocketService) {
+    public InstructorAPI(StudentService studentService, InstructorService instructorService, CloudinaryService cloudinaryService, CourseService courseService, WebSocketService webSocketService, WithdrawService withdrawService) {
         this.studentService = studentService;
         this.instructorService = instructorService;
         this.cloudinaryService = cloudinaryService;
         this.courseService = courseService;
         this.webSocketService = webSocketService;
+        this.withdrawService = withdrawService;
     }
 
 
@@ -1054,6 +1054,103 @@ public class InstructorAPI {
             LogService.getgI().error(e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Response.error("Có lỗi xảy ra khi lấy trạng thái upload"));
+        }
+    }
+
+    @PostMapping("/withdraw-student-account")
+    public ResponseEntity<JSONObject> withdrawStudentAccount(
+            @ModelAttribute WithdrawRequest request,
+            Authentication authentication) {
+        try {
+            String username = authentication.getName();
+
+            StudentEntity student = studentService.findByUsername(username);
+            if (student == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Response.error("Không tìm thấy thông tin người dùng"));
+            }
+
+            InstructorEntity instructor = instructorService.getInstructorByStudentId(student.getId());
+
+            if (instructor == null || !instructor.getIsActive()) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Response.error("Không tìm thấy thông tin giáo viên"));
+            }
+
+            if (request.getAmount() <= 0) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Response.error("Số tiền rút phải lớn hơn 0"));
+            }
+
+            if (request.getAmount() > instructor.getMoney()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Response.error("Số dư không đủ để rút"));
+            }
+
+            instructor.setMoney(instructor.getMoney() - request.getAmount());
+            instructorService.saveInstructor(instructor);
+
+            student.setMoney(student.getMoney() + request.getAmount());
+            studentService.save(student);
+
+            // withdraw entity
+            WithDrawEntity withdrawEntity = new WithDrawEntity();
+            withdrawEntity.setInstructorId(instructor.getId());
+            withdrawEntity.setAmount(request.getAmount());
+            withdrawEntity.setType(WithDrawType.STUDENT_ACCOUNT);
+            withdrawEntity.setStatus(WithDrawStatus.APPROVED);
+            withdrawService.saveWithdraw(withdrawEntity);
+
+            return ResponseEntity.ok(Response.success());
+
+        }catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Response.error("Có lỗi xảy ra khi rút tiền"));
+        }
+    }
+
+    @PostMapping("/withdraw-bank")
+    public ResponseEntity<JSONObject> withdrawBank(
+            @ModelAttribute WithdrawRequest request,
+            Authentication authentication) {
+        try {
+            String username = authentication.getName();
+
+            StudentEntity student = studentService.findByUsername(username);
+            if (student == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Response.error("Không tìm thấy thông tin người dùng"));
+            }
+
+            InstructorEntity instructor = instructorService.getInstructorByStudentId(student.getId());
+
+            if (instructor == null || !instructor.getIsActive()) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Response.error("Không tìm thấy thông tin giáo viên"));
+            }
+
+            if (request.getAmount() <= 0) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Response.error("Số tiền rút phải lớn hơn 0"));
+            }
+
+            if (request.getAmount() > instructor.getMoney()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Response.error("Số dư không đủ để rút"));
+            }
+
+            instructor.setMoney(instructor.getMoney() - request.getAmount());
+            instructorService.saveInstructor(instructor);
+
+            // withdraw entity
+            WithDrawEntity withdrawEntity = new WithDrawEntity();
+            withdrawEntity.setInstructorId(instructor.getId());
+            withdrawEntity.setAmount(request.getAmount());
+            withdrawEntity.setType(WithDrawType.BANK);
+            withdrawEntity.setStatus(WithDrawStatus.PENDING);
+            withdrawEntity.setBankCode(request.getBankCode());
+            withdrawEntity.setBankName(request.getBankName());
+            withdrawEntity.setAccountHolder(request.getAccountHolder());
+            withdrawEntity.setAccountNumber(request.getAccountNumber());
+            withdrawService.saveWithdraw(withdrawEntity);
+
+            return ResponseEntity.ok(Response.success());
+
+        }catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Response.error("Có lỗi xảy ra khi rút tiền"));
         }
     }
 }

@@ -20,6 +20,7 @@ public interface InstructorService {
 
     long getCountInstructor();
 
+    void saveInstructor(InstructorEntity instructorEntity);
 
     long countByYearAndMonth(int currentYear, int currentMonth);
 }
