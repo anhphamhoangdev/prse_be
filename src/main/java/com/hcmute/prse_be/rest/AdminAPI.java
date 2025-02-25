@@ -15,6 +15,10 @@ import com.hcmute.prse_be.response.Response;
 import com.hcmute.prse_be.service.*;
 import com.hcmute.prse_be.util.CalculateUtils;
 import com.hcmute.prse_be.util.ConvertUtils;
+import com.hcmute.prse_be.service.AdminService;
+import com.hcmute.prse_be.service.CustomUserDetailsService;
+import com.hcmute.prse_be.service.JwtService;
+import com.hcmute.prse_be.service.LogService;
 import net.minidev.json.JSONObject;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
@@ -29,7 +33,7 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDateTime;
 import java.util.List;
 
-@RequestMapping("/api/admin")
+@RequestMapping(ApiPaths.ADMIN_API)
 @RestController
 public class AdminAPI {
 
@@ -55,7 +59,7 @@ public class AdminAPI {
 
     @PostMapping(ApiPaths.LOGIN)
     public JSONObject login(@RequestBody LoginRequest loginRequest) {
-
+        LogService.getgI().info("[AdminAPI] loginAdmin: username = " + loginRequest.getUsername() + ", password = "+ loginRequest.getPassword()  );
         try {
 
             AdminEntity admin = adminService.findByEmail(loginRequest.getUsername());
@@ -94,6 +98,7 @@ public class AdminAPI {
 
     @GetMapping(ApiPaths.GET_PROFILE)
     public JSONObject getProfile(Authentication authentication) {
+        LogService.getgI().info("[AdminAPI] getAdminProfile: username = " + authentication.getName());
         try {
             String email = authentication.getName();
             AdminEntity admin = adminService.findByEmail(email);
