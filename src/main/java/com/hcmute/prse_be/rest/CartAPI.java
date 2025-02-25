@@ -1,11 +1,13 @@
 package com.hcmute.prse_be.rest;
 
 
+import com.hcmute.prse_be.constants.ApiPaths;
 import com.hcmute.prse_be.dtos.CartDTO;
 import com.hcmute.prse_be.entity.CartEntity;
 import com.hcmute.prse_be.entity.StudentEntity;
 import com.hcmute.prse_be.response.Response;
 import com.hcmute.prse_be.service.CartService;
+import com.hcmute.prse_be.service.LogService;
 import com.hcmute.prse_be.service.StudentService;
 import net.minidev.json.JSONObject;
 import org.springframework.http.HttpStatus;
@@ -16,7 +18,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/cart")
+@RequestMapping(ApiPaths.CART_API)
 public class CartAPI {
 
     private final StudentService studentService;
@@ -30,8 +32,9 @@ public class CartAPI {
 
 
     // GET /api/v1/cart - Lấy thông tin giỏ hàng
-    @GetMapping
+    @GetMapping(ApiPaths.CART_GET_CART)
     public ResponseEntity<JSONObject> getCart(Authentication authentication) {
+        LogService.getgI().info("[CartAPI] getCartInfor of user: username = " + authentication.getName());
         // neu dang nhap thanh cong thi se co trong authentication thong tin cua user
 
         if(authentication == null) {
@@ -55,12 +58,13 @@ public class CartAPI {
         return ResponseEntity.ok(Response.success(jsonObject));
     }
 
-    @PostMapping()
+    @PostMapping(ApiPaths.CART_ADD_ITEM)
     public ResponseEntity<JSONObject> addToCart(
             Authentication authentication,
             @RequestBody Map<String, Long> data
     ) {
 
+        LogService.getgI().info("[CartAPI] addToCart: item = " + data.toString());
         if (authentication == null) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Response.error("Chưa đăng nhập"));
         }
@@ -81,7 +85,7 @@ public class CartAPI {
 
 
     // DELETE /api/cart/items/{itemId} - Xóa item khỏi giỏ
-    @DeleteMapping("/remove-course/{itemId}")
+    @DeleteMapping(ApiPaths.CART_REMOVE_ITEM_ID)
     public ResponseEntity<JSONObject> removeFromCart(
             Authentication authentication,
             @PathVariable Long itemId
@@ -103,7 +107,7 @@ public class CartAPI {
     }
 
 
-    @GetMapping("/count")
+    @GetMapping(ApiPaths.CART_COUNT_ITEM)
     public ResponseEntity<JSONObject> getCartItemCount(
             Authentication authentication
     ) {

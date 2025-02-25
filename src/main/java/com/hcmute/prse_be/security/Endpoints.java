@@ -63,7 +63,8 @@ public class Endpoints {
             "/api/student/update-avatar",
             "/api/checkout/create",
             "/api/payment/create",
-            "/api/chat"
+            "/api/chat",
+            "/api/cart/**"
 //            "/users",
 //            "/users/**"
     };
