@@ -1,5 +1,6 @@
 package com.hcmute.prse_be.rest;
 
+import com.hcmute.prse_be.constants.ApiPaths;
 import com.hcmute.prse_be.dtos.UploadingVideoCache;
 import com.hcmute.prse_be.dtos.UploadingVideoDetail;
 import com.hcmute.prse_be.service.CloudinaryService;
@@ -17,7 +18,7 @@ import java.util.concurrent.CompletionException;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/upload")
+@RequestMapping(ApiPaths.CLOUDINARY_API)
 public class CloudinaryAPI {
     private final CloudinaryService videoUploadService;
     @Autowired
@@ -107,7 +108,7 @@ public class CloudinaryAPI {
 //        return ResponseEntity.ok(uploadStatus);
 //    }
 
-    @GetMapping("/status/{threadId}")
+    @GetMapping(ApiPaths.CLOUDINARY_CHECK_STATUS_THREAD_ID)
     public ResponseEntity<UploadingVideoDetail> getUploadStatus(@PathVariable String threadId) {
         // Retrieve the upload status from the singleton cache
         UploadingVideoCache cache = UploadingVideoCache.getInstance();
@@ -119,13 +120,13 @@ public class CloudinaryAPI {
         return ResponseEntity.ok(status);
     }
 
-    @GetMapping("/getAllStatuses")
+    @GetMapping(ApiPaths.CLOUDINARY_GET_ALL_STATUS)
     public ResponseEntity<Map<String, UploadingVideoDetail>> getAllThread() {
         UploadingVideoCache cache = UploadingVideoCache.getInstance();
         return ResponseEntity.ok(cache.getUploadingVideo());
     }
 
-    @GetMapping("/status/instructor/{instructorId}")
+    @GetMapping(ApiPaths.CLOUDINARY_CHECK_STATUS_OF_INSTRUCTOR_ID)
     public ResponseEntity<List<UploadingVideoDetail>> getUploadStatusesByInstructor(@PathVariable String instructorId) {
         UploadingVideoCache cache = UploadingVideoCache.getInstance();
         List<UploadingVideoDetail> statuses = cache.getUploadingVideo().values().stream()

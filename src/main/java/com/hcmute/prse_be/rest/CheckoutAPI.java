@@ -1,5 +1,6 @@
 package com.hcmute.prse_be.rest;
 
+import com.hcmute.prse_be.constants.ApiPaths;
 import com.hcmute.prse_be.dtos.CartDTO;
 import com.hcmute.prse_be.dtos.CheckoutDraftDTO;
 import com.hcmute.prse_be.entity.CheckoutDraftEntity;
@@ -18,7 +19,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/checkout")
+@RequestMapping(ApiPaths.CHECKOUT_API)
 public class CheckoutAPI {
 
     private final StudentService studentService;
@@ -34,7 +35,7 @@ public class CheckoutAPI {
     // create checkout_draft
     // POST /api/checkout/create
     // Request: {cartId: Long}
-    @PostMapping("/create")
+    @PostMapping(ApiPaths.CHECKOUT_CREATE)
     public ResponseEntity<JSONObject> createCheckoutDraft(Authentication authentication, @RequestBody CheckoutDraftRequest checkoutDraftRequest) {
         try {
             if (authentication == null) {

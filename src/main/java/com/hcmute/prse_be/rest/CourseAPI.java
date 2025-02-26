@@ -1,5 +1,6 @@
 package com.hcmute.prse_be.rest;
 
+import com.hcmute.prse_be.constants.ApiPaths;
 import com.hcmute.prse_be.constants.ErrorMsg;
 import com.hcmute.prse_be.constants.StatusType;
 import com.hcmute.prse_be.dtos.CourseCurriculumDTO;
@@ -22,7 +23,7 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDateTime;
 
 @RestController
-@RequestMapping("/api/course")
+@RequestMapping(ApiPaths.COURSE_API)
 public class CourseAPI {
 
     private final CourseService courseService;
@@ -37,14 +38,14 @@ public class CourseAPI {
         this.studentService = studentService;
     }
 
-    @GetMapping("{id}")
+    @GetMapping(ApiPaths.COURSE_PATH_ID)
     public JSONObject getBasicDetailCourse(@PathVariable("id") Long id, Authentication authentication) {
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("course", courseService.getDetailCourse(id, authentication));
         return Response.success(jsonObject);
     }
 
-    @GetMapping("/{id}/feedbacks")
+    @GetMapping(ApiPaths.COURSE_GET_FEEDBACK_ID)
     public JSONObject getCourseFeedback(
             @PathVariable("id") Long courseId,
             @RequestParam(defaultValue = "0") int page,
@@ -76,7 +77,7 @@ public class CourseAPI {
     }
 
 
-    @GetMapping("{id}/curriculum")
+    @GetMapping(ApiPaths.COURSE_CURRICULUM_ID)
     public JSONObject getCourseCurriculum(
             @PathVariable("id") Long courseId,
             Authentication authentication
@@ -99,7 +100,7 @@ public class CourseAPI {
         }
     }
 
-    @GetMapping("/{courseId}/{chapterId}/{lessonId}/video")
+    @GetMapping(ApiPaths.COURSE_GET_LESSON)
     public ResponseEntity<JSONObject> getVideoLesson(
             @PathVariable("courseId") Long courseId,
             @PathVariable("chapterId") Long chapterId,
@@ -135,7 +136,7 @@ public class CourseAPI {
     }
 
     // submit lesson
-    @PostMapping("/video/submit")
+    @PostMapping(ApiPaths.COURSE_SUBMIT_VIDEO)
     public ResponseEntity<JSONObject> submitLesson(@RequestBody JSONObject data, Authentication authentication) {
         LogService.getgI().info("[CourseAPI] submitLesson : " + data.toJSONString());
 
@@ -184,7 +185,7 @@ public class CourseAPI {
         }
     }
 
-    @GetMapping("/my-courses")
+    @GetMapping(ApiPaths.COURSE_GET_LIST_COURSE_STUDENT)
     public ResponseEntity<JSONObject> getMyCourses(Authentication authentication, @RequestParam(defaultValue = "0") int page,
                                                    @RequestParam(defaultValue = "12") int size) {
         LogService.getgI().info("[CourseAPI] getMyCourses");
