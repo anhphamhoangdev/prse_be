@@ -61,7 +61,6 @@ public class AdminAPI {
     public JSONObject login(@RequestBody LoginRequest loginRequest) {
         LogService.getgI().info("[AdminAPI] loginAdmin: username = " + loginRequest.getUsername() + ", password = "+ loginRequest.getPassword()  );
         try {
-
             AdminEntity admin = adminService.findByEmail(loginRequest.getUsername());
             if (admin == null) {
                 return Response.error(ErrorMsg.STUDENT_USERNAME_NOT_EXIST);
@@ -115,7 +114,7 @@ public class AdminAPI {
         }
     }
 
-    @GetMapping("/overview")
+    @GetMapping(ApiPaths.ADMIN_OVERVIEW)
     public ResponseEntity<JSONObject> getOverview(Authentication authentication) {
         LogService.getgI().info("AdminAPI.getOverview");
         try {
@@ -168,11 +167,12 @@ public class AdminAPI {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Response.error(ErrorMsg.SOMETHING_WENT_WRONG + e.getMessage()));
         }
     }
-    @GetMapping("/revenue")
+    @GetMapping(ApiPaths.REVENUE)
     public ResponseEntity<JSONObject> getRevenueStatistics(
             @RequestParam(defaultValue = "6") int monthsCount,
             Authentication authentication
     ) {
+        LogService.getgI().info("[AdminAPI] getRevenue");
         try {
             // Verify student
             String email = authentication.getName();
@@ -198,10 +198,11 @@ public class AdminAPI {
         }
     }
 
-    @GetMapping("/category-distribution")
+    @GetMapping(ApiPaths.GET_CATEGORY_DISTRIBUTION)
     public ResponseEntity<JSONObject> getCategoryDistribution(
             Authentication authentication
     ) {
+        LogService.getgI().info("[AdminAPI] getCategoryDistribution");
         try {
             // Verify student
             String email = authentication.getName();
@@ -225,7 +226,7 @@ public class AdminAPI {
         }
     }
 
-    @GetMapping("/students")
+    @GetMapping(ApiPaths.GET_STUDENTS)
     public ResponseEntity<JSONObject> getAllStudents(
             @RequestParam(defaultValue = "") String search,
             @RequestParam(defaultValue = "ALL") String status,
@@ -234,6 +235,7 @@ public class AdminAPI {
             @RequestParam(defaultValue = "10") int size,
             Authentication authentication
     ) {
+        LogService.getgI().info("[AdminAPI] getAllStudents");
         try {
 
             String email = authentication.getName();
@@ -260,11 +262,12 @@ public class AdminAPI {
         }
     }
 
-    @PutMapping("/students/{studentId}/toggle-status")
+    @PutMapping(ApiPaths.UPDATE_STUDENT_STATUS)
     public ResponseEntity<JSONObject> changeStudentStatus(
             @PathVariable Long studentId,
             Authentication authentication
     ) {
+        LogService.getgI().info("[AdminAPI] updateStudentStatus id: " + studentId);
         try {
 
             String email = authentication.getName();
@@ -287,10 +290,11 @@ public class AdminAPI {
         }
     }
 
-    @GetMapping("/withdraws")
+    @GetMapping(ApiPaths.GET_WITHDRAWS)
     public ResponseEntity<JSONObject> getAllWithDraw(
             Authentication authentication
     ) {
+        LogService.getgI().info("[AdminAPI] getAllWithdraws");
         try {
             String email = authentication.getName();
             AdminEntity admin = adminService.findByEmail(email);

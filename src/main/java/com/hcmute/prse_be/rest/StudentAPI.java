@@ -7,10 +7,7 @@ import com.hcmute.prse_be.entity.StudentEntity;
 import com.hcmute.prse_be.request.LoginRequest;
 import com.hcmute.prse_be.response.JwtResponse;
 import com.hcmute.prse_be.response.Response;
-import com.hcmute.prse_be.service.CloudinaryService;
-import com.hcmute.prse_be.service.CustomUserDetailsService;
-import com.hcmute.prse_be.service.JwtService;
-import com.hcmute.prse_be.service.StudentService;
+import com.hcmute.prse_be.service.*;
 import net.minidev.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -72,6 +69,7 @@ public class StudentAPI {
 
     @PostMapping(ApiPaths.REGISTER_ACCOUNT)
     public JSONObject registerUser(@RequestBody StudentEntity user) {
+        LogService.getgI().info("[StudentAPI] registerUser of: " + user.toString() );
         JSONObject response = new JSONObject();
 
         try {
@@ -90,8 +88,8 @@ public class StudentAPI {
 
     @PostMapping(ApiPaths.LOGIN)
     public JSONObject login(@RequestBody LoginRequest loginRequest) {
+        LogService.getgI().info("[StudentAPI] loginStudent" + loginRequest.getUsername());
         try {
-
             StudentEntity student = customUserDetailsService.findByUsername(loginRequest.getUsername());
             if (student == null) {
                 return Response.error(ErrorMsg.STUDENT_USERNAME_NOT_EXIST);
@@ -133,6 +131,8 @@ public class StudentAPI {
 
     @GetMapping(ApiPaths.GET_PROFILE)
     public JSONObject getProfile(Authentication authentication) {
+        LogService.getgI().info("[StudentAPI] getProfile of: " +authentication.getName() );
+
         try {
             String username = authentication.getName();
             StudentEntity student = customUserDetailsService.findByUsername(username);
@@ -152,6 +152,7 @@ public class StudentAPI {
     @PostMapping(ApiPaths.UPDATE_AVATAR)
     public JSONObject updateAvatar(@RequestParam MultipartFile file, Authentication authentication)
     {
+        LogService.getgI().info("[StudentAPI] updateAvatar of: " +authentication.getName() );
         try{
             String imageUrl = cloudinaryService.uploadImage(file, ImageFolderName.STUDENT_AVATAR_FOLDER);
             studentService.saveAvatarStudent(imageUrl, authentication.getName());

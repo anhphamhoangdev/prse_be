@@ -1,5 +1,6 @@
 package com.hcmute.prse_be.rest;
 
+import com.cloudinary.Api;
 import com.hcmute.prse_be.constants.*;
 import com.hcmute.prse_be.dtos.*;
 import com.hcmute.prse_be.entity.*;
@@ -21,7 +22,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/instructor")
+@RequestMapping(ApiPaths.INSTRUCTOR_API)
 public class InstructorAPI {
 
     private final StudentService studentService;
@@ -48,6 +49,8 @@ public class InstructorAPI {
 
     @GetMapping(ApiPaths.GET_PROFILE)
     public ResponseEntity<JSONObject> getProfile(Authentication authentication) {
+        LogService.getgI().info("[InstructorAPI] getInstructorProfile " );
+
         try {
 
             String username = authentication.getName();
@@ -76,8 +79,10 @@ public class InstructorAPI {
         }
     }
 
-    @GetMapping("/courses")
+    @GetMapping(ApiPaths.INSTRUCTOR_GET_COURSES)
     public ResponseEntity<JSONObject> getCourses(Authentication authentication) {
+        LogService.getgI().info("[InstructorAPI] getCoursesOfInstructor " );
+
         try {
 
             String username = authentication.getName();
@@ -104,11 +109,12 @@ public class InstructorAPI {
         }
     }
 
-    @GetMapping("/revenue")
+    @GetMapping(ApiPaths.REVENUE)
     public ResponseEntity<JSONObject> getRevenueStatistics(
             @RequestParam(defaultValue = "6") int monthsCount,
             Authentication authentication
     ) {
+        LogService.getgI().info("[InstructorAPI] getRevenueStatistics " + authentication.getName());
         try {
             // Verify student
             String username = authentication.getName();
@@ -143,8 +149,9 @@ public class InstructorAPI {
         }
     }
 
-    @GetMapping("/recent-enrollments")
+    @GetMapping(ApiPaths.INSTRUCTOR_GET_RECENT_ENROLL)
     public ResponseEntity<?> getRecentEnrollments(Authentication authentication) {
+        LogService.getgI().info("[InstructorAPI] getRecentEnrollments Of " +authentication.getName() );
         try {
             String username = authentication.getName();
             StudentEntity student = studentService.findByUsername(username);
@@ -171,11 +178,12 @@ public class InstructorAPI {
         }
     }
 
-    @PostMapping("/upload-course")
+    @PostMapping(ApiPaths.INSTRUCTOR_UPLOAD_COURSE)
     public ResponseEntity<JSONObject> uploadCourse(
             @RequestParam("image") MultipartFile image,
             @RequestParam("data") String data,
             Authentication authentication) {
+        LogService.getgI().info("[InstructorAPI] uploadCourse " );
         try {
 
             String username = authentication.getName();
@@ -227,10 +235,11 @@ public class InstructorAPI {
         }
     }
 
-    @PostMapping("/upload-preview-video")
+    @PostMapping(ApiPaths.INSTRUCTOR_UPLOAD_PREVIEW_VIDEO)
     public ResponseEntity<JSONObject> uploadVideo(@RequestParam("video") MultipartFile file,
                                                   @RequestParam("courseId") String courseId,
                                                   Authentication authentication) {
+        LogService.getgI().info("[InstructorAPI] UploadPreviewVideo courseId: " +courseId +" Instructor: "+ authentication.getName() );
         try {
             LogService.getgI().info("Uploading video... : uploadVideo");
             String username = authentication.getName();
@@ -312,7 +321,7 @@ public class InstructorAPI {
     }
 
 
-    @GetMapping("/upload-status")
+    @GetMapping(ApiPaths.INSTRUCTOR_UPLOAD_STATUS)
     public ResponseEntity<JSONObject> getUploadStatusesByInstructor(Authentication authentication) {
         try {
             // Kiểm tra thông tin người dùng
@@ -347,8 +356,9 @@ public class InstructorAPI {
         }
     }
 
-    @GetMapping("/courses/{courseId}")
+    @GetMapping(ApiPaths.INSTRUCTOR_GET_COURSE_ID)
     public ResponseEntity<JSONObject> getCourse(Authentication authentication, @PathVariable("courseId") Long courseId) {
+        LogService.getgI().info("[InstructorAPI] getCourseId: "+ courseId);
         try {
 
             Long id = ConvertUtils.toLong(courseId);
@@ -382,10 +392,12 @@ public class InstructorAPI {
         }
     }
 
-    @PutMapping("/courses/{courseId}")
+    @PutMapping(ApiPaths.INSTRUCTOR_UPDATE_COURSE_ID)
     public ResponseEntity<JSONObject> updateCourse(Authentication authentication,
                                                    @PathVariable("courseId") Long courseId,
                                                    @RequestBody UpdateCourseRequest updateCourseRequest) {
+        LogService.getgI().info("[InstructorAPI] getCourseId: "+ courseId + " "+ updateCourseRequest.toString());
+
         try {
 
             Long id = ConvertUtils.toLong(courseId);
@@ -429,8 +441,10 @@ public class InstructorAPI {
         }
     }
 
-    @GetMapping("/courses/{courseId}/curriculum")
+    @GetMapping(ApiPaths.INSTRUCTOR_GET_COURSE_CURRICULUM)
     public ResponseEntity<JSONObject> getCurriculum(Authentication authentication, @PathVariable("courseId") Long courseId) {
+        LogService.getgI().info("[InstructorAPI] getCourseCurriculum: "+ courseId + " "+authentication.getName());
+
         try {
 
             Long id = ConvertUtils.toLong(courseId);
@@ -497,8 +511,10 @@ public class InstructorAPI {
         }
     }
 
-    @GetMapping("/courses/{courseId}/chapter/{chapterId}")
+    @GetMapping(ApiPaths.INSTRUCTOR_GET_CHAPTER_ID)
     public ResponseEntity<JSONObject> getChapterInfo(Authentication authentication, @PathVariable("courseId") Long courseId, @PathVariable("chapterId") Long chapterId) {
+        LogService.getgI().info("[InstructorAPI] getChapter courseId: "+ courseId + "chapterId: "+chapterId);
+
         try {
             String username = authentication.getName();
             StudentEntity student = studentService.findByUsername(username);
@@ -555,8 +571,10 @@ public class InstructorAPI {
         }
     }
 
-    @GetMapping("/courses/{courseId}/chapter/{chapterId}/lesson/{lessonId}")
+    @GetMapping(ApiPaths.INSTRUCTOR_GET_LESSON_ID)
     public ResponseEntity<JSONObject> getLessonInfo(Authentication authentication, @PathVariable("courseId") Long courseId, @PathVariable("chapterId") Long chapterId, @PathVariable("lessonId") Long lessonId){
+        LogService.getgI().info("[InstructorAPI] getLesson courseId: "+ courseId + "chapterId: "+chapterId + " lessonId"+ lessonId);
+
         try {
             String username = authentication.getName();
             StudentEntity student = studentService.findByUsername(username);
@@ -603,8 +621,9 @@ public class InstructorAPI {
         }
     }
 
-    @PutMapping("/courses/{courseId}/chapter/{chapterId}/lesson/{lessonId}")
+    @PutMapping(ApiPaths.INSTRUCTOR_UPDATE_LESSON_ID)
     public ResponseEntity<JSONObject> changeIsPublish(Authentication authentication, @PathVariable("courseId") Long courseId, @PathVariable("chapterId") Long chapterId, @PathVariable("lessonId") Long lessonId){
+        LogService.getgI().info("[InstructorAPI] updateLesson courseId: "+ courseId + "chapterId: "+chapterId+ " lessonId: "+lessonId);
         try {
             String username = authentication.getName();
             StudentEntity student = studentService.findByUsername(username);
@@ -653,8 +672,9 @@ public class InstructorAPI {
         }
     }
 
-    @GetMapping("/courses/{courseId}/chapter/{chapterId}/lesson/{lessonId}/video")
+    @GetMapping(ApiPaths.INSTRUCTOR_GET_LESSON_VIDEO)
     public ResponseEntity<JSONObject> getVideoLessonInfo(Authentication authentication, @PathVariable("courseId") Long courseId, @PathVariable("chapterId") Long chapterId, @PathVariable("lessonId") Long lessonId){
+        LogService.getgI().info("[InstructorAPI] getVideoLesson courseId: "+ courseId + "chapterId: "+chapterId+ " lessonId: "+lessonId);
         try {
             String username = authentication.getName();
             StudentEntity student = studentService.findByUsername(username);
@@ -702,8 +722,9 @@ public class InstructorAPI {
         }
     }
 
-    @PostMapping("/courses/{courseId}/chapter/{chapterId}/lessons")
+    @PostMapping(ApiPaths.INSTRUCTOR_POST_LESSON_INFOR)
     public ResponseEntity<JSONObject> addNewLesson(Authentication authentication, @PathVariable("courseId") Long courseId, @PathVariable("chapterId") Long chapterId, @RequestBody AddNewLessonRequest addLessonRequest) {
+        LogService.getgI().info("[InstructorAPI] createLesson courseId: "+ courseId + "chapterId: "+chapterId+ addLessonRequest.toString());
         try {
             String username = authentication.getName();
             StudentEntity student = studentService.findByUsername(username);
@@ -750,15 +771,16 @@ public class InstructorAPI {
         }
     }
 
-    @PostMapping("/courses/{courseId}/chapter/{chapterId}/lesson/{lessonId}/video/upload")
+    @PostMapping(ApiPaths.INSTRUCTOR_UPLOAD_LESSON_VIDEO)
     public ResponseEntity<JSONObject> uploadLessonVideo(
             @RequestParam("video") MultipartFile file,
             @PathVariable Long courseId,
             @PathVariable Long chapterId,
             @PathVariable Long lessonId,
             Authentication authentication) {
+        LogService.getgI().info("[InstructorAPI] uploadLessonVideo courseId: "+courseId+" chapterId: "+chapterId+" lessonId: "+lessonId);
         try {
-            LogService.getgI().info("[InstructorAPI] uploadLessonVideo...");
+            LogService.getgI().info("[InstructorAPI] uploadLessonVideo courseId: "  +courseId +" chapterId: "+chapterId+" lessonId: "+lessonId);
             String username = authentication.getName();
             StudentEntity student = studentService.findByUsername(username);
             if (student == null) {
@@ -890,11 +912,12 @@ public class InstructorAPI {
         }
     }
 
-    @PostMapping("/courses/{courseId}/curriculum/chapters")
+    @PostMapping(ApiPaths.INSTRUCTOR_CREATE_CHAPTER)
     public ResponseEntity<JSONObject> addChapter(
             @PathVariable Long courseId,
             @RequestBody CreateChapterRequest request,
             Authentication authentication) {
+        LogService.getgI().info("[InstructorAPI] createChapter courseId: "+courseId + " "+request.toString());
         try {
             // Validate user
             String username = authentication.getName();
@@ -947,12 +970,13 @@ public class InstructorAPI {
         }
     }
 
-    @PutMapping("/courses/{courseId}/chapter/{chapterId}")
+    @PutMapping(ApiPaths.INSTRUCTOR_UPDATE_CHAPTER)
     public ResponseEntity<JSONObject> updateChapter(
             @PathVariable Long courseId,
             @PathVariable Long chapterId,
             @RequestBody UpdateChapterRequest request,
             Authentication authentication) {
+        LogService.getgI().info("[InstructorAPI] updateChapter courseId:"+courseId+" chapterId: "+chapterId + " " + authentication.getName() +" "+ request.toString());
         try {
             // Validate user
             String username = authentication.getName();
@@ -996,12 +1020,13 @@ public class InstructorAPI {
         }
     }
 
-    @GetMapping("/courses/{courseId}/chapter/{chapterId}/lesson/{lessonId}/video/upload-status")
+    @GetMapping(ApiPaths.INSTRUCTOR_CHECK_UPLOAD_STATUS)
     public ResponseEntity<JSONObject> videoUploadStatus(
             @PathVariable Long courseId,
             @PathVariable Long chapterId,
             @PathVariable Long lessonId,
             Authentication authentication) {
+        LogService.getgI().info("[InstructorAPI] checkUploadStatus courseId: "+courseId+ " chapterId: "+ chapterId + " lessonId: "+lessonId);
         try {
 
             // Validate user
@@ -1057,10 +1082,11 @@ public class InstructorAPI {
         }
     }
 
-    @PostMapping("/withdraw-student-account")
+    @PostMapping(ApiPaths.INSTRUCTOR_WITHDRAW_STUDENT)
     public ResponseEntity<JSONObject> withdrawStudentAccount(
             @ModelAttribute WithdrawRequest request,
             Authentication authentication) {
+        LogService.getgI().info("[InstructorAPI] withDrawStudent :"+ authentication.getName() +" "+ request.toString());
         try {
             String username = authentication.getName();
 
@@ -1105,10 +1131,12 @@ public class InstructorAPI {
         }
     }
 
-    @PostMapping("/withdraw-bank")
+    @PostMapping(ApiPaths.INSTRUCTOR_WITHDRAW_BANK)
     public ResponseEntity<JSONObject> withdrawBank(
             @ModelAttribute WithdrawRequest request,
             Authentication authentication) {
+        LogService.getgI().info("withDrawBank :"+ authentication.getName() +" "+ request.toString());
+
         try {
             String username = authentication.getName();
 

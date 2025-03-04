@@ -8,6 +8,7 @@ import com.hcmute.prse_be.entity.StudentEntity;
 import com.hcmute.prse_be.request.CheckoutDraftRequest;
 import com.hcmute.prse_be.response.Response;
 import com.hcmute.prse_be.service.CheckoutService;
+import com.hcmute.prse_be.service.LogService;
 import com.hcmute.prse_be.service.StudentService;
 import net.minidev.json.JSONObject;
 import org.springframework.http.HttpStatus;
@@ -37,6 +38,7 @@ public class CheckoutAPI {
     // Request: {cartId: Long}
     @PostMapping(ApiPaths.CHECKOUT_CREATE)
     public ResponseEntity<JSONObject> createCheckoutDraft(Authentication authentication, @RequestBody CheckoutDraftRequest checkoutDraftRequest) {
+        LogService.getgI().info("[CheckoutAPI] createCheckoutDraft");
         try {
             if (authentication == null) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Response.error("Chưa đăng nhập"));

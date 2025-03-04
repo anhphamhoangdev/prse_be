@@ -1,8 +1,10 @@
 package com.hcmute.prse_be.rest;
 
+import com.hcmute.prse_be.constants.ApiPaths;
 import com.hcmute.prse_be.request.ChatRequest;
 import com.hcmute.prse_be.response.Response;
 import com.hcmute.prse_be.service.ChatService;
+import com.hcmute.prse_be.service.LogService;
 import net.minidev.json.JSONObject;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -11,7 +13,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/chat")
+@RequestMapping(ApiPaths.CHAT_API)
 public class ChatAPI {
     private final ChatService chatService;
 
@@ -21,6 +23,7 @@ public class ChatAPI {
 
     @PostMapping("")
     public ResponseEntity<JSONObject> generate(@RequestBody ChatRequest request) {
+        LogService.getgI().info("[ChatAPI] generateGemini "+ request.getMessage());
         // Assume ChatRequest has a 'message' field
         JSONObject response = new JSONObject();
         response.put("message", chatService.generateContent(request.getMessage()));

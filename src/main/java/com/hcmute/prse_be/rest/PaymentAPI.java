@@ -1,6 +1,7 @@
 package com.hcmute.prse_be.rest;
 
 
+import com.hcmute.prse_be.constants.ApiPaths;
 import com.hcmute.prse_be.entity.StudentEntity;
 import com.hcmute.prse_be.request.PaymentRequest;
 import com.hcmute.prse_be.request.PaymentUpdateStatusRequest;
@@ -23,7 +24,7 @@ import java.time.LocalDateTime;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/payment")
+@RequestMapping(ApiPaths.PAYMENT_API)
 public class PaymentAPI {
 
     private final StudentService studentService;
@@ -38,9 +39,9 @@ public class PaymentAPI {
     }
 
 
-    @PostMapping("/create")
+    @PostMapping(ApiPaths.PAYMENT_CREATE)
     public ResponseEntity<JSONObject> createPayment(@RequestBody PaymentRequest data, Authentication authentication) throws Exception {
-
+        LogService.getgI().info("[PaymentAPI] create Payment" + data.toString());
         if (authentication == null) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Response.error("Chưa đăng nhập"));
         }
@@ -58,8 +59,9 @@ public class PaymentAPI {
         return ResponseEntity.ok(Response.success(paymentResponse));
     }
 
-    @PostMapping("/update-status")
+    @PostMapping(ApiPaths.PAYMENT_UPDATE_STATUS)
     public ResponseEntity<JSONObject> qq(@RequestBody PaymentUpdateStatusRequest data, Authentication authentication) {
+        LogService.getgI().info("[PaymentAPI] updatePaymentStatus" + data.toString());
         try {
             // Log để kiểm tra payload nhận được
             paymentService.updatePaymentStatus(data);

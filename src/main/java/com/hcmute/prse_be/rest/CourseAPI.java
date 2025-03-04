@@ -40,6 +40,7 @@ public class CourseAPI {
 
     @GetMapping(ApiPaths.COURSE_PATH_ID)
     public JSONObject getBasicDetailCourse(@PathVariable("id") Long id, Authentication authentication) {
+        LogService.getgI().info("[CourseAPI] getBasicDetailCourse: " +id );
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("course", courseService.getDetailCourse(id, authentication));
         return Response.success(jsonObject);
@@ -207,7 +208,7 @@ public class CourseAPI {
     }
 
     // submit feedback
-    @PostMapping("/feedback")
+    @PostMapping(ApiPaths.COURSE_SUBMIT_FEEDBACK)
     public ResponseEntity<JSONObject> submitFeedback(@RequestBody JSONObject data, Authentication authentication) {
         LogService.getgI().info("[CourseAPI] submitFeedback: " + data.toJSONString());
         try {
@@ -278,7 +279,7 @@ public class CourseAPI {
         }
     }
 
-    @GetMapping("/{courseId}/all-feedbacks")
+    @GetMapping(ApiPaths.COURSE_GET_ALL_FEEDBACK)
     public ResponseEntity<JSONObject> getAllCourseFeedbacks(@PathVariable Long courseId) {
         LogService.getgI().info("[CourseAPI] getAllCourseFeedbacks : " + courseId);
         try {

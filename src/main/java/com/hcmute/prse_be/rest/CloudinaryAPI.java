@@ -4,6 +4,7 @@ import com.hcmute.prse_be.constants.ApiPaths;
 import com.hcmute.prse_be.dtos.UploadingVideoCache;
 import com.hcmute.prse_be.dtos.UploadingVideoDetail;
 import com.hcmute.prse_be.service.CloudinaryService;
+import com.hcmute.prse_be.service.LogService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -110,6 +111,7 @@ public class CloudinaryAPI {
 
     @GetMapping(ApiPaths.CLOUDINARY_CHECK_STATUS_THREAD_ID)
     public ResponseEntity<UploadingVideoDetail> getUploadStatus(@PathVariable String threadId) {
+        LogService.getgI().info("[CloudinaryAPI] getUploadStatus id: "+ threadId );
         // Retrieve the upload status from the singleton cache
         UploadingVideoCache cache = UploadingVideoCache.getInstance();
         UploadingVideoDetail status = cache.getUploadingVideo().get(threadId);
@@ -122,12 +124,14 @@ public class CloudinaryAPI {
 
     @GetMapping(ApiPaths.CLOUDINARY_GET_ALL_STATUS)
     public ResponseEntity<Map<String, UploadingVideoDetail>> getAllThread() {
+        LogService.getgI().info("[CloudinaryAPI] getAllThread ");
         UploadingVideoCache cache = UploadingVideoCache.getInstance();
         return ResponseEntity.ok(cache.getUploadingVideo());
     }
 
-    @GetMapping(ApiPaths.CLOUDINARY_CHECK_STATUS_OF_INSTRUCTOR_ID)
+    @GetMapping(ApiPaths.CLOUDINARY_CHECK_STATUS_INSTRUCTOR_ID)
     public ResponseEntity<List<UploadingVideoDetail>> getUploadStatusesByInstructor(@PathVariable String instructorId) {
+        LogService.getgI().info("[CloudinaryAPI] getUploadStatusesByInstructor " );
         UploadingVideoCache cache = UploadingVideoCache.getInstance();
         List<UploadingVideoDetail> statuses = cache.getUploadingVideo().values().stream()
                 .filter(status -> instructorId.equals(status.getInstructorId()))

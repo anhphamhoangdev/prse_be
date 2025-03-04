@@ -90,6 +90,7 @@ public class CartAPI {
             Authentication authentication,
             @PathVariable Long itemId
     ) {
+        LogService.getgI().info("[CartAPI] Delete ItemId " + itemId);
 
         if(authentication == null) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Response.error("Chưa đăng nhập"));
@@ -111,6 +112,7 @@ public class CartAPI {
     public ResponseEntity<JSONObject> getCartItemCount(
             Authentication authentication
     ) {
+        LogService.getgI().info("[CartAPI] CountItem ");
 
         if(authentication == null) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Response.error("Chưa đăng nhập"));
