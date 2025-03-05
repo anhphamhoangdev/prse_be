@@ -112,7 +112,7 @@ public class CartAPI {
     public ResponseEntity<JSONObject> getCartItemCount(
             Authentication authentication
     ) {
-        LogService.getgI().info("[CartAPI] CountItem ");
+        LogService.getgI().info("[CartAPI] CountItem username: "+authentication.getName());
 
         if(authentication == null) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Response.error("Chưa đăng nhập"));

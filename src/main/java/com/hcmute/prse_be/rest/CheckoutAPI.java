@@ -38,7 +38,7 @@ public class CheckoutAPI {
     // Request: {cartId: Long}
     @PostMapping(ApiPaths.CHECKOUT_CREATE)
     public ResponseEntity<JSONObject> createCheckoutDraft(Authentication authentication, @RequestBody CheckoutDraftRequest checkoutDraftRequest) {
-        LogService.getgI().info("[CheckoutAPI] createCheckoutDraft");
+        LogService.getgI().info("[CheckoutAPI] createCheckoutDraft username: "+authentication.getName() + " checkoutDraft: "+checkoutDraftRequest.toString());
         try {
             if (authentication == null) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Response.error("Chưa đăng nhập"));

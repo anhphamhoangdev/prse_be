@@ -97,7 +97,7 @@ public class AdminAPI {
 
     @GetMapping(ApiPaths.GET_PROFILE)
     public JSONObject getProfile(Authentication authentication) {
-        LogService.getgI().info("[AdminAPI] getAdminProfile: username = " + authentication.getName());
+        LogService.getgI().info("[AdminAPI] getAdminProfile username: " + authentication.getName());
         try {
             String email = authentication.getName();
             AdminEntity admin = adminService.findByEmail(email);
@@ -116,7 +116,7 @@ public class AdminAPI {
 
     @GetMapping(ApiPaths.ADMIN_OVERVIEW)
     public ResponseEntity<JSONObject> getOverview(Authentication authentication) {
-        LogService.getgI().info("AdminAPI.getOverview");
+        LogService.getgI().info("[AdminAPI]getOverview username: "+authentication.getName());
         try {
             String email = authentication.getName();
             AdminEntity admin = adminService.findByEmail(email);
@@ -172,7 +172,7 @@ public class AdminAPI {
             @RequestParam(defaultValue = "6") int monthsCount,
             Authentication authentication
     ) {
-        LogService.getgI().info("[AdminAPI] getRevenue");
+        LogService.getgI().info("[AdminAPI] getRevenue username: "+authentication.getName());
         try {
             // Verify student
             String email = authentication.getName();
@@ -202,7 +202,7 @@ public class AdminAPI {
     public ResponseEntity<JSONObject> getCategoryDistribution(
             Authentication authentication
     ) {
-        LogService.getgI().info("[AdminAPI] getCategoryDistribution");
+        LogService.getgI().info("[AdminAPI] getCategoryDistribution username: "+authentication.getName());
         try {
             // Verify student
             String email = authentication.getName();
@@ -235,7 +235,8 @@ public class AdminAPI {
             @RequestParam(defaultValue = "10") int size,
             Authentication authentication
     ) {
-        LogService.getgI().info("[AdminAPI] getAllStudents");
+        LogService.getgI().info("[AdminAPI] getAllStudents username: "+authentication.getName()
+        + " search: "+ search+" status: "+status + " role: "+ role+" page: "+page +" size: "+size);
         try {
 
             String email = authentication.getName();
@@ -294,7 +295,7 @@ public class AdminAPI {
     public ResponseEntity<JSONObject> getAllWithDraw(
             Authentication authentication
     ) {
-        LogService.getgI().info("[AdminAPI] getAllWithdraws");
+        LogService.getgI().info("[AdminAPI] getAllWithdraws username: "+authentication.getName() );
         try {
             String email = authentication.getName();
             AdminEntity admin = adminService.findByEmail(email);

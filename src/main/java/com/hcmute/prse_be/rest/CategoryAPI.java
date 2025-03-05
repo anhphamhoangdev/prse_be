@@ -26,7 +26,7 @@ public class CategoryAPI {
     public JSONObject getCourseBySubCategoryId(@PathVariable Long id,
                                                @RequestParam(defaultValue = "0") Integer page
     ) {
-        LogService.getgI().info("[CategoryAPI] getCourseBySubCategoryId : " + id);
+        LogService.getgI().info("[CategoryAPI] getCourseBySubCategoryId : " + id + " page: "+page);
         JSONObject response = new JSONObject();
         try {
             SubCategoryEntity subCategory = categoryService.getSubCategoryById(ConvertUtils.toLong(id));

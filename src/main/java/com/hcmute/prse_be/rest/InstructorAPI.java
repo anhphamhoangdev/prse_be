@@ -49,7 +49,7 @@ public class InstructorAPI {
 
     @GetMapping(ApiPaths.GET_PROFILE)
     public ResponseEntity<JSONObject> getProfile(Authentication authentication) {
-        LogService.getgI().info("[InstructorAPI] getInstructorProfile " );
+        LogService.getgI().info("[InstructorAPI] getInstructorProfile username: "+authentication.getName() );
 
         try {
 
@@ -81,7 +81,7 @@ public class InstructorAPI {
 
     @GetMapping(ApiPaths.INSTRUCTOR_GET_COURSES)
     public ResponseEntity<JSONObject> getCourses(Authentication authentication) {
-        LogService.getgI().info("[InstructorAPI] getCoursesOfInstructor " );
+        LogService.getgI().info("[InstructorAPI] getCoursesOfInstructor username: "+authentication.getName() );
 
         try {
 
@@ -114,7 +114,7 @@ public class InstructorAPI {
             @RequestParam(defaultValue = "6") int monthsCount,
             Authentication authentication
     ) {
-        LogService.getgI().info("[InstructorAPI] getRevenueStatistics " + authentication.getName());
+        LogService.getgI().info("[InstructorAPI] getRevenueStatistics username: "+authentication.getName() + "months: "+monthsCount);
         try {
             // Verify student
             String username = authentication.getName();
@@ -183,7 +183,7 @@ public class InstructorAPI {
             @RequestParam("image") MultipartFile image,
             @RequestParam("data") String data,
             Authentication authentication) {
-        LogService.getgI().info("[InstructorAPI] uploadCourse " );
+        LogService.getgI().info("[InstructorAPI] uploadCourse username: "+authentication.getName() );
         try {
 
             String username = authentication.getName();
@@ -323,6 +323,7 @@ public class InstructorAPI {
 
     @GetMapping(ApiPaths.INSTRUCTOR_UPLOAD_STATUS)
     public ResponseEntity<JSONObject> getUploadStatusesByInstructor(Authentication authentication) {
+        LogService.getgI().info("[InstructorAPI] getUploadStatusesByInstructor: "+authentication.getName());
         try {
             // Kiểm tra thông tin người dùng
             String username = authentication.getName();
@@ -358,7 +359,7 @@ public class InstructorAPI {
 
     @GetMapping(ApiPaths.INSTRUCTOR_GET_COURSE_ID)
     public ResponseEntity<JSONObject> getCourse(Authentication authentication, @PathVariable("courseId") Long courseId) {
-        LogService.getgI().info("[InstructorAPI] getCourseId: "+ courseId);
+        LogService.getgI().info("[InstructorAPI] getCourseId: "+ courseId + " username: "+authentication.getName());
         try {
 
             Long id = ConvertUtils.toLong(courseId);
@@ -396,7 +397,7 @@ public class InstructorAPI {
     public ResponseEntity<JSONObject> updateCourse(Authentication authentication,
                                                    @PathVariable("courseId") Long courseId,
                                                    @RequestBody UpdateCourseRequest updateCourseRequest) {
-        LogService.getgI().info("[InstructorAPI] getCourseId: "+ courseId + " "+ updateCourseRequest.toString());
+        LogService.getgI().info("[InstructorAPI] getCourseId: "+ courseId + " "+ updateCourseRequest.toString() + " username: "+ authentication.getName());
 
         try {
 
@@ -513,7 +514,7 @@ public class InstructorAPI {
 
     @GetMapping(ApiPaths.INSTRUCTOR_GET_CHAPTER_ID)
     public ResponseEntity<JSONObject> getChapterInfo(Authentication authentication, @PathVariable("courseId") Long courseId, @PathVariable("chapterId") Long chapterId) {
-        LogService.getgI().info("[InstructorAPI] getChapter courseId: "+ courseId + "chapterId: "+chapterId);
+        LogService.getgI().info("[InstructorAPI] getChapter username:"+ authentication.getName()+ " courseId: "+ courseId + "chapterId: "+chapterId);
 
         try {
             String username = authentication.getName();
@@ -573,7 +574,7 @@ public class InstructorAPI {
 
     @GetMapping(ApiPaths.INSTRUCTOR_GET_LESSON_ID)
     public ResponseEntity<JSONObject> getLessonInfo(Authentication authentication, @PathVariable("courseId") Long courseId, @PathVariable("chapterId") Long chapterId, @PathVariable("lessonId") Long lessonId){
-        LogService.getgI().info("[InstructorAPI] getLesson courseId: "+ courseId + "chapterId: "+chapterId + " lessonId"+ lessonId);
+        LogService.getgI().info("[InstructorAPI] getLesson username: "+ authentication.getName()+ " courseId: "+ courseId + "chapterId: "+chapterId + " lessonId"+ lessonId);
 
         try {
             String username = authentication.getName();
@@ -623,7 +624,7 @@ public class InstructorAPI {
 
     @PutMapping(ApiPaths.INSTRUCTOR_UPDATE_LESSON_ID)
     public ResponseEntity<JSONObject> changeIsPublish(Authentication authentication, @PathVariable("courseId") Long courseId, @PathVariable("chapterId") Long chapterId, @PathVariable("lessonId") Long lessonId){
-        LogService.getgI().info("[InstructorAPI] updateLesson courseId: "+ courseId + "chapterId: "+chapterId+ " lessonId: "+lessonId);
+        LogService.getgI().info("[InstructorAPI] updateLesson username: "+ authentication.getName()+ " courseId: "+ courseId + "chapterId: "+chapterId+ " lessonId: "+lessonId);
         try {
             String username = authentication.getName();
             StudentEntity student = studentService.findByUsername(username);
@@ -674,7 +675,7 @@ public class InstructorAPI {
 
     @GetMapping(ApiPaths.INSTRUCTOR_GET_LESSON_VIDEO)
     public ResponseEntity<JSONObject> getVideoLessonInfo(Authentication authentication, @PathVariable("courseId") Long courseId, @PathVariable("chapterId") Long chapterId, @PathVariable("lessonId") Long lessonId){
-        LogService.getgI().info("[InstructorAPI] getVideoLesson courseId: "+ courseId + "chapterId: "+chapterId+ " lessonId: "+lessonId);
+        LogService.getgI().info("[InstructorAPI] getVideoLesson username: "+ authentication.getName()+ " courseId: "+ courseId + "chapterId: "+chapterId+ " lessonId: "+lessonId);
         try {
             String username = authentication.getName();
             StudentEntity student = studentService.findByUsername(username);
@@ -724,7 +725,7 @@ public class InstructorAPI {
 
     @PostMapping(ApiPaths.INSTRUCTOR_POST_LESSON_INFOR)
     public ResponseEntity<JSONObject> addNewLesson(Authentication authentication, @PathVariable("courseId") Long courseId, @PathVariable("chapterId") Long chapterId, @RequestBody AddNewLessonRequest addLessonRequest) {
-        LogService.getgI().info("[InstructorAPI] createLesson courseId: "+ courseId + "chapterId: "+chapterId+ addLessonRequest.toString());
+        LogService.getgI().info("[InstructorAPI] createLesson username: "+ authentication.getName()+" courseId: "+ courseId + "chapterId: "+chapterId+ addLessonRequest.toString());
         try {
             String username = authentication.getName();
             StudentEntity student = studentService.findByUsername(username);
@@ -778,7 +779,7 @@ public class InstructorAPI {
             @PathVariable Long chapterId,
             @PathVariable Long lessonId,
             Authentication authentication) {
-        LogService.getgI().info("[InstructorAPI] uploadLessonVideo courseId: "+courseId+" chapterId: "+chapterId+" lessonId: "+lessonId);
+        LogService.getgI().info("[InstructorAPI] uploadLessonVideo username: "+ authentication.getName()+ " courseId: "+courseId+" chapterId: "+chapterId+" lessonId: "+lessonId);
         try {
             LogService.getgI().info("[InstructorAPI] uploadLessonVideo courseId: "  +courseId +" chapterId: "+chapterId+" lessonId: "+lessonId);
             String username = authentication.getName();
@@ -917,7 +918,7 @@ public class InstructorAPI {
             @PathVariable Long courseId,
             @RequestBody CreateChapterRequest request,
             Authentication authentication) {
-        LogService.getgI().info("[InstructorAPI] createChapter courseId: "+courseId + " "+request.toString());
+        LogService.getgI().info("[InstructorAPI] createChapter username: "+ authentication.getName()+ " courseId: "+courseId + " "+request.toString());
         try {
             // Validate user
             String username = authentication.getName();
@@ -976,7 +977,7 @@ public class InstructorAPI {
             @PathVariable Long chapterId,
             @RequestBody UpdateChapterRequest request,
             Authentication authentication) {
-        LogService.getgI().info("[InstructorAPI] updateChapter courseId:"+courseId+" chapterId: "+chapterId + " " + authentication.getName() +" "+ request.toString());
+        LogService.getgI().info("[InstructorAPI] updateChapter username: "+ authentication.getName()+ " courseId:"+courseId+" chapterId: "+chapterId + " " + authentication.getName() +" "+ request.toString());
         try {
             // Validate user
             String username = authentication.getName();

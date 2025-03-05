@@ -131,7 +131,7 @@ public class CloudinaryAPI {
 
     @GetMapping(ApiPaths.CLOUDINARY_CHECK_STATUS_INSTRUCTOR_ID)
     public ResponseEntity<List<UploadingVideoDetail>> getUploadStatusesByInstructor(@PathVariable String instructorId) {
-        LogService.getgI().info("[CloudinaryAPI] getUploadStatusesByInstructor " );
+        LogService.getgI().info("[CloudinaryAPI] getUploadStatusesByInstructor InstructorId:" + instructorId );
         UploadingVideoCache cache = UploadingVideoCache.getInstance();
         List<UploadingVideoDetail> statuses = cache.getUploadingVideo().values().stream()
                 .filter(status -> instructorId.equals(status.getInstructorId()))

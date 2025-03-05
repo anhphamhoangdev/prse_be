@@ -61,7 +61,7 @@ public class PaymentAPI {
 
     @PostMapping(ApiPaths.PAYMENT_UPDATE_STATUS)
     public ResponseEntity<JSONObject> qq(@RequestBody PaymentUpdateStatusRequest data, Authentication authentication) {
-        LogService.getgI().info("[PaymentAPI] updatePaymentStatus" + data.toString());
+        LogService.getgI().info("[PaymentAPI] updatePaymentStatus username: "+ authentication.getName()+" "+ data.toString());
         try {
             // Log để kiểm tra payload nhận được
             paymentService.updatePaymentStatus(data);

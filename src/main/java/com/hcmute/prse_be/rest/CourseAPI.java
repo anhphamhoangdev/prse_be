@@ -210,7 +210,7 @@ public class CourseAPI {
     // submit feedback
     @PostMapping(ApiPaths.COURSE_SUBMIT_FEEDBACK)
     public ResponseEntity<JSONObject> submitFeedback(@RequestBody JSONObject data, Authentication authentication) {
-        LogService.getgI().info("[CourseAPI] submitFeedback: " + data.toJSONString());
+        LogService.getgI().info("[CourseAPI] submitFeedback: username: "+authentication.getName()+" feedback: " + data.toJSONString());
         try {
             // Lấy thông tin từ request
             Long courseId = Long.parseLong(data.getAsString("courseId"));
