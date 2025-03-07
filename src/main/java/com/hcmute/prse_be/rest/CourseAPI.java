@@ -163,9 +163,8 @@ public class CourseAPI {
 
             // lay thong tin user
             StudentEntity student = studentService.findByUsername(authentication.getName());
-
             // Lấy thông tin lesson progress
-            LessonProgressEntity lessonProgress = courseService.getLessonProgress(chapterId, lessonId);
+            LessonProgressEntity lessonProgress = courseService.getLessonProgress( student.getId(), lessonId);
 
             if(lessonProgress == null)
             {

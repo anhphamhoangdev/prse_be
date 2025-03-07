@@ -37,6 +37,8 @@ public class LessonProgressEntity {
 
     private LocalDateTime updatedAt;
 
+    private long chapterProgressId =0;
+
     @PrePersist
     public void prePersist() {
         LocalDateTime now = LocalDateTime.now();
