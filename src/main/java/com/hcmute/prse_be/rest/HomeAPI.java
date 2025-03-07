@@ -84,7 +84,7 @@ public class HomeAPI {
 
     @GetMapping(ApiPaths.HOME_HOT_COURSE)
     public JSONObject getHotCourse(Authentication authentication, Integer page) {
-        LogService.getgI().info("[HOME] " + ApiPaths.HOME_HOT_COURSE + " username: "+authentication.getName()+" page: "+page);
+        LogService.getgI().info("[HOME] " + ApiPaths.HOME_HOT_COURSE +  " username: "+ (authentication != null ? authentication.getName(): "anonymous")+ " page: "+page);
         JSONObject response = new JSONObject();
         try {
             response.put("courses", courseService.getHotCourses(page, PaginationNumber.HOME_COURSE_PER_PAGE, authentication));
