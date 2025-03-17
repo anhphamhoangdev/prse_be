@@ -51,7 +51,7 @@ public class ApiPaths {
     public static final String CART_REMOVE_ITEM_ID = "/remove-course/{itemId}";
     public static final String CART_COUNT_ITEM = "/count";
     public static final String CART_GET_CART = "";
-    public static final String CART_ADD_ITEM = "/add-to-cart";
+    public static final String CART_ADD_ITEM = "";
 
     // CHECKOUT API
     public static final String CHECKOUT_API = "/api/checkout";
