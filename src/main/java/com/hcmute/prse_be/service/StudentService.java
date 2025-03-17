@@ -39,4 +39,5 @@ public interface StudentService {
     );
 
     StudentEntity save(StudentEntity studentEntity);
+    boolean updatePassword(String currentPassword, String newPassword, String username);
 }

@@ -5,6 +5,7 @@ import com.hcmute.prse_be.constants.ErrorMsg;
 import com.hcmute.prse_be.constants.ImageFolderName;
 import com.hcmute.prse_be.entity.StudentEntity;
 import com.hcmute.prse_be.request.LoginRequest;
+import com.hcmute.prse_be.request.UpdatePasswordRequest;
 import com.hcmute.prse_be.response.JwtResponse;
 import com.hcmute.prse_be.response.Response;
 import com.hcmute.prse_be.service.*;
@@ -16,6 +17,7 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -162,6 +164,26 @@ public class StudentAPI {
         } catch (Exception e) {
             return Response.error(ErrorMsg.SOMETHING_WENT_WRONG + e.getMessage());
         }
+    }
+
+    @PostMapping(ApiPaths.UPDATE_PASSWORD)
+    public JSONObject updatePassword(@RequestBody UpdatePasswordRequest updatePasswordRequest)
+    {
+        LogService.getgI().info("[StudentAPI] updatePassword of: " +updatePasswordRequest.getUsername() + "oldPassword: "+updatePasswordRequest.getOldPassword()+ " newPassword: "+updatePasswordRequest.getNewPassword() );
+        try{
+            String username = updatePasswordRequest.getUsername();
+            StudentEntity student = customUserDetailsService.findByUsername(username);
+            if (student == null) {
+                return Response.error(ErrorMsg.STUDENT_USERNAME_NOT_EXIST);
+            }
+            studentService.updatePassword(updatePasswordRequest.getOldPassword(),updatePasswordRequest.getNewPassword(),updatePasswordRequest.getUsername());
+            JSONObject response = new JSONObject();
+            response.put("password", updatePasswordRequest.getNewPassword());
+            return Response.success(response);
+        }catch (Exception e) {
+            return Response.error(ErrorMsg.SOMETHING_WENT_WRONG + e.getMessage());
+        }
+
     }
 
 }

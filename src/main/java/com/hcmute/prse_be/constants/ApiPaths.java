@@ -36,6 +36,7 @@ public class ApiPaths {
     public static final String LOGIN = "/login";
     public static final String GET_PROFILE = "/profile";
     public static final String UPDATE_AVATAR = "/update-avatar";
+    public static final String UPDATE_PASSWORD = "update-password";
 
     // ADMIN API
     public static final String ADMIN_API = "/api/admin";
