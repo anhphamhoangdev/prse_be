@@ -179,10 +179,11 @@ public class StudentAPI {
             if(!studentService.isMatch(updatePasswordRequest.getOldPassword(),student.getPasswordHash())){
                 return Response.error(ErrorMsg.PASSWORD_DOES_NOT_MATCH);
             }
-            studentService.updatePassword(updatePasswordRequest.getNewPassword(),authentication.getName());
-
+            if(!studentService.updatePassword(updatePasswordRequest.getNewPassword(),student))
+            {
+                return Response.error(ErrorMsg.UPDATE_PASSWORD_FAILED);
+            }
             JSONObject response = new JSONObject();
-            response.put("password", updatePasswordRequest.getNewPassword());
             return Response.success(response);
         }catch (Exception e) {
             return Response.error(ErrorMsg.SOMETHING_WENT_WRONG + e.getMessage());

@@ -206,11 +206,8 @@ public class StudentServiceImpl implements StudentService{
     }
 
     @Override
-    public boolean updatePassword(String newPassword, String username) {
+    public boolean updatePassword(String newPassword, StudentEntity student) {
         try{
-            StudentEntity student = studentRepository.findByUsername(username);
-            if(student == null)
-                return false;
             student.setPasswordHash(passwordEncoder.encode(newPassword));
             studentRepository.save(student);
             return true;

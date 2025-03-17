@@ -19,6 +19,7 @@ public class ErrorMsg {
     public static final String WRONG_PASSWORD = "Sai tên đăng nhập hoặc mật khẩu";
     public static final String AUTHENTICATION_FAILED = "Xác thực thất bại";
     public static final String PASSWORD_DOES_NOT_MATCH ="Mật khẩu không trùng khớp";
+    public static final String UPDATE_PASSWORD_FAILED ="Thay đổi mật khẩu thất bại";
 
 
     // JWT ERROR
