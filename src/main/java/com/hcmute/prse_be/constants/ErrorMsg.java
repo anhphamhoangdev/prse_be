@@ -18,6 +18,7 @@ public class ErrorMsg {
     public static final String WRONG_ACTIVATE_CODE = "Mã kích hoạt tài khoản không đúng !";
     public static final String WRONG_PASSWORD = "Sai tên đăng nhập hoặc mật khẩu";
     public static final String AUTHENTICATION_FAILED = "Xác thực thất bại";
+    public static final String PASSWORD_DOES_NOT_MATCH ="Mật khẩu không trùng khớp";
 
 
     // JWT ERROR

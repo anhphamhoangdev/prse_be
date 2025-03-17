@@ -12,11 +12,9 @@ import com.hcmute.prse_be.repository.StudentRepository;
 import com.hcmute.prse_be.response.Response;
 import com.hcmute.prse_be.util.GenerateUtils;
 import net.minidev.json.JSONObject;
-import org.apache.catalina.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -208,18 +206,22 @@ public class StudentServiceImpl implements StudentService{
     }
 
     @Override
-    public boolean updatePassword(String currentPassword, String newPassword, String username) {
+    public boolean updatePassword(String newPassword, String username) {
         try{
             StudentEntity student = studentRepository.findByUsername(username);
             if(student == null)
                 return false;
-            if(passwordEncoder.matches(currentPassword,student.getPasswordHash()));
             student.setPasswordHash(passwordEncoder.encode(newPassword));
             studentRepository.save(student);
             return true;
         } catch (Exception e) {
             return false;
         }
+    }
+
+    @Override
+    public boolean isMatch(String oldPassword, String currentPassword) {
+        return passwordEncoder.matches(oldPassword,currentPassword);
     }
 
 

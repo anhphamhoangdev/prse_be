@@ -167,16 +167,20 @@ public class StudentAPI {
     }
 
     @PostMapping(ApiPaths.UPDATE_PASSWORD)
-    public JSONObject updatePassword(@RequestBody UpdatePasswordRequest updatePasswordRequest)
+    public JSONObject updatePassword(@RequestBody UpdatePasswordRequest updatePasswordRequest, Authentication authentication)
     {
-        LogService.getgI().info("[StudentAPI] updatePassword of: " +updatePasswordRequest.getUsername() + "oldPassword: "+updatePasswordRequest.getOldPassword()+ " newPassword: "+updatePasswordRequest.getNewPassword() );
+        LogService.getgI().info("[StudentAPI] updatePassword of: " +authentication.getName() + "oldPassword: "+updatePasswordRequest.getOldPassword()+ " newPassword: "+updatePasswordRequest.getNewPassword() );
         try{
-            String username = updatePasswordRequest.getUsername();
+            String username = authentication.getName();
             StudentEntity student = customUserDetailsService.findByUsername(username);
             if (student == null) {
                 return Response.error(ErrorMsg.STUDENT_USERNAME_NOT_EXIST);
             }
-            studentService.updatePassword(updatePasswordRequest.getOldPassword(),updatePasswordRequest.getNewPassword(),updatePasswordRequest.getUsername());
+            if(!studentService.isMatch(updatePasswordRequest.getOldPassword(),student.getPasswordHash())){
+                return Response.error(ErrorMsg.PASSWORD_DOES_NOT_MATCH);
+            }
+            studentService.updatePassword(updatePasswordRequest.getNewPassword(),authentication.getName());
+
             JSONObject response = new JSONObject();
             response.put("password", updatePasswordRequest.getNewPassword());
             return Response.success(response);
