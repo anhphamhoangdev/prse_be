@@ -2,6 +2,7 @@ package com.hcmute.prse_be.rest;
 
 
 import com.hcmute.prse_be.constants.ApiPaths;
+import com.hcmute.prse_be.constants.ErrorMsg;
 import com.hcmute.prse_be.dtos.CartDTO;
 import com.hcmute.prse_be.entity.CartEntity;
 import com.hcmute.prse_be.entity.StudentEntity;
@@ -38,13 +39,13 @@ public class CartAPI {
         // neu dang nhap thanh cong thi se co trong authentication thong tin cua user
 
         if(authentication == null) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Response.error("Chưa đăng nhập"));
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Response.error(ErrorMsg.HAS_NOT_LOGIN));
         }
 
 
         StudentEntity studentEntity = studentService.findByUsername(authentication.getName());
         if(studentEntity == null) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Response.error("Không tìm thấy thông tin người dùng"));
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Response.error(ErrorMsg.STUDENT_USERNAME_NOT_EXIST));
         }
 
         // neu tim thay nguoi dung thi
@@ -66,12 +67,12 @@ public class CartAPI {
 
         LogService.getgI().info("[CartAPI] addToCart: item = " + data.toString());
         if (authentication == null) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Response.error("Chưa đăng nhập"));
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Response.error(ErrorMsg.HAS_NOT_LOGIN));
         }
 
         StudentEntity studentEntity = studentService.findByUsername(authentication.getName());
         if(studentEntity == null) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Response.error("Không tìm thấy thông tin người dùng"));
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Response.error(ErrorMsg.STUDENT_USERNAME_NOT_EXIST));
         }
 
         return ResponseEntity.ok(cartService.addItemToCart(studentEntity, data.get("courseId")));
@@ -93,13 +94,13 @@ public class CartAPI {
         LogService.getgI().info("[CartAPI] Delete ItemId " + itemId);
 
         if(authentication == null) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Response.error("Chưa đăng nhập"));
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Response.error(ErrorMsg.HAS_NOT_LOGIN));
         }
 
 
         StudentEntity studentEntity = studentService.findByUsername(authentication.getName());
         if(studentEntity == null) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Response.error("Không tìm thấy thông tin người dùng"));
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Response.error(ErrorMsg.STUDENT_USERNAME_NOT_EXIST));
         }
 
         cartService.removeItemFromCart(studentEntity, itemId);
@@ -115,13 +116,13 @@ public class CartAPI {
         LogService.getgI().info("[CartAPI] CountItem username: "+authentication.getName());
 
         if(authentication == null) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Response.error("Chưa đăng nhập"));
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Response.error(ErrorMsg.HAS_NOT_LOGIN));
         }
 
 
         StudentEntity studentEntity = studentService.findByUsername(authentication.getName());
         if(studentEntity == null) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Response.error("Không tìm thấy thông tin người dùng"));
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Response.error(ErrorMsg.STUDENT_USERNAME_NOT_EXIST));
         }
 
         long count = cartService.getCartItemCount(studentEntity.getId());
