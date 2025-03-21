@@ -88,20 +88,14 @@ public class InstructorAPI {
             if (student == null) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Response.error(ErrorMsg.STUDENT_USERNAME_NOT_EXIST));
             }
-            InstructorEntity instructor = instructorService.getInstructorByStudentId(student.getId());
-            if (instructor == null || !instructor.getIsActive()) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Response.error(ErrorMsg.INSTRUCTOR_DOES_NOT_EXIST));
-            }
             if(instructorService.getPopularPosition()==null)
             {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Response.error(ErrorMsg.INSTRUCTOR_CAN_NOT_FIND_POPULAR));
             }
             List <InstructorCommonTitleEntity> listPopular= instructorService.getPopularPosition();
             JSONObject response = new JSONObject();
-            response.put("code", 1);
-            response.put("data", listPopular);
-            response.put("error_message", "");
-            return ResponseEntity.ok((response));
+            response.put("instructor_common_titles", listPopular);
+            return ResponseEntity.ok(Response.success(response));
         }
         catch(Exception err)
         {

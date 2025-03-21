@@ -23,7 +23,9 @@ public class Endpoints {
 
             "/api/payment-method",
 
-            "/api/banks/**"
+            "/api/banks/**",
+
+            "/api/instructor/common-titles"
 
 
 
