@@ -2,7 +2,9 @@ package com.hcmute.prse_be.service;
 
 import com.hcmute.prse_be.dtos.RecentEnrollmentDTO;
 import com.hcmute.prse_be.dtos.RevenueStatisticsDTO;
+import com.hcmute.prse_be.entity.InstructorCommonTitleEntity;
 import com.hcmute.prse_be.entity.InstructorEntity;
+import com.hcmute.prse_be.repository.InstructorCommonTitleRepository;
 import com.hcmute.prse_be.repository.InstructorPlatformTransactionRepository;
 import com.hcmute.prse_be.repository.InstructorRepository;
 import org.springframework.data.domain.PageRequest;
@@ -10,6 +12,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.time.temporal.TemporalAdjusters;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -18,10 +21,30 @@ public class InstructorServiceImpl implements InstructorService{
 
     private final InstructorRepository instructorRepository;
     private final InstructorPlatformTransactionRepository transactionRepository;
+    private final InstructorCommonTitleRepository instructorCommonTitleRepository;
 
-    public InstructorServiceImpl(InstructorRepository instructorRepository, InstructorPlatformTransactionRepository transactionRepository) {
+    public InstructorServiceImpl(InstructorRepository instructorRepository, InstructorPlatformTransactionRepository transactionRepository, InstructorCommonTitleRepository instructorCommonTitleRepository) {
         this.instructorRepository = instructorRepository;
         this.transactionRepository = transactionRepository;
+        this.instructorCommonTitleRepository = instructorCommonTitleRepository;
+    }
+    @Override
+    public List<InstructorCommonTitleEntity> getPopularPosition() {
+        List<String> popularPositions = Arrays.asList(
+                "Senior Java Developer",
+                "React Developer",
+                "Full Stack Engineer",
+                "DevOps Engineer",
+                "UI/UX Designer",
+                "Product Manager",
+                "Data Scientist",
+                "Machine Learning Engineer",
+                "Cloud Architect",
+                "Python Developer"
+        );
+        // Lấy danh sách vị trí từ database theo tên
+        List<InstructorCommonTitleEntity> listTitlePopular = instructorCommonTitleRepository.findByPositionIn(popularPositions);
+        return listTitlePopular;
     }
 
     @Override
@@ -82,5 +105,6 @@ public class InstructorServiceImpl implements InstructorService{
     public long countByYearAndMonth(int currentYear, int currentMonth) {
         return instructorRepository.countByYearAndMonth(currentYear, currentMonth);
     }
+
 
 }

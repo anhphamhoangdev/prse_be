@@ -2,6 +2,7 @@ package com.hcmute.prse_be.service;
 
 import com.hcmute.prse_be.dtos.RecentEnrollmentDTO;
 import com.hcmute.prse_be.dtos.RevenueStatisticsDTO;
+import com.hcmute.prse_be.entity.InstructorCommonTitleEntity;
 import com.hcmute.prse_be.entity.InstructorEntity;
 
 import java.util.List;
@@ -23,4 +24,5 @@ public interface InstructorService {
     void saveInstructor(InstructorEntity instructorEntity);
 
     long countByYearAndMonth(int currentYear, int currentMonth);
+    List<InstructorCommonTitleEntity> getPopularPosition();
 }

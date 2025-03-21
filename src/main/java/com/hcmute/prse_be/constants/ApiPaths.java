@@ -98,6 +98,8 @@ public class ApiPaths {
     public static final String INSTRUCTOR_WITHDRAW_STUDENT ="/withdraw-student-account";
     public static final String INSTRUCTOR_WITHDRAW_BANK ="/withdraw-bank";
     public static final String INSTRUCTOR_UPDATE_CHAPTER ="/courses/{courseId}/chapter/{chapterId}";
+    public static final String INSTRUCTOR_POPULAR_POSITION ="/popular-position";
+
     //BANK API
     public static final String BANKS_API = "/api/banks";
 

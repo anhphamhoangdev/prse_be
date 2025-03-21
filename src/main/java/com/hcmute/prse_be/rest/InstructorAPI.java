@@ -78,6 +78,35 @@ public class InstructorAPI {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Response.error(ErrorMsg.SOMETHING_WENT_WRONG));
         }
     }
+    @GetMapping(ApiPaths.INSTRUCTOR_POPULAR_POSITION)
+    public ResponseEntity<JSONObject> popularPosition(Authentication authentication)
+    {
+        LogService.getgI().info("[InstructorAPI] getListPopularPosition : " +authentication.getName());
+        try{
+            String username = authentication.getName();
+            StudentEntity student = studentService.findByUsername(username);
+            if (student == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Response.error(ErrorMsg.STUDENT_USERNAME_NOT_EXIST));
+            }
+            InstructorEntity instructor = instructorService.getInstructorByStudentId(student.getId());
+            if (instructor == null || !instructor.getIsActive()) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Response.error(ErrorMsg.INSTRUCTOR_DOES_NOT_EXIST));
+            }
+            if(instructorService.getPopularPosition()==null)
+            {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Response.error(ErrorMsg.INSTRUCTOR_CAN_NOT_FIND_POPULAR));
+            }
+            List <InstructorCommonTitleEntity> listPopular= instructorService.getPopularPosition();
+            JSONObject response = new JSONObject();
+            response.put("data",listPopular);
+            return ResponseEntity.ok(Response.success(response));
+        }
+        catch(Exception err)
+        {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Response.error(ErrorMsg.SOMETHING_WENT_WRONG));
+
+        }
+    }
 
     @GetMapping(ApiPaths.INSTRUCTOR_GET_COURSES)
     public ResponseEntity<JSONObject> getCourses(Authentication authentication) {
@@ -95,7 +124,7 @@ public class InstructorAPI {
             InstructorEntity instructor = instructorService.getInstructorByStudentId(student.getId());
 
             if (instructor == null || !instructor.getIsActive()) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Response.error("Không tìm thấy thông tin giáo viên"));
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Response.error(ErrorMsg.INSTRUCTOR_DOES_NOT_EXIST));
             }
 
             List<CourseEntity> courses = courseService.getCoursesByInstructorId(instructor.getId());
@@ -128,7 +157,7 @@ public class InstructorAPI {
             InstructorEntity instructor = instructorService.getInstructorByStudentId(student.getId());
             if (instructor == null || !instructor.getIsActive()) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                        .body(Response.error("Không tìm thấy thông tin giáo viên"));
+                        .body(Response.error(ErrorMsg.INSTRUCTOR_DOES_NOT_EXIST));
             }
 
             // Get revenue statistics
@@ -196,7 +225,7 @@ public class InstructorAPI {
             InstructorEntity instructor = instructorService.getInstructorByStudentId(student.getId());
             if (instructor == null || !instructor.getIsActive()) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                        .body(Response.error("Không tìm thấy thông tin giáo viên"));
+                        .body(Response.error(ErrorMsg.INSTRUCTOR_DOES_NOT_EXIST));
             }
 
             // Xử lý dữ liệu form

@@ -27,4 +27,8 @@ public class ErrorMsg {
     public static final String EXPIRED_TOKEN = "Token đã hết hạn, vui lòng đăng nhập lại";
     public static final String INVALID_TOKEN = "Token không hợp lệ";
 
+    // INSTRUCTOR ERR
+    public static final String INSTRUCTOR_DOES_NOT_EXIST = "Không tìm thấy thông tin giáo viên";
+    public static final String INSTRUCTOR_CAN_NOT_FIND_POPULAR = "Không tìm thấy danh sách vị trí phổ biến";
+
 }
