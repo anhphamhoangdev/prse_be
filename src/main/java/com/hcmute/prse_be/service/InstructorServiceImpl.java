@@ -29,22 +29,9 @@ public class InstructorServiceImpl implements InstructorService{
         this.instructorCommonTitleRepository = instructorCommonTitleRepository;
     }
     @Override
-    public List<InstructorCommonTitleEntity> getPopularPosition() {
-        List<String> popularPositions = Arrays.asList(
-                "Senior Java Developer",
-                "React Developer",
-                "Full Stack Engineer",
-                "DevOps Engineer",
-                "UI/UX Designer",
-                "Product Manager",
-                "Data Scientist",
-                "Machine Learning Engineer",
-                "Cloud Architect",
-                "Python Developer"
-        );
+    public List<InstructorCommonTitleEntity> getAllTitles() {
         // Lấy danh sách vị trí từ database theo tên
-        List<InstructorCommonTitleEntity> listTitlePopular = instructorCommonTitleRepository.findByPositionIn(popularPositions);
-        return listTitlePopular;
+        return instructorCommonTitleRepository.findAll();
     }
 
     @Override

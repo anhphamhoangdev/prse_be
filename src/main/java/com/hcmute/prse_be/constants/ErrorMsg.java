@@ -29,6 +29,5 @@ public class ErrorMsg {
 
     // INSTRUCTOR ERR
     public static final String INSTRUCTOR_DOES_NOT_EXIST = "Không tìm thấy thông tin giáo viên";
-    public static final String INSTRUCTOR_CAN_NOT_FIND_POPULAR = "Không tìm thấy danh sách vị trí phổ biến";
 
 }

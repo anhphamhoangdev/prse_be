@@ -79,20 +79,15 @@ public class InstructorAPI {
         }
     }
     @GetMapping(ApiPaths.INSTRUCTOR_POPULAR_POSITION)
-    public ResponseEntity<JSONObject> popularPosition(Authentication authentication)
+    public ResponseEntity<JSONObject> popularPosition()
     {
-        LogService.getgI().info("[InstructorAPI] getListPopularPosition : " +authentication.getName());
+        LogService.getgI().info("[InstructorAPI] getListPopularPosition");
         try{
-            String username = authentication.getName();
-            StudentEntity student = studentService.findByUsername(username);
-            if (student == null) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Response.error(ErrorMsg.STUDENT_USERNAME_NOT_EXIST));
-            }
-            if(instructorService.getPopularPosition()==null)
+            if(instructorService.getAllTitles()==null)
             {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Response.error(ErrorMsg.INSTRUCTOR_CAN_NOT_FIND_POPULAR));
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Response.success(new JSONObject()));
             }
-            List <InstructorCommonTitleEntity> listPopular= instructorService.getPopularPosition();
+            List <InstructorCommonTitleEntity> listPopular= instructorService.getAllTitles();
             JSONObject response = new JSONObject();
             response.put("instructor_common_titles", listPopular);
             return ResponseEntity.ok(Response.success(response));

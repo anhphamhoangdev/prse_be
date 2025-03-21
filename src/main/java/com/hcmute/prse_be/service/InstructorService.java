@@ -24,5 +24,5 @@ public interface InstructorService {
     void saveInstructor(InstructorEntity instructorEntity);
 
     long countByYearAndMonth(int currentYear, int currentMonth);
-    List<InstructorCommonTitleEntity> getPopularPosition();
+    List<InstructorCommonTitleEntity> getAllTitles();
 }
