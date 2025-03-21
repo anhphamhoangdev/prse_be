@@ -98,8 +98,10 @@ public class InstructorAPI {
             }
             List <InstructorCommonTitleEntity> listPopular= instructorService.getPopularPosition();
             JSONObject response = new JSONObject();
-            response.put("data",listPopular);
-            return ResponseEntity.ok(Response.success(response));
+            response.put("code", 1);
+            response.put("data", listPopular);
+            response.put("error_message", "");
+            return ResponseEntity.ok((response));
         }
         catch(Exception err)
         {
