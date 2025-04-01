@@ -3,6 +3,7 @@ package com.hcmute.prse_be.service;
 import com.hcmute.prse_be.constants.PaymentRequestLogStatus;
 import com.hcmute.prse_be.entity.*;
 import com.hcmute.prse_be.repository.*;
+import com.hcmute.prse_be.request.InstructorPaymentLogRequest;
 import com.hcmute.prse_be.request.PaymentItemRequest;
 import com.hcmute.prse_be.request.PaymentRequest;
 import com.hcmute.prse_be.request.PaymentUpdateStatusRequest;
@@ -17,6 +18,7 @@ import vn.payos.type.ItemData;
 import vn.payos.type.PaymentData;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 
 @Service
@@ -32,14 +34,18 @@ public class PaymentServiceImpl implements PaymentService{
     // return url + cancelled url
     private final String returnUrl = Endpoints.FRONT_END_HOST +"/payment/success";
     private final String cancelUrl = Endpoints.FRONT_END_HOST +"/payment/cancel";
+    private final String returnUrlInstructor = Endpoints.FRONT_END_HOST +"/payment-instructor/success";
+    private final String cancelUrlInstructor = Endpoints.FRONT_END_HOST +"/payment-instructor/error";
+
     private final PaymentLogRepository paymentLogRepository;
     private final StudentRepository studentRepository;
     private final EnrollmentRepository enrollmentRepository;
     private final CourseRepository courseRepository;
     private final InstructorRepository instructorRepository;
     private final InstructorPlatformTransactionRepository instructorPlatformTransactionRepository;
+    private final InstructorPaymentRequestLogRepository instructorPaymentRequestLogRepository;
 
-    public PaymentServiceImpl(PayOS payOS, PaymentMethodRepository paymentMethodRepository, PaymentRequestLogRepository paymentRequestLogRepository, CheckoutDraftRepository checkoutDraftRepository, CartService cartService, PaymentLogRepository paymentLogRepository, StudentRepository studentRepository, EnrollmentRepository enrollmentRepository, CourseRepository courseRepository, InstructorRepository instructorRepository, InstructorPlatformTransactionRepository instructorPlatformTransactionRepository) {
+    public PaymentServiceImpl(PayOS payOS, PaymentMethodRepository paymentMethodRepository, PaymentRequestLogRepository paymentRequestLogRepository, CheckoutDraftRepository checkoutDraftRepository, CartService cartService, PaymentLogRepository paymentLogRepository, StudentRepository studentRepository, EnrollmentRepository enrollmentRepository, CourseRepository courseRepository, InstructorRepository instructorRepository, InstructorPlatformTransactionRepository instructorPlatformTransactionRepository, InstructorPaymentRequestLogRepository instructorPaymentRequestLogRepository) {
         this.payOS = payOS;
         this.paymentMethodRepository = paymentMethodRepository;
         this.paymentRequestLogRepository = paymentRequestLogRepository;
@@ -51,6 +57,7 @@ public class PaymentServiceImpl implements PaymentService{
         this.courseRepository = courseRepository;
         this.instructorRepository = instructorRepository;
         this.instructorPlatformTransactionRepository = instructorPlatformTransactionRepository;
+        this.instructorPaymentRequestLogRepository = instructorPaymentRequestLogRepository;
     }
 
 
@@ -130,6 +137,73 @@ public class PaymentServiceImpl implements PaymentService{
     }
 
     @Override
+    public JSONObject createInstructorPayment(InstructorPaymentLogRequest instructorPaymentLogRequest, StudentEntity studentEntity) throws Exception {
+
+        Long paymentMethodId = instructorPaymentLogRequest.getPaymentMethodId();
+        // get payment method ra
+        PaymentMethodEntity paymentMethodEntity = paymentMethodRepository.findById(paymentMethodId).orElse(null);
+
+        if(paymentMethodEntity == null) {
+            throw new Exception("Không tìm thấy phương thức thanh toán");
+        }
+
+        // tao request
+        InstructorPaymentRequestLogEntity instructorPaymentRequestLog = new InstructorPaymentRequestLogEntity();
+        instructorPaymentRequestLog.setStudentId(studentEntity.getId());
+        instructorPaymentRequestLog.setPaymentMethodCode(paymentMethodEntity.getCode());
+        instructorPaymentRequestLog.setPrice(instructorPaymentLogRequest.getPrice());
+        instructorPaymentRequestLog.setStatus(PaymentRequestLogStatus.NEW);
+        instructorPaymentRequestLog.setInstructorName(instructorPaymentLogRequest.getInstructorName());
+        instructorPaymentRequestLog.setInstructorTitle(instructorPaymentLogRequest.getInstructorTitle());
+        // save request
+        instructorPaymentRequestLog = instructorPaymentRequestLogRepository.save(instructorPaymentRequestLog);
+
+        Long orderCode = (long) UUID.randomUUID().hashCode();
+
+        instructorPaymentRequestLog.setOrderCode(orderCode);
+
+        String description = "BI_" + studentEntity.getId() + "_ORDER_" + orderCode;
+
+        String returnUrl = this.returnUrlInstructor; // gan tam
+        String cancelUrl = this.cancelUrlInstructor; // gan tam
+
+        final int price = instructorPaymentLogRequest.getPrice();
+
+        PaymentData paymentData = PaymentData
+                .builder()
+                .buyerName(studentEntity.getFullName())
+                .buyerEmail(studentEntity.getEmail())
+                .buyerPhone(studentEntity.getPhoneNumber())
+                .orderCode(orderCode)
+                .description(description)
+                .amount(price)
+                .returnUrl(returnUrl)
+                .cancelUrl(cancelUrl)
+                .build();
+
+        ItemData item = ItemData
+                .builder()
+                .name("Thanh toán cho instructor " + instructorPaymentLogRequest.getInstructorName())
+                .price(ConvertUtils.toInt(instructorPaymentLogRequest.getPrice()))
+                .quantity(1)
+                .build();
+
+        paymentData.addItem(item);
+
+        CheckoutResponseData data = payOS.createPaymentLink(paymentData);
+
+        if (data != null) {
+            JSONObject jsonObject = new JSONObject();
+            jsonObject.put("payment_info", data);
+            instructorPaymentRequestLog.setTransactionId(createTransactionId(orderCode, studentEntity.getId().toString()));
+            instructorPaymentRequestLogRepository.save(instructorPaymentRequestLog);
+            return jsonObject;
+        }
+
+        return null;
+    }
+
+    @Override
     public void updatePaymentStatus(PaymentUpdateStatusRequest data) {
         // orderCode = paymentRequestLogEntity.getId()
         Long orderCode = ConvertUtils.toLong(data.getOrderCode());
@@ -199,6 +273,46 @@ public class PaymentServiceImpl implements PaymentService{
         }
     }
 
+    @Override
+    public void updatePaymentStatusInstructor(PaymentUpdateStatusRequest data) {
+        Long orderCode = ConvertUtils.toLong(data.getOrderCode());
+        InstructorPaymentRequestLogEntity instructorPaymentLogRequest =
+                instructorPaymentRequestLogRepository
+                .findByOrderCode(orderCode)
+                .orElse(null);
+
+        if(instructorPaymentLogRequest == null || !instructorPaymentLogRequest.getStatus().equals(PaymentRequestLogStatus.NEW)) {
+            return;
+        }
+
+        instructorPaymentLogRequest.setStatus(data.getStatus());
+
+        instructorPaymentRequestLogRepository.save(instructorPaymentLogRequest);
+
+        // tim student
+        StudentEntity studentEntity = studentRepository.findById(instructorPaymentLogRequest.getStudentId()).orElse(null);
+        if(studentEntity == null) {
+            return;
+        }
+        // if thanh cong => tao instructor
+        if(data.getStatus().equals(PaymentRequestLogStatus.PAID)){
+
+            studentEntity.setInstructor(true);
+            studentRepository.save(studentEntity);
+
+            InstructorEntity instructorEntity = new InstructorEntity();
+            instructorEntity.setStudentId(instructorPaymentLogRequest.getStudentId()); // Giả định có studentId từ request
+            instructorEntity.setFullName(instructorPaymentLogRequest.getInstructorName());   // Giả định có fullName từ request
+            instructorEntity.setAvatarUrl(studentEntity.getAvatarUrl());                       // Giá trị mặc định
+            instructorEntity.setTitle(instructorPaymentLogRequest.getInstructorTitle());                                   // Giá trị mặc định
+            instructorEntity.setTotalStudent(0);                                       // Số học viên ban đầu
+            instructorEntity.setTotalCourse(0);                                        // Số khóa học ban đầu
+            instructorEntity.setFee(30.0);                                              // Phí mặc định
+            instructorEntity.setMoney(0.0);                                            // Số tiền ban đầu
+            instructorEntity.setIsActive(true);
+            instructorRepository.save(instructorEntity);
+        }
+    }
 
 
     private String createTransactionId(Long orderCode, String studentId) {

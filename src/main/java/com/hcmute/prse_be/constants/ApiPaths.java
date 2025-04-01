@@ -58,6 +58,7 @@ public class ApiPaths {
     public static final String CHECKOUT_API = "/api/checkout";
     public static final String CHECKOUT_CREATE = "/create";
 
+
     // CLOUDINARY API
     public static final String CLOUDINARY_API = "/api/upload";
     public static final String CLOUDINARY_CHECK_STATUS_THREAD_ID = "/status/{threadId}";
@@ -106,7 +107,10 @@ public class ApiPaths {
     //PAYMENT API
     public static final String PAYMENT_API ="/api/payment";
     public static final String PAYMENT_CREATE = "/create";
+    public static final String PAYMENT_CREATE_INSTRUCTOR ="/create-instructor";
     public static final String PAYMENT_UPDATE_STATUS ="/update-status";
+    public static final String PAYMENT_UPDATE_STATUS_INSTRUCTOR ="/update-status-instructor";
+
 
     //PAYMENT METHOD API
     public static final String PAYMENT_METHOD_API ="/api/payment-method";

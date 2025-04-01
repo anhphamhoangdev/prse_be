@@ -3,6 +3,7 @@ package com.hcmute.prse_be.rest;
 
 import com.hcmute.prse_be.constants.ApiPaths;
 import com.hcmute.prse_be.entity.StudentEntity;
+import com.hcmute.prse_be.request.InstructorPaymentLogRequest;
 import com.hcmute.prse_be.request.PaymentRequest;
 import com.hcmute.prse_be.request.PaymentUpdateStatusRequest;
 import com.hcmute.prse_be.response.Response;
@@ -59,12 +60,46 @@ public class PaymentAPI {
         return ResponseEntity.ok(Response.success(paymentResponse));
     }
 
+    @PostMapping(ApiPaths.PAYMENT_CREATE_INSTRUCTOR)
+    public ResponseEntity<JSONObject> createInstructorPayment(@RequestBody InstructorPaymentLogRequest data, Authentication authentication) throws Exception {
+        LogService.getgI().info("[PaymentAPI] create Instructor Payment" + data.toString());
+        if (authentication == null) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Response.error("Chưa đăng nhập"));
+        }
+
+        StudentEntity studentEntity = studentService.findByUsername(authentication.getName());
+
+        if (studentEntity == null || !studentEntity.getUsername().equals(authentication.getName())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Response.error("Không tìm thấy thông tin người dùng"));
+        }
+
+        // API call to payment gateway
+        JSONObject paymentResponse = paymentService.createInstructorPayment(data, studentEntity);
+        return ResponseEntity.ok(Response.success(paymentResponse));
+    }
+
     @PostMapping(ApiPaths.PAYMENT_UPDATE_STATUS)
-    public ResponseEntity<JSONObject> qq(@RequestBody PaymentUpdateStatusRequest data, Authentication authentication) {
+    public ResponseEntity<JSONObject> updateStatus(@RequestBody PaymentUpdateStatusRequest data, Authentication authentication) {
         LogService.getgI().info("[PaymentAPI] updatePaymentStatus username: "+ authentication.getName()+" "+ data.toString());
         try {
             // Log để kiểm tra payload nhận được
             paymentService.updatePaymentStatus(data);
+            // Trả về response success
+            return ResponseEntity.ok(Response.success());
+
+        } catch (Exception e) {
+            // Log error nếu có
+            LogService.getgI().error(e);
+            return ResponseEntity.ok(Response.error("Error processing callback"));
+        }
+    }
+
+    @PostMapping(ApiPaths.PAYMENT_UPDATE_STATUS_INSTRUCTOR)
+    public ResponseEntity<JSONObject> updateStatusInstructor(@RequestBody PaymentUpdateStatusRequest data, Authentication authentication) {
+        LogService.getgI().info("[PaymentAPI] updateStatusInstructor username: "+ authentication.getName()+" "+ data.toString());
+        try {
+            // Log để kiểm tra payload nhận được
+            paymentService.updatePaymentStatusInstructor(data);
             // Trả về response success
             return ResponseEntity.ok(Response.success());
 
