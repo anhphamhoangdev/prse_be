@@ -9,6 +9,7 @@ import com.hcmute.prse_be.response.Response;
 import com.hcmute.prse_be.service.*;
 import com.hcmute.prse_be.util.ConvertUtils;
 import com.hcmute.prse_be.util.JsonUtils;
+import net.minidev.json.JSONArray;
 import net.minidev.json.JSONObject;
 import org.apache.commons.logging.Log;
 import org.springframework.http.HttpStatus;
@@ -693,10 +694,15 @@ public class InstructorAPI {
         }
     }
 
-    @GetMapping(ApiPaths.INSTRUCTOR_GET_LESSON_VIDEO)
-    public ResponseEntity<JSONObject> getVideoLessonInfo(Authentication authentication, @PathVariable("courseId") Long courseId, @PathVariable("chapterId") Long chapterId, @PathVariable("lessonId") Long lessonId){
-        LogService.getgI().info("[InstructorAPI] getVideoLesson username: "+ authentication.getName()+ " courseId: "+ courseId + "chapterId: "+chapterId+ " lessonId: "+lessonId);
+    @GetMapping(ApiPaths.INSTRUCTOR_GET_LESSON_DETAILS)
+    public ResponseEntity<JSONObject> getLessonDetails(Authentication authentication,
+                                                    @PathVariable("courseId") Long courseId,
+                                                    @PathVariable("chapterId") Long chapterId,
+                                                    @PathVariable("lessonId") Long lessonId) {
+        LogService.getgI().info("[InstructorAPI] getLessonInfo username: " + authentication.getName() +
+                " courseId: " + courseId + " chapterId: " + chapterId + " lessonId: " + lessonId);
         try {
+            // Xác thực người dùng
             String username = authentication.getName();
             StudentEntity student = studentService.findByUsername(username);
             if (student == null) {
@@ -710,36 +716,71 @@ public class InstructorAPI {
                         .body(Response.error("Không tìm thấy thông tin giáo viên"));
             }
 
+            // Kiểm tra khóa học
             CourseEntity courseEntity = courseService.getCourse(courseId);
-            if(courseEntity == null || !courseEntity.getInstructorId().equals(instructor.getId())) {
+            if (courseEntity == null || !courseEntity.getInstructorId().equals(instructor.getId())) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
                         .body(Response.error("Không tìm thấy thông tin khóa học"));
             }
 
+            // Kiểm tra chương
             ChapterEntity chapterEntity = courseService.getChapterById(chapterId);
-
-            if(chapterEntity == null || !chapterEntity.getCourseId().equals(courseId)) {
+            if (chapterEntity == null || !chapterEntity.getCourseId().equals(courseId)) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body(Response.error("Không tìm thấy thông tin chương"));
             }
 
-
+            // Lấy danh sách lesson trong chapter
             List<LessonEntity> lessons = courseService.getAllLessonByChapterId(chapterId);
+            LessonEntity targetLesson = null;
             for (LessonEntity lesson : lessons) {
                 if (lesson.getId().equals(lessonId)) {
-                    JSONObject response = new JSONObject();
-                    VideoLessonEntity videoLessonEntity = courseService.getVideoLesson(courseId, chapterId, lessonId);
-                    response.put("video", videoLessonEntity);
-                    return ResponseEntity.ok(Response.success(response));
+                    targetLesson = lesson;
+                    break;
                 }
             }
 
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Response.error("Không tìm thấy thông tin"));
+            if (targetLesson == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Response.error("Không tìm thấy thông tin lesson"));
+            }
+
+            // Tạo response dựa trên loại lesson
+            JSONObject response = new JSONObject();
+            switch (targetLesson.getType()) { // Giả sử LessonEntity có field "type" kiểu String hoặc Enum
+                case "video":
+                    VideoLessonEntity videoLessonEntity = courseService.getVideoLesson(courseId, chapterId, lessonId);
+                    response.put("video", videoLessonEntity);
+                    break;
+
+                case "quiz":
+                    JSONArray quizContent = courseService.getQuizContent(lessonId);
+                    response.put("quiz", quizContent);
+                    break;
+
+//                case "text":
+//                    // Xử lý cho lesson kiểu text (nếu có entity tương ứng)
+//                    // Ví dụ: TextLessonEntity textLesson = courseService.getTextLesson(lessonId);
+//                    // response.put("text", textLesson);
+//                    response.put("text", JSONObject.NULL); // Placeholder
+//                    break;
+//
+//                case "code":
+//                    // Xử lý cho lesson kiểu code (nếu có entity tương ứng)
+//                    response.put("code", JSONObject.NULL); // Placeholder
+//                    break;
+
+                default:
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                            .body(Response.error("Loại lesson không được hỗ trợ"));
+            }
+
+            response.put("lesson", targetLesson); // Thêm thông tin chung của lesson nếu cần
+            return ResponseEntity.ok(Response.success(response));
 
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Response.error("Có lỗi xảy ra khi lấy trạng thái upload"));
+                    .body(Response.error("Có lỗi xảy ra khi lấy thông tin lesson: " + e.getMessage()));
         }
     }
 
@@ -1200,6 +1241,73 @@ public class InstructorAPI {
         }catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Response.error("Có lỗi xảy ra khi rút tiền"));
+        }
+    }
+
+
+    @PutMapping("courses/{courseId}/chapter/{chapterId}/lesson/{lessonId}/quiz")
+    public ResponseEntity<JSONObject> updateQuizLesson(
+            @PathVariable Long courseId,
+            @PathVariable Long chapterId,
+            @PathVariable Long lessonId,
+            @RequestBody QuizRequest quizRequest,
+            Authentication authentication) {
+        LogService.getgI().info("[InstructorAPI] updateQuizLesson username: " + authentication.getName() +
+                " courseId: " + courseId + " chapterId: " + chapterId + " lessonId: " + lessonId +
+                " " + quizRequest.toString());
+        try {
+            // Validate user
+            String username = authentication.getName();
+            StudentEntity student = studentService.findByUsername(username);
+            if (student == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Response.error("Không tìm thấy thông tin người dùng"));
+            }
+
+            // Validate instructor
+            InstructorEntity instructor = instructorService.getInstructorByStudentId(student.getId());
+            if (instructor == null || !instructor.getIsActive()) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Response.error("Không tìm thấy thông tin giáo viên"));
+            }
+
+            // Validate course ownership
+            CourseEntity course = courseService.getCourse(courseId);
+            if (course == null || !course.getInstructorId().equals(instructor.getId())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Response.error("Không có quyền truy cập khóa học này"));
+            }
+
+            // Validate chapter
+            ChapterEntity chapter = courseService.getChapterById(chapterId);
+            if (chapter == null || !chapter.getCourseId().equals(courseId)) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Response.error("Không tìm thấy thông tin chương"));
+            }
+
+            // Validate lesson
+            LessonEntity lesson = courseService.getAllLessonByChapterId(chapterId).stream()
+                    .filter(l -> l.getId().equals(lessonId))
+                    .findFirst()
+                    .orElse(null);
+            if (lesson == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Response.error("Không tìm thấy thông tin bài học"));
+            }
+            if (!lesson.getType().equals("quiz")) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Response.error("Bài học này không phải loại quiz"));
+            }
+
+            // Gọi service để lưu quiz
+            courseService.updateQuizLesson(lessonId, quizRequest);
+
+            // Trả về response thành công
+            return ResponseEntity.ok(Response.success(new JSONObject()));
+        } catch (Exception e) {
+            LogService.getgI().error(e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Response.error("Không thể lưu quiz: " + e.getMessage()));
         }
     }
 }

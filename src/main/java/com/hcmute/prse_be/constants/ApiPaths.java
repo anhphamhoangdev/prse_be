@@ -91,7 +91,7 @@ public class ApiPaths {
     public static final String INSTRUCTOR_GET_CHAPTER_ID ="/courses/{courseId}/chapter/{chapterId}";
     public static final String INSTRUCTOR_GET_LESSON_ID ="/courses/{courseId}/chapter/{chapterId}/lesson/{lessonId}";
     public static final String INSTRUCTOR_UPDATE_LESSON_ID ="/courses/{courseId}/chapter/{chapterId}/lesson/{lessonId}";
-    public static final String INSTRUCTOR_GET_LESSON_VIDEO ="/courses/{courseId}/chapter/{chapterId}/lesson/{lessonId}/video";
+    public static final String INSTRUCTOR_GET_LESSON_DETAILS ="/courses/{courseId}/chapter/{chapterId}/lesson/{lessonId}/details";
     public static final String INSTRUCTOR_POST_LESSON_INFOR = "/courses/{courseId}/chapter/{chapterId}/lessons";
     public static final String INSTRUCTOR_UPLOAD_LESSON_VIDEO ="/courses/{courseId}/chapter/{chapterId}/lesson/{lessonId}/video/upload";
     public static final String INSTRUCTOR_CREATE_CHAPTER = "/courses/{courseId}/curriculum/chapters";
@@ -118,4 +118,7 @@ public class ApiPaths {
     // TEST API
     public static final String TEST_API ="/api/test";
     public static final String TEST_SEND_NOTIFY_INSTRUCTOR_ID = "/send-notification/{instructorId}";
+
+    // QUIZ API
+    public static final String QUIZ_API = "/api/quiz";
 }

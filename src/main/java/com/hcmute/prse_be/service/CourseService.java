@@ -6,7 +6,9 @@ import com.hcmute.prse_be.dtos.CourseDTO;
 import com.hcmute.prse_be.dtos.CourseFeedbackDTO;
 import com.hcmute.prse_be.entity.*;
 import com.hcmute.prse_be.request.CourseFormDataRequest;
+import com.hcmute.prse_be.request.QuizRequest;
 import com.hcmute.prse_be.response.CoursePageResponse;
+import net.minidev.json.JSONArray;
 import org.springframework.data.domain.Page;
 import org.springframework.security.core.Authentication;
 
@@ -80,4 +82,8 @@ public interface CourseService {
     void saveFeedback(CourseFeedbackEntity feedback);
 
     void updateCourseAverageRating(CourseEntity course);
+
+    JSONArray getQuizContent(Long lessonId);
+
+    void updateQuizLesson(Long lessonId, QuizRequest quizRequest) throws Exception;
 }

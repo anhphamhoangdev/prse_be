@@ -6,16 +6,23 @@ import com.hcmute.prse_be.constants.PaginationNumber;
 import com.hcmute.prse_be.dtos.*;
 import com.hcmute.prse_be.entity.*;
 import com.hcmute.prse_be.repository.*;
+import com.hcmute.prse_be.request.AnswerRequest;
 import com.hcmute.prse_be.request.CourseFormDataRequest;
+import com.hcmute.prse_be.request.QuestionRequest;
+import com.hcmute.prse_be.request.QuizRequest;
 import com.hcmute.prse_be.response.CoursePageResponse;
+import net.minidev.json.JSONArray;
+import net.minidev.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.*;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -38,9 +45,11 @@ public class CourseServiceImpl implements CourseService {
     private final LessonProgressRepository lessonProgressRepository;
     private final VideoLessonRepository videoLessonRepository;
     private final CourseSubCategoryRepository courseSubCategoryRepository;
+    private final QuestionRepository questionRepository;
+    private final AnswerRepository answerRepository;
 
     @Autowired
-    public CourseServiceImpl(CourseRepository courseRepository, CourseDiscountRepository courseDiscountRepository, InstructorRepository instructorRepository, CourseObjectiveRepository courseObjectiveRepository, SubCategoryRepository subCategoryRepository, CoursePrerequisiteRepository coursePrerequisiteRepository, StudentRepository studentRepository, EnrollmentRepository enrollmentRepository, CourseFeedbackRepository courseFeedbackRepository, ChapterRepository chapterRepository, LessonRepository lessonRepository, ChapterProgressRepository chapterProgressRepository, LessonProgressRepository lessonProgressRepository, VideoLessonRepository videoLessonRepository, CourseSubCategoryRepository courseSubCategoryRepository) {
+    public CourseServiceImpl(CourseRepository courseRepository, CourseDiscountRepository courseDiscountRepository, InstructorRepository instructorRepository, CourseObjectiveRepository courseObjectiveRepository, SubCategoryRepository subCategoryRepository, CoursePrerequisiteRepository coursePrerequisiteRepository, StudentRepository studentRepository, EnrollmentRepository enrollmentRepository, CourseFeedbackRepository courseFeedbackRepository, ChapterRepository chapterRepository, LessonRepository lessonRepository, ChapterProgressRepository chapterProgressRepository, LessonProgressRepository lessonProgressRepository, VideoLessonRepository videoLessonRepository, CourseSubCategoryRepository courseSubCategoryRepository, QuestionRepository questionRepository, AnswerRepository answerRepository) {
         this.courseRepository = courseRepository;
         this.courseDiscountRepository = courseDiscountRepository;
         this.instructorRepository = instructorRepository;
@@ -56,6 +65,8 @@ public class CourseServiceImpl implements CourseService {
         this.lessonProgressRepository = lessonProgressRepository;
         this.videoLessonRepository = videoLessonRepository;
         this.courseSubCategoryRepository = courseSubCategoryRepository;
+        this.questionRepository = questionRepository;
+        this.answerRepository = answerRepository;
     }
 
     @Override
@@ -525,6 +536,92 @@ public class CourseServiceImpl implements CourseService {
             courseRepository.save(course);
     }
 
+    @Override
+    public JSONArray getQuizContent(Long lessonId) {
+        List<QuestionEntity> questions = questionRepository.findByLessonId(lessonId);
+        JSONArray quizArray = new JSONArray();
+
+        for (QuestionEntity question : questions) {
+            JSONObject questionObj = new JSONObject();
+            questionObj.put("id", question.getId());
+            questionObj.put("text", question.getText());
+
+            List<AnswerEntity> answers = answerRepository.findByQuestionId(question.getId());
+            JSONArray answersArray = new JSONArray();
+            for (AnswerEntity answer : answers) {
+                JSONObject answerObj = new JSONObject();
+                answerObj.put("id", answer.getId());
+                answerObj.put("text", answer.getText());
+                answerObj.put("isCorrect", answer.getIsCorrect());
+                answersArray.add(answerObj);
+            }
+            questionObj.put("answers", answersArray);
+            quizArray.add(questionObj);
+        }
+
+        return quizArray;
+    }
+
+    @Override
+    @Transactional
+    public void updateQuizLesson(Long lessonId, QuizRequest quizRequest) throws Exception {
+        try {
+            // Xóa các câu hỏi cũ không còn trong payload
+            List<QuestionEntity> existingQuestions = questionRepository.findByLessonId(lessonId);
+            List<Long> newQuestionIds = quizRequest.getQuestions().stream()
+                    .map(QuestionRequest::getId)
+                    .filter(Objects::nonNull)
+                    .toList();
+
+            for (QuestionEntity existingQuestion : existingQuestions) {
+                if (!newQuestionIds.contains(existingQuestion.getId())) {
+                    answerRepository.deleteByQuestionId(existingQuestion.getId());
+                    questionRepository.delete(existingQuestion);
+                }
+            }
+
+            // Thêm hoặc cập nhật các câu hỏi mới
+            for (QuestionRequest questionRequest : quizRequest.getQuestions()) {
+                QuestionEntity questionEntity = questionRequest.getId() != null
+                        ? questionRepository.findById(questionRequest.getId()).orElse(new QuestionEntity())
+                        : new QuestionEntity();
+
+                questionEntity.setLessonId(lessonId);
+                questionEntity.setText(questionRequest.getText());
+                questionEntity = questionRepository.save(questionEntity);
+
+                // Xóa các đáp án cũ không còn trong payload
+                List<AnswerEntity> existingAnswers = answerRepository.findByQuestionId(questionEntity.getId());
+                List<Long> newAnswerIds = questionRequest.getAnswers().stream()
+                        .map(AnswerRequest::getId)
+                        .filter(Objects::nonNull)
+                        .toList();
+
+                for (AnswerEntity existingAnswer : existingAnswers) {
+                    if (!newAnswerIds.contains(existingAnswer.getId())) {
+                        answerRepository.delete(existingAnswer);
+                    }
+                }
+
+                // Thêm hoặc cập nhật các đáp án mới
+                for (AnswerRequest answerRequest : questionRequest.getAnswers()) {
+                    AnswerEntity answerEntity = answerRequest.getId() != null
+                            ? answerRepository.findById(answerRequest.getId()).orElse(new AnswerEntity())
+                            : new AnswerEntity();
+
+                    answerEntity.setQuestionId(questionEntity.getId());
+                    answerEntity.setText(answerRequest.getText());
+                    answerEntity.setIsCorrect(answerRequest.getIsCorrect());
+                    answerRepository.save(answerEntity);
+                }
+            }
+        }catch (Exception e) {
+            throw new Exception("Error while updating quiz lesson: " + e.getMessage(), e);
+        }
+
+
+    }
+
 
     private CourseDTO processDiscountPrice(CourseDTO course) {
         if (Boolean.TRUE.equals(course.getIsDiscount())) {
@@ -541,6 +638,8 @@ public class CourseServiceImpl implements CourseService {
         }
         return course;
     }
+
+
 
 
 
