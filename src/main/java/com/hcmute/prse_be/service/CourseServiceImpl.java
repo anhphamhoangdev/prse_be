@@ -3,6 +3,7 @@ package com.hcmute.prse_be.service;
 import com.hcmute.prse_be.constants.Constant;
 import com.hcmute.prse_be.constants.LessonType;
 import com.hcmute.prse_be.constants.PaginationNumber;
+import com.hcmute.prse_be.constants.StatusType;
 import com.hcmute.prse_be.dtos.*;
 import com.hcmute.prse_be.entity.*;
 import com.hcmute.prse_be.repository.*;
@@ -496,6 +497,15 @@ public class CourseServiceImpl implements CourseService {
     public VideoLessonEntity saveVideoLesson(VideoLessonEntity videoLessonEntity) {
         LogService.getgI().info("saveVideoLesson starting...");
         return videoLessonRepository.save(videoLessonEntity);
+    }
+
+    @Override
+    public boolean isCompleteLesson(Long lessonId, Long studentId) {
+        LessonProgressEntity lessonProgress = lessonProgressRepository.findByLessonIdAndStudentId(lessonId, studentId);
+        if (lessonProgress != null) {
+            return Objects.equals(lessonProgress.getStatus(), StatusType.COMPLETED);
+        }
+        return false;
     }
 
     @Override

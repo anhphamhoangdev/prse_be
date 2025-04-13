@@ -69,6 +69,8 @@ public interface CourseService {
 
     VideoLessonEntity saveVideoLesson(VideoLessonEntity videoLessonEntity);
 
+    boolean isCompleteLesson(Long lessonId, Long studentId);
+
     ChapterEntity saveChapter(ChapterEntity chapterEntity);
 
     long getCountCourse();

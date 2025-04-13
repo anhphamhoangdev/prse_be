@@ -3,4 +3,8 @@ ${AnsiStyle.BOLD}${AnsiColor.BRIGHT_WHITE}|  | |  |'--.  .--'|  .---' '--.  .--'
 ${AnsiStyle.BOLD}${AnsiColor.BRIGHT_RED}|  | |  |   |  |   |  `--,     |  |  | .-. :' ,-.  ||        |
 ${AnsiStyle.BOLD}${AnsiColor.BRIGHT_BLUE}'  '-'  '   |  |   |  `---.    |  |  \   --.\ '-'  ||  |  |  |
 ${AnsiStyle.BOLD}${AnsiColor.BRIGHT_WHITE} `-----'    `--'   `------'    `--'   `----' `--`--'`--`--`--'
-${AnsiColor.BRIGHT_YELLOW}The dynamic collaboration of ${AnsiColor.RED}Harris Pham${AnsiColor.BRIGHT_YELLOW}, ${AnsiColor.RED}Dang Hieu Anh${AnsiColor.BRIGHT_YELLOW}, and ${AnsiColor.RED}Hoang Huu Minh Phuc${AnsiColor.BRIGHT_YELLOW} is about to embark on an exciting new venture.
+${AnsiColor.BRIGHT_YELLOW}🤣 ${AnsiColor.RED}Anh Pham Hoang${AnsiColor.BRIGHT_YELLOW}-${AnsiColor.RED}Dang Hieu Anh${AnsiColor.BRIGHT_YELLOW}-${AnsiColor.RED}Hoang Huu Minh Phuc${AnsiColor.BRIGHT_YELLOW} presents:
+${AnsiColor.BRIGHT_CYAN}💻 "Final project - plz no bugs!
+${AnsiColor.BRIGHT_RED}🐛 Let us graduate!"
+${AnsiColor.BRIGHT_WHITE}🙏 ${AnsiColor.BRIGHT_YELLOW}Our degrees depend on this...
+${AnsiColor.BRIGHT_RED}😭 Don't break our hearts, PRETTY PLEASE!!!

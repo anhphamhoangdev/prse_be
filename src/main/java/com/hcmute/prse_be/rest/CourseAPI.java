@@ -8,6 +8,7 @@ import com.hcmute.prse_be.dtos.CourseDTO;
 import com.hcmute.prse_be.dtos.CourseFeedbackDTO;
 import com.hcmute.prse_be.entity.*;
 import com.hcmute.prse_be.response.Response;
+import com.hcmute.prse_be.response.VideoLessonInfoResponse;
 import com.hcmute.prse_be.service.CourseService;
 import com.hcmute.prse_be.service.LogService;
 import com.hcmute.prse_be.service.StudentService;
@@ -101,7 +102,7 @@ public class CourseAPI {
         }
     }
 
-    @GetMapping(ApiPaths.COURSE_GET_LESSON)
+    @GetMapping(ApiPaths.COURSE_GET_VIDEO_LESSON)
     public ResponseEntity<JSONObject> getVideoLesson(
             @PathVariable("courseId") Long courseId,
             @PathVariable("chapterId") Long chapterId,
@@ -126,8 +127,15 @@ public class CourseAPI {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Response.error("Không tìm thấy video lesson"));
             }
 
+            // check xem complete chua thong qua progress cua lesson
+            boolean isCompleted = courseService.isCompleteLesson(lessonId, studentService.findByUsername(authentication.getName()).getId());
+
+            // tra ve VideoLessonInfoResponse
+            VideoLessonInfoResponse videoLessonInfoResponse = new VideoLessonInfoResponse(videoLesson);
+            videoLessonInfoResponse.setComplete(isCompleted);
+
             JSONObject data = new JSONObject();
-            data.put("currentLesson", videoLesson);
+            data.put("currentLesson", videoLessonInfoResponse);
 
             return ResponseEntity.ok(Response.success(data));
 

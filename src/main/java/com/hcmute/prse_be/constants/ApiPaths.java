@@ -70,7 +70,7 @@ public class ApiPaths {
     public static final String COURSE_PATH_ID="{id}";
     public static final String COURSE_GET_FEEDBACK_ID ="/{id}/feedbacks";
     public static final String COURSE_CURRICULUM_ID = "{id}/curriculum";
-    public static final String COURSE_GET_LESSON = "/{courseId}/{chapterId}/{lessonId}/video";
+    public static final String COURSE_GET_VIDEO_LESSON = "/{courseId}/{chapterId}/{lessonId}/video";
     public static final String COURSE_SUBMIT_VIDEO ="/video/submit";
     public static final String COURSE_GET_LIST_COURSE_STUDENT = "/my-courses";
     public static final String COURSE_SUBMIT_FEEDBACK = "/feedback";
