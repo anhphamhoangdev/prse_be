@@ -10,4 +10,6 @@ public interface CertificateRepository extends JpaRepository<CertificateEntity, 
     CertificateEntity findByCourseId(Long courseId);
 
     CertificateEntity findByStudentId(Long studentId);
+
+    CertificateEntity findByCertificatePublicCode(String publicCode);
 }

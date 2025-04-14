@@ -17,6 +17,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.util.UUID;
 
 
 @Service
@@ -58,7 +59,7 @@ public class CertificateServiceImpl implements CertificateService {
             certificate.setCourseId(course.getId());
             certificate.setCourseName(course.getTitle());
             certificate.setCertificateUrl(cloudinaryUrl);
-
+            certificate.setCertificatePublicCode(UUID.randomUUID().toString());
             return certificateRepository.save(certificate);
 
         } catch (Exception e) {
@@ -69,6 +70,11 @@ public class CertificateServiceImpl implements CertificateService {
     @Override
     public CertificateEntity getCertificateByStudentAndCourse(Long studentId, Long courseId) {
         return certificateRepository.findByStudentIdAndCourseId(studentId, courseId);
+    }
+
+    @Override
+    public CertificateEntity getCertificateByPublicCode(String publicCode) {
+        return certificateRepository.findByCertificatePublicCode(publicCode);
     }
 
     /**

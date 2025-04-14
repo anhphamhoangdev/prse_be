@@ -12,4 +12,6 @@ public interface CertificateService {
     CertificateEntity createCertificateAndUploadCloudinary(StudentEntity student, CourseEntity course, InstructorEntity instructor) throws IOException;
 
     CertificateEntity getCertificateByStudentAndCourse(Long studentId, Long courseId);
+
+    CertificateEntity getCertificateByPublicCode(String publicCode);
 }

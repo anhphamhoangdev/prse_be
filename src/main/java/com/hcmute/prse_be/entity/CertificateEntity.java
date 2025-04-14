@@ -31,6 +31,9 @@ public class CertificateEntity {
     @Column(name = "certificate_url", nullable = false, columnDefinition = "TEXT")
     private String certificateUrl;
 
+    @Column(name = "certificate_public_code", nullable = false)
+    private String certificatePublicCode;
+
     private boolean isActive = true;
 
     private LocalDateTime createdAt;
