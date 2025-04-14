@@ -340,6 +340,7 @@ public class CourseServiceImpl implements CourseService {
         if(authentication == null || !authentication.isAuthenticated()) {
             CourseCurriculumDTO courseCurriculumDTO = new CourseCurriculumDTO();
             courseCurriculumDTO.setChapters(chapters);
+            courseCurriculumDTO.setTotalLessons(lessonRepository.countByCourseIdAndIsPublishTrue(courseId));
             return courseCurriculumDTO;
         }
 
@@ -381,19 +382,18 @@ public class CourseServiceImpl implements CourseService {
 
         EnrollmentEntity enrollmentEntity = enrollmentRepository
                 .findByStudentIdAndCourseIdAndIsActiveTrue(student.getId(), courseId);
+
+        CourseCurriculumDTO courseCurriculumDTO = new CourseCurriculumDTO();
+        courseCurriculumDTO.setChapters(chapters);
+        courseCurriculumDTO.setTotalLessons(lessonRepository.countByCourseIdAndIsPublishTrue(courseId));
         if(enrollmentEntity == null) {
-            CourseCurriculumDTO courseCurriculumDTO = new CourseCurriculumDTO();
-            courseCurriculumDTO.setChapters(chapters);
             return courseCurriculumDTO;
         }
         // find lesson progress of student
-        CourseCurriculumDTO courseCurriculumDTO = new CourseCurriculumDTO();
         courseCurriculumDTO.setCourseStatus(enrollmentEntity.getStatus());
         courseCurriculumDTO.setCourseProgress(enrollmentEntity.getProgressPercent());
-        courseCurriculumDTO.setTotalLessons(lessonRepository.countByCourseIdAndIsPublishTrue(courseId));
         courseCurriculumDTO.setCompletedLessons(lessonProgressRepository.countCompletedByEnrollmentId(enrollmentEntity.getId()));
         courseCurriculumDTO.setRemainingLessons(courseCurriculumDTO.getTotalLessons() - courseCurriculumDTO.getCompletedLessons());
-        courseCurriculumDTO.setChapters(chapters);
         return courseCurriculumDTO;
     }
 

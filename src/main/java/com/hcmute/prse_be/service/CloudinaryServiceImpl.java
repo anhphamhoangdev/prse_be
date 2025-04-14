@@ -23,7 +23,7 @@ public class CloudinaryServiceImpl implements CloudinaryService{
                 ObjectUtils.asMap(
                         "folder", folderName
                 ));
-        return (String) result.get("url");
+        return (String) result.get("secure_url");
 
     }
 
@@ -51,7 +51,17 @@ public class CloudinaryServiceImpl implements CloudinaryService{
             LogService.getgI().error(e);
             throw new IllegalArgumentException("Error when uploading video: " + e.getMessage());
         }
-
-
     }
+
+    @Override
+    public String uploadFile(byte[] fileData, String folderName, String filePath) throws IOException {
+        Map result = cloudinary.uploader().upload(fileData,
+                ObjectUtils.asMap(
+                        "public_id", filePath.substring(0, filePath.lastIndexOf('.')),
+                        "folder", folderName
+                ));
+        return (String) result.get("secure_url");
+    }
+
+
 }

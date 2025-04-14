@@ -9,6 +9,8 @@ import java.util.List;
 
 public interface InstructorService {
 
+    InstructorEntity getInstructorById(Long instructorId);
+
     long getTotalStudentOfInstructor(Long instructorId);
 
     long getTotalCourseOfInstructor(Long instructorId);
@@ -25,4 +27,6 @@ public interface InstructorService {
 
     long countByYearAndMonth(int currentYear, int currentMonth);
     List<InstructorCommonTitleEntity> getAllTitles();
+
+
 }
