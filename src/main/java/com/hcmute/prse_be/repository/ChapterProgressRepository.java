@@ -5,4 +5,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface ChapterProgressRepository extends JpaRepository<ChapterProgressEntity, Long>{
     ChapterProgressEntity findByChapterIdAndStudentId(Long chapterId, Long userId);
+
+    Long countByEnrollmentIdAndStudentIdAndProgressPercent(Long enrollmentId, Long studentId, Double progressPercent);
 }

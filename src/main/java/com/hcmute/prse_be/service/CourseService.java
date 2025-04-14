@@ -12,7 +12,6 @@ import net.minidev.json.JSONArray;
 import org.springframework.data.domain.Page;
 import org.springframework.security.core.Authentication;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 public interface CourseService {
@@ -88,4 +87,6 @@ public interface CourseService {
     JSONArray getQuizContent(Long lessonId);
 
     void updateQuizLesson(Long lessonId, QuizRequest quizRequest) throws Exception;
+
+    boolean submitLesson(Long courseId, Long chapterId, long lessonId, StudentEntity student);
 }

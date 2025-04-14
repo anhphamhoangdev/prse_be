@@ -304,7 +304,7 @@ public class CourseServiceImpl implements CourseService {
         List<ChapterDTO> chapters = new ArrayList<>();
 
         // find list chapter cua course
-        List<ChapterEntity> chapterOfCourse = chapterRepository.findByCourseIdOrderByOrderIndexAsc(courseId);
+        List<ChapterEntity> chapterOfCourse = chapterRepository.findByCourseIdAndIsPublishTrueOrderByOrderIndexAsc(courseId);
 
         // duyet qua tung chapter => lay ra tat ca lesson cua chapter
         for (ChapterEntity chapterEntity : chapterOfCourse) {
@@ -354,12 +354,15 @@ public class CourseServiceImpl implements CourseService {
         // find chapter progress of student
         chapters.forEach(chapterDTO -> {
             // find chapter progress of student
-            ChapterProgressEntity chapterProgress = chapterProgressRepository.findByChapterIdAndStudentId(chapterDTO.getId() ,student.getId());
+            ChapterProgressEntity chapterProgress = chapterProgressRepository
+                    .findByChapterIdAndStudentId(chapterDTO.getId() ,student.getId());
+            if(chapterProgress == null) {
+                chapterProgress = new ChapterProgressEntity();
+            }
             ChapterProgressDTO chapterProgressDTO = new ChapterProgressDTO();
-//            chapterProgress = new ChapterProgressEntity();
-//            chapterProgressDTO.setStatus(chapterProgress.getStatus());
-//            chapterProgressDTO.setCompletedAt(chapterProgress.getCompletedAt());
-//            chapterProgressDTO.setProgressPercent(chapterProgress.getProgressPercent());
+            chapterProgressDTO.setStatus(chapterProgress.getStatus());
+            chapterProgressDTO.setCompletedAt(chapterProgress.getCompletedAt());
+            chapterProgressDTO.setProgressPercent(chapterProgress.getProgressPercent());
 
             // set progress cho lesson
             List<LessonDTO> lessons = chapterDTO.getLessons();
@@ -376,9 +379,20 @@ public class CourseServiceImpl implements CourseService {
             chapterDTO.setProgress(chapterProgressDTO);
         });
 
-
+        EnrollmentEntity enrollmentEntity = enrollmentRepository
+                .findByStudentIdAndCourseIdAndIsActiveTrue(student.getId(), courseId);
+        if(enrollmentEntity == null) {
+            CourseCurriculumDTO courseCurriculumDTO = new CourseCurriculumDTO();
+            courseCurriculumDTO.setChapters(chapters);
+            return courseCurriculumDTO;
+        }
         // find lesson progress of student
         CourseCurriculumDTO courseCurriculumDTO = new CourseCurriculumDTO();
+        courseCurriculumDTO.setCourseStatus(enrollmentEntity.getStatus());
+        courseCurriculumDTO.setCourseProgress(enrollmentEntity.getProgressPercent());
+        courseCurriculumDTO.setTotalLessons(lessonRepository.countByCourseIdAndIsPublishTrue(courseId));
+        courseCurriculumDTO.setCompletedLessons(lessonProgressRepository.countCompletedByEnrollmentId(enrollmentEntity.getId()));
+        courseCurriculumDTO.setRemainingLessons(courseCurriculumDTO.getTotalLessons() - courseCurriculumDTO.getCompletedLessons());
         courseCurriculumDTO.setChapters(chapters);
         return courseCurriculumDTO;
     }
@@ -470,7 +484,7 @@ public class CourseServiceImpl implements CourseService {
 
     @Override
     public List<ChapterEntity> getChaptersByCourseId(Long courseId) {
-        return chapterRepository.findByCourseIdOrderByOrderIndexAsc(courseId);
+        return chapterRepository.findByCourseIdAndIsPublishTrueOrderByOrderIndexAsc(courseId);
     }
 
     @Override
@@ -630,6 +644,100 @@ public class CourseServiceImpl implements CourseService {
         }
 
 
+    }
+
+    @Override
+    public boolean submitLesson(Long courseId, Long chapterId, long lessonId, StudentEntity student) {
+
+        EnrollmentEntity enrollmentEntity = enrollmentRepository
+                .findByStudentIdAndCourseIdAndIsActiveTrue(student.getId(), courseId);
+
+        LessonProgressEntity lessonProgressEntity = lessonProgressRepository
+                .findByLessonIdAndStudentId(lessonId, student.getId());
+
+        if(lessonProgressEntity != null) {
+            return true;
+        }
+
+        if(enrollmentEntity == null) {
+            return false;
+        }
+
+        // find chapter first
+        ChapterEntity chapterEntity = chapterRepository.findByIdAndCourseIdAndIsPublishTrue(chapterId, courseId).orElse(null);
+        if(chapterEntity == null) {
+            return false;
+        }
+
+        ChapterProgressEntity chapterProgressEntity = chapterProgressRepository.findByChapterIdAndStudentId(chapterId, student.getId());
+        if(chapterProgressEntity == null) {
+            chapterProgressEntity = new ChapterProgressEntity();
+            chapterProgressEntity.setChapterId(chapterId);
+            chapterProgressEntity.setStudentId(student.getId());
+            chapterProgressEntity.setStatus(StatusType.NOT_STARTED);
+            chapterProgressEntity.setProgressPercent(0.0);
+            chapterProgressEntity.setEnrollmentId(enrollmentEntity.getId());
+            try
+            {
+                chapterProgressEntity = chapterProgressRepository.save(chapterProgressEntity);
+            }catch (Exception e)
+            {
+                LogService.getgI().error(e);
+                return false;
+            }
+        }
+
+        // lesson progress
+        lessonProgressEntity = new LessonProgressEntity();
+        lessonProgressEntity.setLessonId(lessonId);
+        lessonProgressEntity.setStudentId(student.getId());
+        lessonProgressEntity.setStatus(StatusType.COMPLETED); // not_started, completed
+        lessonProgressEntity.setChapterProgressId(chapterProgressEntity.getId());
+        lessonProgressRepository.save(lessonProgressEntity);
+
+        // calculate progress percent
+
+        // total lesson of chapter
+        Long totalLesson = lessonRepository.countByChapterIdAndIsPublishTrue(chapterId);
+
+        // total lesson completed in chapter
+        Long totalLessonCompletedInChapter = lessonProgressRepository
+                .countByChapterProgressIdAndStudentId(chapterProgressEntity.getId(), student.getId());
+
+        double progressPercent = (double) totalLessonCompletedInChapter / totalLesson * 100;
+
+        // update progress percent
+        chapterProgressEntity.setProgressPercent(progressPercent);
+        if(progressPercent == 100) {
+            chapterProgressEntity.setStatus(StatusType.COMPLETED);
+            chapterProgressEntity.setCompletedAt(LocalDateTime.now());
+        } else {
+            chapterProgressEntity.setStatus(StatusType.IN_PROGRESS);
+        }
+
+
+        chapterProgressEntity = chapterProgressRepository.save(chapterProgressEntity);
+
+        // update enrollment status
+        // total chapter of course
+        Long totalLessonOfCourse = lessonRepository.countByCourseIdAndIsPublishTrue(courseId);
+
+        // total chapter completed in course
+        Long totalLessonCompletedInCourse = lessonProgressRepository
+                .countCompletedByEnrollmentId(enrollmentEntity.getId());
+
+        // calculate progress percent
+        double courseProgressPercent = (double) totalLessonCompletedInCourse / totalLessonOfCourse * 100;
+        enrollmentEntity.setProgressPercent(courseProgressPercent);
+        if(courseProgressPercent == 100) {
+            enrollmentEntity.setStatus(StatusType.COMPLETED);
+        } else {
+            enrollmentEntity.setStatus(StatusType.IN_PROGRESS);
+        }
+
+        enrollmentRepository.save(enrollmentEntity);
+
+        return true;
     }
 
 

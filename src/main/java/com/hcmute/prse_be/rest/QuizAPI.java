@@ -87,7 +87,22 @@ public class QuizAPI {
 
 
             try {
+
+                // save quiz
                 quizService.saveQuizHistory(studentEntity, quizSubmitRequest);
+
+                // update lesson progress if quiz score is equal or greater than 80%
+                if(quizSubmitRequest.getScore() >= 80)
+                {
+                    courseService.submitLesson(
+                                    quizSubmitRequest.getCourseId(),
+                                    quizSubmitRequest.getChapterId(),
+                                    quizSubmitRequest.getLessonId(),
+                                    studentEntity
+                            );
+                }
+
+                // then create progress
             } catch (Exception ignored) {
 
             }

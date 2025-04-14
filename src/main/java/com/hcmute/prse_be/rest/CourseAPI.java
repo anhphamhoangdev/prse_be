@@ -172,24 +172,14 @@ public class CourseAPI {
             // lay thong tin user
             StudentEntity student = studentService.findByUsername(authentication.getName());
             // Lấy thông tin lesson progress
-            LessonProgressEntity lessonProgress = courseService.getLessonProgress( student.getId(), lessonId);
+            boolean submitLesson = courseService.submitLesson(courseId, chapterId, lessonId, student);
 
-            if(lessonProgress == null)
-            {
-                lessonProgress = new LessonProgressEntity();
-                lessonProgress.setStudentId(student.getId());
-                lessonProgress.setLessonId(lessonId);
-                lessonProgress.setLastAccessedAt(LocalDateTime.now());
-            }
-
-            lessonProgress.setStatus(StatusType.COMPLETED);
-
-            courseService.saveLessonProgress(lessonProgress);
-
-            return ResponseEntity.ok(Response.success());
-
+            if(submitLesson)
+                return ResponseEntity.ok(Response.success());
+            else
+                return ResponseEntity.ok(Response.error("Đã có lỗi xảy ra khi submit lesson !"));
         } catch (Exception e) {
-            return ResponseEntity.ok(Response.success(data));
+            return ResponseEntity.ok(Response.error("Đã có lỗi xảy ra khi submit lesson !"));
         }
     }
 

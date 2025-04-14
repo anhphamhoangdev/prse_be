@@ -44,6 +44,7 @@ public class LessonProgressEntity {
         LocalDateTime now = LocalDateTime.now();
         this.createdAt = now;
         this.updatedAt = now;
+        this.completedAt = now;
     }
 
     @PreUpdate

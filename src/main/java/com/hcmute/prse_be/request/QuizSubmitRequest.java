@@ -4,6 +4,10 @@ import lombok.Data;
 
 @Data
 public class QuizSubmitRequest {
+    private Long courseId;
+
+    private Long chapterId;
+
     private Long lessonId;
 
     private Double score;

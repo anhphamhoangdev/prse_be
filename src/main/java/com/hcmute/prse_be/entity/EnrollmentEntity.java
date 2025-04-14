@@ -30,7 +30,7 @@ public class EnrollmentEntity {
 
     private String status; // ('active', 'completed', 'on_process')
 
-//    private Double progressPercent;
+    private Double progressPercent;
 
 //    private LocalDateTime lastAccessedAt;
 

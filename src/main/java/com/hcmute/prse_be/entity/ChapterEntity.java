@@ -24,6 +24,8 @@ public class ChapterEntity {
 
     private Integer orderIndex;
 
+    private Boolean isPublish = true;
+
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;
