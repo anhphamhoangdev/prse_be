@@ -25,9 +25,9 @@ public class Endpoints {
 
             "/api/banks/**",
 
-            "/api/instructor/common-titles"
+            "/api/instructor/common-titles",
 
-
+            "/api/certificate/public/**"
 
 //            "/books",
 //            "/books/**",
