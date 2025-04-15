@@ -1,6 +1,7 @@
 package com.hcmute.prse_be.service;
 
 import com.hcmute.prse_be.constants.PaymentRequestLogStatus;
+import com.hcmute.prse_be.constants.StatusType;
 import com.hcmute.prse_be.entity.*;
 import com.hcmute.prse_be.repository.*;
 import com.hcmute.prse_be.request.InstructorPaymentLogRequest;
@@ -239,6 +240,7 @@ public class PaymentServiceImpl implements PaymentService{
                     enrollmentEntity.setEnrolledAt(LocalDateTime.now());
                     enrollmentEntity.setIsActive(true);
                     enrollmentEntity.setIsRating(false);
+                    enrollmentEntity.setStatus(StatusType.NOT_STARTED);
                     enrollmentEntity.setPaymentLogId(paymentLogEntity.getId());
                     enrollmentRepository.save(enrollmentEntity);
 

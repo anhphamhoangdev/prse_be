@@ -1,9 +1,6 @@
 package com.hcmute.prse_be.service;
 
-import com.hcmute.prse_be.dtos.CourseBasicDTO;
-import com.hcmute.prse_be.dtos.CourseCurriculumDTO;
-import com.hcmute.prse_be.dtos.CourseDTO;
-import com.hcmute.prse_be.dtos.CourseFeedbackDTO;
+import com.hcmute.prse_be.dtos.*;
 import com.hcmute.prse_be.entity.*;
 import com.hcmute.prse_be.request.CourseFormDataRequest;
 import com.hcmute.prse_be.request.QuizRequest;
@@ -16,7 +13,7 @@ import java.util.List;
 
 public interface CourseService {
     List<CourseDTO> getFreeCourse(Integer page, Integer size);
-    Page<CourseDTO> getMyCourse(StudentEntity studentEntity, Integer page, Integer size);
+    Page<EnrollmentDTO> getMyCourse(StudentEntity studentEntity, String status, Integer page, Integer size);
     Page<CourseDTO> getDiscountCourse(Integer page, Integer size, Authentication authentication);
     Page<CourseDTO> getHotCourses(Integer page, Integer size, Authentication authentication);
 

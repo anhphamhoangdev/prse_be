@@ -6,6 +6,7 @@ import com.hcmute.prse_be.constants.StatusType;
 import com.hcmute.prse_be.dtos.CourseCurriculumDTO;
 import com.hcmute.prse_be.dtos.CourseDTO;
 import com.hcmute.prse_be.dtos.CourseFeedbackDTO;
+import com.hcmute.prse_be.dtos.EnrollmentDTO;
 import com.hcmute.prse_be.entity.*;
 import com.hcmute.prse_be.response.Response;
 import com.hcmute.prse_be.response.VideoLessonInfoResponse;
@@ -184,16 +185,18 @@ public class CourseAPI {
     }
 
     @GetMapping(ApiPaths.COURSE_GET_LIST_COURSE_STUDENT)
-    public ResponseEntity<JSONObject> getMyCourses(Authentication authentication, @RequestParam(defaultValue = "0") int page,
-                                                   @RequestParam(defaultValue = "12") int size) {
-        LogService.getgI().info("[CourseAPI] getMyCourses");
+    public ResponseEntity<JSONObject> getMyCourses(Authentication authentication,
+                                                   @RequestParam(defaultValue = "0") int page,
+                                                   @RequestParam(defaultValue = "12") int size,
+                                                   @RequestParam(defaultValue = "all") String status) {
+        LogService.getgI().info("[CourseAPI] getMyCourses : " + authentication.getName() + " page: " + page + " size: " + size + " status: " + status);
 
         try {
             // Lấy thông tin người dùng từ authentication
             StudentEntity studentEntity = studentService.findByUsername(authentication.getName());
 
             // Lấy danh sách khóa học của người dùng
-            Page<CourseDTO> courses = courseService.getMyCourse(studentEntity, page, size);
+            Page<EnrollmentDTO> courses = courseService.getMyCourse(studentEntity, status, page, size);
 
             JSONObject data = new JSONObject();
             data.put("courses", courses);

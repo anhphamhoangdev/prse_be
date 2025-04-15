@@ -3,6 +3,7 @@ package com.hcmute.prse_be.repository;
 import com.hcmute.prse_be.dtos.CourseBasicDTO;
 import com.hcmute.prse_be.dtos.CourseDTO;
 import com.hcmute.prse_be.entity.CourseEntity;
+import com.hcmute.prse_be.entity.EnrollmentEntity;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -236,31 +237,38 @@ public interface CourseRepository extends JpaRepository<CourseEntity, Long> {
     CourseBasicDTO findCourseBasicById(@Param("courseId") Long courseId);
 
     @Query("""
-        SELECT new com.hcmute.prse_be.dtos.CourseDTO(
-            c.id,
-            c.instructorId,
-            c.title, 
-            c.shortDescription,
-            c.description,
-            c.imageUrl,
-            c.language,
-            c.originalPrice,
-            c.originalPrice,
-            c.averageRating,
-            c.totalStudents,
-            c.totalViews,
-            c.isPublish,
-            c.isHot,
-            c.isDiscount,
-            c.createdAt,
-            c.updatedAt
-        )
-        FROM CourseEntity c
-        JOIN EnrollmentEntity e ON c.id = e.courseId
-        WHERE e.studentId = :studentId
-        AND e.isActive = true
-        """)
-    Page<CourseDTO> findAllMyCourses(@Param("studentId") Long studentId, Pageable pageable);
+            SELECT e
+            FROM EnrollmentEntity e
+            join CourseEntity c on e.courseId = c.id
+            WHERE e.studentId = :studentId
+            and c.isPublish = true
+            AND e.isActive = true
+            AND (:status IS NULL OR e.status = :status)
+            ORDER BY e.enrolledAt DESC
+            """)
+    Page<EnrollmentEntity> findAllMyEnrollmentsByStatus(
+            @Param("studentId") Long studentId,
+            @Param("status") String status,
+            Pageable pageable
+    );
+
+    @Query("""
+            SELECT e
+            FROM EnrollmentEntity e
+            join CourseEntity c on e.courseId = c.id
+            WHERE e.studentId = :studentId
+            and c.isPublish = true
+            AND e.isActive = true
+            ORDER BY e.enrolledAt DESC
+            """)
+    Page<EnrollmentEntity> findAllMyEnrollments(
+            @Param("studentId") Long studentId,
+            Pageable pageable
+    );
+
+
+
+
 
     List<CourseEntity> findAllByInstructorId(Long id);
 

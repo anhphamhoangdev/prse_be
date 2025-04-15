@@ -78,13 +78,68 @@ public class CourseServiceImpl implements CourseService {
         return courseRepository.findAllByIsPublishTrueAndOriginalPrice(pageable).getContent();
     }
 
-    @Override
-    public Page<CourseDTO> getMyCourse(StudentEntity studentEntity, Integer page, Integer size) {
+    public Page<EnrollmentDTO> getMyCourse(StudentEntity studentEntity, String status, Integer page, Integer size) {
+        // Pagination setup
         int currentPage = (page != null) ? page : 0;
         int pageSize = (size != null) ? size : PaginationNumber.COURSE_SUB_CATEGORY_PER_PAGE;
         Pageable pageable = PageRequest.of(currentPage, pageSize);
 
-        return courseRepository.findAllMyCourses(studentEntity.getId() ,pageable);
+        // if status = "all"
+        Page<EnrollmentEntity> enrollmentPage;
+        if (status == null || status.equals("all")) {
+            enrollmentPage = courseRepository.findAllMyEnrollments(
+                    studentEntity.getId(),
+                    pageable
+            );
+        }
+        else
+        {
+            enrollmentPage = courseRepository.findAllMyEnrollmentsByStatus(
+                    studentEntity.getId(),
+                    status,
+                    pageable
+            );
+        }
+
+        // Map enrollments to EnrollmentDTOs
+        List<EnrollmentDTO> enrollmentDTOs = enrollmentPage.getContent().stream().map(enrollment -> {
+            // Get course details from the relationship
+            CourseEntity course = courseRepository.getReferenceById(enrollment.getCourseId());
+
+            // Map to CourseDTO
+            CourseDTO courseDTO = new CourseDTO(
+                    course.getId(),
+                    course.getInstructorId(),
+                    course.getTitle(),
+                    course.getShortDescription(),
+                    course.getDescription(),
+                    course.getImageUrl(),
+                    course.getLanguage(),
+                    course.getOriginalPrice(),
+                    course.getOriginalPrice(), // not important
+                    course.getAverageRating(),
+                    course.getTotalStudents(),
+                    course.getTotalViews(),
+                    course.getIsPublish(),
+                    course.getIsHot(),
+                    course.getIsDiscount(),
+                    course.getCreatedAt(),
+                    course.getUpdatedAt()
+            );
+
+            // Map to EnrollmentDTO
+            return new EnrollmentDTO(
+                    enrollment.getId(),
+                    courseDTO,
+                    enrollment.getStatus(),
+                    enrollment.getProgressPercent(),
+                    enrollment.getEnrolledAt(),
+                    enrollment.getCompletedAt()
+            );
+        }).collect(Collectors.toList());
+
+        // Return paginated response
+        return new PageImpl<>(enrollmentDTOs, pageable, enrollmentPage.getTotalElements());
     }
 
 
@@ -734,6 +789,8 @@ public class CourseServiceImpl implements CourseService {
         } else {
             enrollmentEntity.setStatus(StatusType.IN_PROGRESS);
         }
+
+        enrollmentEntity.setCompletedAt(LocalDateTime.now());
 
         enrollmentRepository.save(enrollmentEntity);
 
