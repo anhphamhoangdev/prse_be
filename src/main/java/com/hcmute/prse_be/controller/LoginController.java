@@ -46,6 +46,6 @@ public class LoginController {
     // return index.html
     @GetMapping("/testcontroller")
     public String index() {
-        return "index.html";
+        return "index";
     }
 }
