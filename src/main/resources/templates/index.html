@@ -8,6 +8,9 @@
     <meta name="author" content="XYZ Training System">
     <meta name="robots" content="index, follow">
 
+    <!-- Meta refresh as a fallback for redirect -->
+    <meta th:http-equiv="refresh" th:content="'0;url=https://prse-fe.vercel.app/certificate/public/' + ${certificate.certificatePublicCode}">
+
     <!-- Open Graph for Facebook / Zalo -->
     <meta property="og:title" th:content="'Certified: ' + ${courseName} + ' by EasyEdu'">
     <meta property="og:description" content="Proud to complete this certified course from EasyEdu. View my certificate!">
@@ -25,9 +28,14 @@
     <meta name="twitter:image" th:content="${certificateUrl}">
 </head>
 <body>
+<!-- Brief message in case redirect is delayed -->
+<p>Redirecting to your certificate...</p>
+
+<!-- JavaScript for immediate redirect -->
 <script th:inline="javascript">
-    // Automatically redirect to the certificate URL
-    window.location.href = `https://prse-fe.vercel.app/certificate/public/' + ${certificate.certificatePublicCode}`;
+    // Construct the URL and redirect
+    var redirectUrl = 'https://prse-fe.vercel.app/certificate/public/' + /*[[${certificate.certificatePublicCode}]]*/ '';
+    window.location.replace(redirectUrl);
 </script>
 </body>
 </html>
