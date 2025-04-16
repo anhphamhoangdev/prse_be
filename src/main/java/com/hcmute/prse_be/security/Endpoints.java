@@ -8,6 +8,7 @@ public class Endpoints {
 
     public static final String[] PUBLIC_GET_END_POINT = {
             "/testcontroller",
+            "/robots.txt",
 
             "/api/home/**",
 

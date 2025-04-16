@@ -75,4 +75,10 @@ public class LoginController {
                 "</body>\n" +
                 "</html>";
     }
+
+    @GetMapping("/robots.txt")
+    @ResponseBody
+    public String robots() {
+        return "User-agent: *\nAllow: /testcontroller\n";
+    }
 }
