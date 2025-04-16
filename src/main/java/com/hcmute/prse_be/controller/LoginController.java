@@ -62,7 +62,7 @@ public class LoginController {
                 "    <meta property=\"og:title\" content=\"Chứng Chỉ Của Bạn - Hoàn Thành Khóa Học!\">\n" +
                 "    <meta property=\"og:description\" content=\"Chúc mừng bạn đã hoàn thành khóa học. Xem video chứng chỉ ngay bây giờ!\">\n" +
                 "    <meta property=\"og:image\" content=\"https://png.pngtree.com/element_pic/16/11/11/83b2bc072fb15b3ddd955caeaa0e31c9.jpg\">\n" +
-                "    <meta property=\"og:url\" content=\"http://14.225.253.200/chungchi.html\">\n" +
+                "    <meta property=\"og:url\" content=\"https://prse-be.ddns.net/testcontroller\">\n" +
                 "    <meta property=\"og:type\" content=\"website\">\n" +
                 "\n" +
                 "    <!-- Twitter Card -->\n" +
