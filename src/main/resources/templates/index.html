@@ -27,15 +27,13 @@
     <meta name="twitter:description" content="Excited to earn this certificate from EasyEdu.">
     <meta name="twitter:image" th:content="${certificateUrl}">
 </head>
-<body>
-<!-- Brief message in case redirect is delayed -->
-<p>Redirecting to your certificate...</p>
-
-<!-- JavaScript for immediate redirect -->
-<script th:inline="javascript">
-    // Construct the URL and redirect
-    var redirectUrl = 'https://prse-fe.vercel.app/certificate/public/' + /*[[${certificate.certificatePublicCode}]]*/ '';
-    window.location.replace(redirectUrl);
-</script>
+<body style="display: flex; justify-content: center; align-items: center; flex-direction: column; min-height: 100vh; margin: 0;">
+<h1>🎉 Congratulations! 🎓</h1>
+<img th:src="${certificateUrl}" alt="Course Certificate" style="max-width: 90%; height: auto; border: 2px solid #ddd; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); margin: 20px 0;">
+<a th:href="'https://prse-fe.vercel.app/certificate/public/' + ${certificate.certificatePublicCode}" target="_blank"
+   style="padding: 10px 20px; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 5px; font-size: 16px;">
+    🔗 Xem chi tiết / Tải về
+</a>
 </body>
+
 </html>
