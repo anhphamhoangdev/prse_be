@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,21 +8,21 @@
     <meta name="author" content="Hệ Thống Đào Tạo XYZ">
     <meta name="robots" content="index, follow">
 
-    <!-- Open Graph cho Facebook / Zalo -->
-    <meta property="og:title" content="Chứng Chỉ Của Bạn - Hoàn Thành Khóa Học!">
+    <!-- Open Graph for Facebook / Zalo -->
+    <meta property="og:title" content="Chứng Chỉ Của Bạn - Hoàn Thành Khóa Học!" th:content="${nameInCertificate} + ' - ' + ${courseName}">
     <meta property="og:description" content="Chúc mừng bạn đã hoàn thành khóa học. Xem video chứng chỉ ngay bây giờ!">
-    <meta property="og:image" content="https://png.pngtree.com/element_pic/16/11/11/83b2bc072fb15b3ddd955caeaa0e31c9.jpg">
+    <meta property="og:image" th:content="${certificateUrl}">
     <meta property="og:image:width" content="800">
     <meta property="og:image:height" content="600">
-    <meta property="og:url" content="https://prse-be.ddns.net:8443/testcontroller">
+    <meta property="og:url" th:content="'https://prse-be.ddns.net:8443/sharing/certificate/' + ${certificate.certificatePublicCode}">
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="Hệ Thống Đào Tạo XYZ">
 
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Chứng Chỉ Của Bạn - Khóa học hoàn tất!">
+    <meta name="twitter:title" th:content="${nameInCertificate} + ' - ' + ${courseName}">
     <meta name="twitter:description" content="Chứng nhận thành tích học tập của bạn. Click để xem video!">
-    <meta name="twitter:image" content="https://png.pngtree.com/element_pic/16/11/11/83b2bc072fb15b3ddd955caeaa0e31c9.jpg">
+    <meta name="twitter:image" th:content="${certificateUrl}">
 
     <style>
         body {
@@ -51,14 +51,20 @@
             line-height: 1.6;
             margin-bottom: 20px;
         }
+        .certificate-image {
+            max-width: 100%;
+            height: auto;
+            margin-top: 20px;
+        }
     </style>
 </head>
 <body>
 <div class="certificate-container">
     <h1>Chứng Chỉ Hoàn Thành Khóa Học</h1>
-    <p>Chúc mừng bạn đã hoàn thành khóa học thành công!</p>
-    <p>Đây là trang xác nhận thành tích học tập của bạn. Chứng chỉ này xác nhận rằng bạn đã hoàn thành tất cả các yêu cầu của chương trình đào tạo.</p>
+    <p>Chúc mừng <strong th:text="${nameInCertificate}"></strong> đã hoàn thành khóa học <strong th:text="${courseName}"></strong> thành công!</p>
+    <p>Chứng chỉ này được cấp vào ngày <span th:text="${#temporals.format(createdAt, 'dd/MM/yyyy')}"></span>.</p>
     <p>Kỹ năng và kiến thức bạn đã thu được trong khóa học này sẽ giúp ích cho sự phát triển nghề nghiệp của bạn.</p>
+    <img th:src="${certificateUrl}" alt="Certificate Image" class="certificate-image"/>
 </div>
 </body>
 </html>
