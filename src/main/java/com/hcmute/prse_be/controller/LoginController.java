@@ -9,6 +9,7 @@ import net.minidev.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
 @Controller
@@ -45,7 +46,33 @@ public class LoginController {
 
     // return index.html
     @GetMapping("/testcontroller")
+    @ResponseBody
     public String index() {
-        return "index";
+        return "<!DOCTYPE html>\n" +
+                "<html lang=\"vi\">\n" +
+                "<head>\n" +
+                "    <meta charset=\"UTF-8\">\n" +
+                "    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n" +
+                "    <title>Chứng Chỉ Của Bạn</title>\n" +
+                "    <meta name=\"description\" content=\"Trang chứng chỉ video của bạn - hãy xem và lưu giữ thành quả học tập của mình!\">\n" +
+                "    <meta name=\"author\" content=\"Hệ Thống Đào Tạo XYZ\">\n" +
+                "    <meta name=\"robots\" content=\"index, follow\">\n" +
+                "\n" +
+                "    <!-- Open Graph cho Facebook / Zalo -->\n" +
+                "    <meta property=\"og:title\" content=\"Chứng Chỉ Của Bạn - Hoàn Thành Khóa Học!\">\n" +
+                "    <meta property=\"og:description\" content=\"Chúc mừng bạn đã hoàn thành khóa học. Xem video chứng chỉ ngay bây giờ!\">\n" +
+                "    <meta property=\"og:image\" content=\"https://png.pngtree.com/element_pic/16/11/11/83b2bc072fb15b3ddd955caeaa0e31c9.jpg\">\n" +
+                "    <meta property=\"og:url\" content=\"http://14.225.253.200/chungchi.html\">\n" +
+                "    <meta property=\"og:type\" content=\"website\">\n" +
+                "\n" +
+                "    <!-- Twitter Card -->\n" +
+                "    <meta name=\"twitter:card\" content=\"summary_large_image\">\n" +
+                "    <meta name=\"twitter:title\" content=\"Chứng Chỉ Của Bạn - Khóa học hoàn tất!\">\n" +
+                "    <meta name=\"twitter:description\" content=\"Chứng nhận thành tích học tập của bạn. Click để xem video!\">\n" +
+                "    <meta name=\"twitter:image\" content=\"https://png.pngtree.com/element_pic/16/11/11/83b2bc072fb15b3ddd955caeaa0e31c9.jpg\">\n" +
+                "</head>\n" +
+                "<body>\n" +
+                "</body>\n" +
+                "</html>";
     }
 }
