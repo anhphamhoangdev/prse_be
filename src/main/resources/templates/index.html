@@ -8,15 +8,12 @@
     <meta name="author" content="XYZ Training System">
     <meta name="robots" content="index, follow">
 
-    <!-- Meta refresh as a fallback for redirect -->
-    <meta th:http-equiv="refresh" th:content="'0;url=https://prse-fe.vercel.app/certificate/public/' + ${certificate.certificatePublicCode}">
-
     <!-- Open Graph for Facebook / Zalo -->
     <meta property="og:title" th:content="'Certified: ' + ${courseName} + ' by EasyEdu'">
     <meta property="og:description" content="Proud to complete this certified course from EasyEdu. View my certificate!">
     <meta property="og:image" th:content="${certificateUrl}">
-    <meta property="og:image:width" content="760">
-    <meta property="og:image:height" content="537">
+    <meta property="og:image:width" content="800">
+    <meta property="og:image:height" content="600">
     <meta property="og:url" th:content="'https://prse-fe.vercel.app/certificate/public/' + ${certificate.certificatePublicCode}">
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="EasyEdu">
@@ -27,13 +24,6 @@
     <meta name="twitter:description" content="Excited to earn this certificate from EasyEdu.">
     <meta name="twitter:image" th:content="${certificateUrl}">
 </head>
-<body style="display: flex; justify-content: center; align-items: center; flex-direction: column; min-height: 100vh; margin: 0;">
-<h1>🎉 Congratulations! 🎓</h1>
-<img th:src="${certificateUrl}" alt="Course Certificate" style="max-width: 90%; height: auto; border: 2px solid #ddd; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); margin: 20px 0;">
-<a th:href="'https://prse-fe.vercel.app/certificate/public/' + ${certificate.certificatePublicCode}" target="_blank"
-   style="padding: 10px 20px; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 5px; font-size: 16px;">
-    🔗 Xem chi tiết / Tải về
-</a>
+<body>
 </body>
-
 </html>
