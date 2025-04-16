@@ -25,5 +25,9 @@
     <meta name="twitter:image" th:content="${certificateUrl}">
 </head>
 <body>
+<script th:inline="javascript">
+    // Automatically redirect to the certificate URL
+    window.location.href = `https://prse-fe.vercel.app/certificate/public/' + ${certificate.certificatePublicCode}`;
+</script>
 </body>
 </html>
