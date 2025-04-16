@@ -8,4 +8,5 @@ public class PaymentItemRequest {
     private Long courseId;
     private String title;
     private Double price;
+    private String imageUrl;
 }
