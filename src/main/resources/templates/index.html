@@ -139,16 +139,21 @@
 </head>
 <body>
 <div class="certificate-container">
-    <h1 th:text="'Certificate: ' + ${courseName}"></h1>
-    <p class="congrats">Congratulations to <span class="name-highlight" th:text="${nameInCertificate}"></span> on completing this course!</p>
+    <div class="header">
+        <h1 th:text="'Certificate: ' + ${courseName}"></h1>
+        <p class="congrats">Congratulations to <span class="name-highlight" th:text="${nameInCertificate}"></span>!</p>
+    </div>
 
-    <!-- Certificate Image Display -->
-    <img class="certificate-image" th:src="${certificateUrl}" alt="Course Certificate">
+    <div class="certificate-image-container">
+        <img class="certificate-image" th:src="${certificateUrl}" alt="Course Certificate">
+    </div>
 
-    <!-- Button to redirect to og:url - Fixed -->
-    <button class="view-certificate-btn" onclick="viewCertificate()">
-        View Official Certificate
-    </button>
+    <div class="actions">
+        <!-- Fixed button with proper parameter passing -->
+        <button class="view-certificate-btn" onclick="viewCertificate()">
+            View Official Certificate
+        </button>
+    </div>
 
     <div class="certificate-info">
         <p>This certificate was issued by EasyEdu
