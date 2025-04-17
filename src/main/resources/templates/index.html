@@ -175,7 +175,7 @@
         <div class="certificate-info">
             <p>This certificate was issued by EasyEdu
                 <span th:if="${certificate != null && certificate.createdAt != null}"
-                      th:text="'on ' + ${#temporals.format(certificate.createdAt, 'dd MMMM yyyy', 'en')}"></span>
+                      th:text="'on ' + ${#temporals.format(certificate.createdAt, 'dd MMMM yyyy', T(java.util.Locale).ENGLISH)}"></span>
             </p>
             <p>Certificate ID: <span th:text="${certificate != null ? certificate.certificatePublicCode : ''}"></span></p>
         </div>
