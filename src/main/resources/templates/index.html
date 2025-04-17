@@ -89,7 +89,7 @@
     </a>
 
     <div class="certificate-info">
-        <p>This certificate was issued by EasyEdu on <span th:text="${#dates.format(certificate.issuedDate, 'dd MMMM yyyy')}"></span></p>
+        <p>This certificate was issued by EasyEdu on <span th:text="${#dates.format(certificate.getCreatedAt(), 'dd MMMM yyyy')}"></span></p>
         <p>Certificate ID: <span th:text="${certificate.certificatePublicCode}"></span></p>
     </div>
 </div>
