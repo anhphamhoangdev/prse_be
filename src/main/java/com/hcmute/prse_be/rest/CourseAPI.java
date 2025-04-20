@@ -239,6 +239,8 @@ public class CourseAPI {
             // Lấy user hiện tại
             StudentEntity student = studentService.findByUsername(authentication.getName());
 
+            // if student have feedback
+
             // Kiem tra enrollment da co rating chua, neu co roi thi update lai, neu chua thi save lai
             EnrollmentEntity enrollment = courseService.findEnrollmentByStudentAndCourse(student, course);
             if (enrollment != null) {
@@ -253,7 +255,12 @@ public class CourseAPI {
             }
 
             // Tạo feedback mới
-            CourseFeedbackEntity feedback = new CourseFeedbackEntity();
+            CourseFeedbackEntity feedback = courseService.getCourseFeedback(courseId, student.getId());
+
+            if(feedback == null)
+            {
+                feedback = new CourseFeedbackEntity();
+            }
             feedback.setCourseId(courseId);
             feedback.setStudentId(student.getId());
             feedback.setRating(ConvertUtils.toDouble(rating));

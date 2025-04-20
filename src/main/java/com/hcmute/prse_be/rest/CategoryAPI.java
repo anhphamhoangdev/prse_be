@@ -9,6 +9,7 @@ import com.hcmute.prse_be.service.LogService;
 import com.hcmute.prse_be.util.ConvertUtils;
 import net.minidev.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -24,7 +25,8 @@ public class CategoryAPI {
 
     @GetMapping(ApiPaths.CATEGORY_PATH_ID)
     public JSONObject getCourseBySubCategoryId(@PathVariable Long id,
-                                               @RequestParam(defaultValue = "0") Integer page
+                                               @RequestParam(defaultValue = "0") Integer page,
+                                               Authentication authentication
     ) {
         LogService.getgI().info("[CategoryAPI] getCourseBySubCategoryId : " + id + " page: "+page);
         JSONObject response = new JSONObject();
@@ -38,7 +40,7 @@ public class CategoryAPI {
                 return Response.error(ErrorMsg.INVALID_SUB_CATEGORY);
             }
 
-            response.put("total_courses", categoryService.getCoursesBySubCategory(ConvertUtils.toLong(id), page));
+            response.put("total_courses", categoryService.getCoursesBySubCategory(ConvertUtils.toLong(id), page, authentication));
         } catch (Exception e) {
             return Response.error("Failed");
         }
@@ -52,7 +54,8 @@ public class CategoryAPI {
             @RequestParam(defaultValue = "0") Integer page,
             @RequestParam(defaultValue = "all") String price,
             @RequestParam(defaultValue = "0") Integer rating,
-            @RequestParam(defaultValue = "newest") String sort
+            @RequestParam(defaultValue = "newest") String sort,
+            Authentication authentication
     ) {
         LogService.getgI().info("[CategoryAPI] getCoursesBySubCategoryWithFilters: " +
                 "id=" + id + ", q=" + q + ", price=" + price +
@@ -67,7 +70,7 @@ public class CategoryAPI {
             }
 
             response.put("total_courses", categoryService.getCoursesBySubCategoryWithFilters(
-                    id, q, page, price, rating, sort
+                    id, q, page, price, rating, sort, authentication
             ));
         } catch (Exception e) {
             return Response.error("Failed");

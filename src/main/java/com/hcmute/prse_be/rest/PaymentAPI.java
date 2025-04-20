@@ -2,6 +2,7 @@ package com.hcmute.prse_be.rest;
 
 
 import com.hcmute.prse_be.constants.ApiPaths;
+import com.hcmute.prse_be.entity.PaymentRequestLogEntity;
 import com.hcmute.prse_be.entity.StudentEntity;
 import com.hcmute.prse_be.request.InstructorPaymentLogRequest;
 import com.hcmute.prse_be.request.PaymentRequest;
@@ -15,13 +16,11 @@ import net.minidev.json.JSONObject;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import vn.payos.PayOS;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -105,6 +104,29 @@ public class PaymentAPI {
 
         } catch (Exception e) {
             // Log error nếu có
+            LogService.getgI().error(e);
+            return ResponseEntity.ok(Response.error("Error processing callback"));
+        }
+    }
+
+    @GetMapping("/get-all-payment-log")
+    public ResponseEntity<?> getAllPaymentLog(Authentication authentication) {
+        LogService.getgI().info("[PaymentAPI] getAllPaymentLog username: "+ authentication.getName());
+        try {
+            if (authentication == null) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Response.error("Chưa đăng nhập"));
+            }
+
+            StudentEntity studentEntity = studentService.findByUsername(authentication.getName());
+
+            if (studentEntity == null || !studentEntity.getUsername().equals(authentication.getName())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Response.error("Không tìm thấy thông tin người dùng"));
+            }
+            List<PaymentRequestLogEntity> paymentRequestLogEntities = paymentService.getAllPaymentRequestLogByStudentId(studentEntity);
+            JSONObject paymentResponse = new JSONObject();
+            paymentResponse.put("paymentRequestLogEntities", paymentRequestLogEntities);
+            return ResponseEntity.ok(Response.success(paymentResponse));
+        } catch (Exception e) {
             LogService.getgI().error(e);
             return ResponseEntity.ok(Response.error("Error processing callback"));
         }

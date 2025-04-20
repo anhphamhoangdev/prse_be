@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface CourseFeedbackRepository extends JpaRepository<CourseFeedbackEntity, Long> {
 
@@ -25,4 +26,6 @@ public interface CourseFeedbackRepository extends JpaRepository<CourseFeedbackEn
             "AND f.isHidden = false " +
             "ORDER BY f.rating DESC, f.createdAt DESC")
     List<CourseFeedbackEntity> findAllVisibleFeedbacks(@Param("courseId") Long courseId);
+
+    Optional<CourseFeedbackEntity> findByStudentIdAndCourseIdAndIsHiddenFalse(Long studentId, Long courseId);
 }

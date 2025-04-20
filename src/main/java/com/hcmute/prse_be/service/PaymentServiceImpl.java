@@ -19,6 +19,7 @@ import vn.payos.type.ItemData;
 import vn.payos.type.PaymentData;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 
@@ -314,6 +315,12 @@ public class PaymentServiceImpl implements PaymentService{
             instructorEntity.setIsActive(true);
             instructorRepository.save(instructorEntity);
         }
+    }
+
+    @Override
+    public List<PaymentRequestLogEntity> getAllPaymentRequestLogByStudentId(StudentEntity student) {
+        List<PaymentRequestLogEntity> paymentRequestLogEntities = paymentRequestLogRepository.findAllByStudentIdOrderByIdDesc(student.getId());
+        return paymentRequestLogEntities;
     }
 
 

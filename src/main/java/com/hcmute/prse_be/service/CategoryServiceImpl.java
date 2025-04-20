@@ -9,6 +9,7 @@ import com.hcmute.prse_be.repository.*;
 import com.hcmute.prse_be.response.CoursePageResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.*;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -26,16 +27,22 @@ public class CategoryServiceImpl implements CategoryService{
     private final CourseSubCategoryRepository courseSubCategoryRepository;
     private final CourseDiscountRepository courseDiscountRepository;
 
+    private final StudentRepository studentRepository;
+
+    private final EnrollmentRepository enrollmentRepository;
+
 
     private final CourseRepository courseRepository;
 
 
     @Autowired
-    public CategoryServiceImpl(CategoryRepository categoryRepository, SubCategoryRepository subCategoryRepository, CourseSubCategoryRepository courseSubCategoryRepository, CourseDiscountRepository courseDiscountRepository, CourseRepository courseRepository) {
+    public CategoryServiceImpl(CategoryRepository categoryRepository, SubCategoryRepository subCategoryRepository, CourseSubCategoryRepository courseSubCategoryRepository, CourseDiscountRepository courseDiscountRepository, StudentRepository studentRepository, EnrollmentRepository enrollmentRepository, CourseRepository courseRepository) {
         this.categoryRepository = categoryRepository;
         this.subCategoryRepository = subCategoryRepository;
         this.courseSubCategoryRepository = courseSubCategoryRepository;
         this.courseDiscountRepository = courseDiscountRepository;
+        this.studentRepository = studentRepository;
+        this.enrollmentRepository = enrollmentRepository;
         this.courseRepository = courseRepository;
     }
 
@@ -74,20 +81,47 @@ public class CategoryServiceImpl implements CategoryService{
     }
 
     @Override
-    public CoursePageResponse getCoursesBySubCategory(Long subCategoryId, Integer page) {
+    public CoursePageResponse getCoursesBySubCategory(Long subCategoryId, Integer page, Authentication authentication) {
         Pageable pageable = PageRequest.of(page, PaginationNumber.COURSE_SUB_CATEGORY_PER_PAGE, Sort.by("createdAt").descending());
+
         // Get courses
         Page<CourseDTO> coursePage = courseSubCategoryRepository
                 .findCoursesBySubCategory(subCategoryId, pageable);
 
+        // Initialize filtered courses with all courses by default
+        List<CourseDTO> filteredCourses = coursePage.getContent();
+
+        // Filter for authenticated users
+        if (authentication != null) {
+            // Find the student
+            StudentEntity student = studentRepository.findByUsername(authentication.getName());
+            if (student != null) {
+                // Get course IDs the student is actively enrolled in
+                List<Long> enrolledCourseIds = enrollmentRepository
+                        .findAllByStudentIdAndIsActiveTrue(student.getId())
+                        .stream()
+                        .map(EnrollmentEntity::getCourseId)
+                        .toList();
+
+                // Filter out enrolled courses
+                filteredCourses = coursePage.getContent()
+                        .stream()
+                        .filter(course -> !enrolledCourseIds.contains(course.getId()))
+                        .toList();
+            }
+        }
+
         // Process discount prices
-        List<CourseDTO> processedCourses = coursePage.getContent().stream()
+        List<CourseDTO> processedCourses = filteredCourses.stream()
                 .map(this::processDiscountPrice)
                 .toList();
 
-        return new CoursePageResponse(processedCourses, coursePage.getTotalPages(),coursePage.getTotalElements());
+        return new CoursePageResponse(
+                processedCourses,
+                coursePage.getTotalPages(),
+                coursePage.getTotalElements()
+        );
     }
-
     @Override
     public CoursePageResponse getCoursesBySubCategoryWithFilters(
             Long subCategoryId,
@@ -95,7 +129,8 @@ public class CategoryServiceImpl implements CategoryService{
             Integer page,
             String price,
             Integer rating,
-            String sort
+            String sort,
+            Authentication authentication
     ) {
         Sort sorting = switch (sort) {
             case "oldest" -> Sort.by("createdAt").ascending();
@@ -112,6 +147,7 @@ public class CategoryServiceImpl implements CategoryService{
                 sorting
         );
 
+        // Get courses with filters
         Page<CourseDTO> coursePage = courseSubCategoryRepository
                 .findCoursesBySubCategoryWithFilters(
                         subCategoryId,
@@ -121,7 +157,31 @@ public class CategoryServiceImpl implements CategoryService{
                         pageable
                 );
 
-        List<CourseDTO> processedCourses = coursePage.getContent().stream()
+        // Initialize filtered courses with all courses by default
+        List<CourseDTO> filteredCourses = coursePage.getContent();
+
+        // Filter for authenticated users
+        if (authentication != null) {
+            // Find the student
+            StudentEntity student = studentRepository.findByUsername(authentication.getName());
+            if (student != null) {
+                // Get course IDs the student is actively enrolled in
+                List<Long> enrolledCourseIds = enrollmentRepository
+                        .findAllByStudentIdAndIsActiveTrue(student.getId())
+                        .stream()
+                        .map(EnrollmentEntity::getCourseId)
+                        .toList();
+
+                // Filter out enrolled courses
+                filteredCourses = coursePage.getContent()
+                        .stream()
+                        .filter(course -> !enrolledCourseIds.contains(course.getId()))
+                        .toList();
+            }
+        }
+
+        // Process discount prices
+        List<CourseDTO> processedCourses = filteredCourses.stream()
                 .map(this::processDiscountPrice)
                 .toList();
 

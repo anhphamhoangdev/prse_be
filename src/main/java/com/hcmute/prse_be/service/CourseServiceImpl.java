@@ -797,6 +797,11 @@ public class CourseServiceImpl implements CourseService {
         return true;
     }
 
+    @Override
+    public CourseFeedbackEntity getCourseFeedback(Long courseId, Long studentId) {
+        return courseFeedbackRepository.findByStudentIdAndCourseIdAndIsHiddenFalse(studentId, courseId).orElse(null);
+    }
+
 
     private CourseDTO processDiscountPrice(CourseDTO course) {
         if (Boolean.TRUE.equals(course.getIsDiscount())) {
