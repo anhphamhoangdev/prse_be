@@ -91,4 +91,8 @@ public interface InstructorPlatformTransactionRepository extends JpaRepository<I
             @Param("month") int month
     );
 
+    @Query("SELECT SUM(t.instructorMoney) FROM InstructorPlatformTransactionEntity t WHERE t.instructorId = :instructorId")
+    Double getTotalRevenueByInstructorId(@Param("instructorId") Long instructorId);
+
+
 }

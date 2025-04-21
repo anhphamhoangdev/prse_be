@@ -1,5 +1,6 @@
 package com.hcmute.prse_be.service;
 
+import com.hcmute.prse_be.dtos.ChatMessageDTO;
 import com.hcmute.prse_be.dtos.WebSocketMessage;
 import com.hcmute.prse_be.util.JsonUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +21,19 @@ public class WebSocketServiceImpl implements WebSocketService{
     public void sendToInstructor(Long instructorId, String path, Object message) {
         String destination = "/topic/instructor/" + instructorId + path; // "/topic/instructor/{instructorId}/path"
         LogService.getgI().info("Sending message to " + destination + " : " + JsonUtils.Serialize(message));
+        messagingTemplate.convertAndSend(destination, message);
+    }
+
+    @Override
+    public void sendToStudent(Long studentId, String path, Object message) {
+        String destination = "/topic/student/" + studentId + path; // "/topic/student/{studentId}/path"
+        LogService.getgI().info("Sending message to " + destination + " : " + JsonUtils.Serialize(message));
+        messagingTemplate.convertAndSend(destination, message);
+    }
+
+    @Override
+    public void sendChatMessage(Long conversationId, ChatMessageDTO message) {
+        String destination = "/topic/conversation/" + conversationId;
         messagingTemplate.convertAndSend(destination, message);
     }
 

@@ -5,6 +5,7 @@ import com.hcmute.prse_be.constants.*;
 import com.hcmute.prse_be.dtos.*;
 import com.hcmute.prse_be.entity.*;
 import com.hcmute.prse_be.request.*;
+import com.hcmute.prse_be.response.InstructorDataResponse;
 import com.hcmute.prse_be.response.Response;
 import com.hcmute.prse_be.service.*;
 import com.hcmute.prse_be.util.ConvertUtils;
@@ -71,8 +72,11 @@ public class InstructorAPI {
             instructor.setTotalStudent(ConvertUtils.toInt(instructorService.getTotalStudentOfInstructor(instructor.getId())));
             instructor.setTotalCourse(ConvertUtils.toInt(instructorService.getTotalCourseOfInstructor(instructor.getId())));
 
+            InstructorDataResponse instructorDataResponse = new InstructorDataResponse(instructor);
+            // total revenue
+            instructorDataResponse.setTotalRevenue(instructorService.getTotalRevenueOfInstructor(instructor.getId()));
             JSONObject response = new JSONObject();
-            response.put("instructor", instructor);
+            response.put("instructor", instructorDataResponse);
             return ResponseEntity.ok(Response.success(response));
 
         } catch (Exception e) {

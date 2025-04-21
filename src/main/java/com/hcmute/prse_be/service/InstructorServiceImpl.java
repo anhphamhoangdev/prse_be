@@ -50,6 +50,12 @@ public class InstructorServiceImpl implements InstructorService{
     }
 
     @Override
+    public Double getTotalRevenueOfInstructor(Long instructorId) {
+        Double totalRevenue = transactionRepository.getTotalRevenueByInstructorId(instructorId);
+        return totalRevenue != null ? totalRevenue : 0.0;
+    }
+
+    @Override
     public InstructorEntity getInstructorByStudentId(Long studentId) {
         return instructorRepository.findByStudentId(studentId);
     }

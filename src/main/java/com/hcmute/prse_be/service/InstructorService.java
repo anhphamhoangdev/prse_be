@@ -15,6 +15,8 @@ public interface InstructorService {
 
     long getTotalCourseOfInstructor(Long instructorId);
 
+    Double getTotalRevenueOfInstructor(Long instructorId);
+
     InstructorEntity getInstructorByStudentId(Long studentId);
 
     List<RevenueStatisticsDTO> getRevenueStatistics(Long instructorId, int monthsCount);
