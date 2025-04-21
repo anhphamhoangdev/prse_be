@@ -1144,6 +1144,7 @@ public class InstructorAPI {
         }
     }
 
+    // withdraw by adding to student account
     @PostMapping(ApiPaths.INSTRUCTOR_WITHDRAW_STUDENT)
     public ResponseEntity<JSONObject> withdrawStudentAccount(
             @ModelAttribute WithdrawRequest request,
@@ -1245,6 +1246,38 @@ public class InstructorAPI {
     }
 
 
+    @GetMapping("/withdraw/get-all")
+    public ResponseEntity<JSONObject> getAllWithdraw(Authentication authentication) {
+        LogService.getgI().info("[InstructorAPI] getAllWithdraw username: " + authentication.getName());
+        try {
+            String username = authentication.getName();
+            StudentEntity student = studentService.findByUsername(username);
+            if (student == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Response.error("Không tìm thấy thông tin người dùng"));
+            }
+
+            InstructorEntity instructor = instructorService.getInstructorByStudentId(student.getId());
+            if (instructor == null || !instructor.getIsActive()) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Response.error("Không tìm thấy thông tin giáo viên"));
+            }
+
+            List<WithDrawEntity> withdraws = withdrawService.getAllWithdrawsByInstructor(instructor.getId());
+
+            JSONObject response = new JSONObject();
+            response.put("withdraws", withdraws);
+
+            return ResponseEntity.ok(Response.success(response));
+
+        } catch (Exception e) {
+            LogService.getgI().error(e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Response.error("Có lỗi xảy ra khi lấy danh sách rút tiền"));
+        }
+    }
+
+
     @PutMapping("courses/{courseId}/chapter/{chapterId}/lesson/{lessonId}/quiz")
     public ResponseEntity<JSONObject> updateQuizLesson(
             @PathVariable Long courseId,
@@ -1310,4 +1343,6 @@ public class InstructorAPI {
                     .body(Response.error("Không thể lưu quiz: " + e.getMessage()));
         }
     }
+
+
 }

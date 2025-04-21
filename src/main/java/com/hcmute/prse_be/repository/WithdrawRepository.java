@@ -15,4 +15,8 @@ public interface WithdrawRepository extends JpaRepository<WithDrawEntity, Long> 
     @Query("SELECT SUM(w.amount) FROM WithDrawEntity w WHERE w.status = :status")
     Double sumAmountByStatus(String status);
 
+    List<WithDrawEntity> findAllByInstructorIdOrderByIdDesc(Long instructorId);
+
+
+
 }

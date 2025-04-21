@@ -4,6 +4,8 @@ import com.hcmute.prse_be.entity.WithDrawEntity;
 import com.hcmute.prse_be.repository.WithdrawRepository;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 public class WithdrawServiceImpl implements WithdrawService{
 
@@ -18,4 +20,11 @@ public class WithdrawServiceImpl implements WithdrawService{
     public void saveWithdraw(WithDrawEntity withDrawEntity) {
         withdrawRepository.save(withDrawEntity);
     }
+
+    @Override
+    public List<WithDrawEntity> getAllWithdrawsByInstructor(Long instructorId) {
+        return withdrawRepository.findAllByInstructorIdOrderByIdDesc(instructorId);
+    }
+
+
 }
