@@ -3,7 +3,6 @@ package com.hcmute.prse_be.rest;
 import com.hcmute.prse_be.dtos.ChatMessageDTO;
 import com.hcmute.prse_be.dtos.ConversationDTO;
 import com.hcmute.prse_be.dtos.WebSocketMessage;
-import com.hcmute.prse_be.entity.ChatMessageEntity;
 import com.hcmute.prse_be.entity.ConversationEntity;
 import com.hcmute.prse_be.entity.InstructorEntity;
 import com.hcmute.prse_be.entity.StudentEntity;
@@ -18,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @RestController
@@ -25,16 +25,14 @@ import java.util.stream.Collectors;
 public class ConversationAPI {
 
     private final StudentService studentService;
-
     private final InstructorService instructorService;
-
     private final ConversationService conversationService;
-
     private final ChatMessageService chatMessageService;
-
     private final WebSocketService webSocketService;
 
-    public ConversationAPI(StudentService studentService, InstructorService instructorService, ConversationService conversationService, ChatMessageService chatMessageService, WebSocketService webSocketService) {
+    public ConversationAPI(StudentService studentService, InstructorService instructorService,
+                           ConversationService conversationService, ChatMessageService chatMessageService,
+                           WebSocketService webSocketService) {
         this.studentService = studentService;
         this.instructorService = instructorService;
         this.conversationService = conversationService;
@@ -53,14 +51,24 @@ public class ConversationAPI {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(Response.error("Không tìm thấy thông tin người dùng"));
             }
-
             InstructorEntity instructor = instructorService.getInstructorByStudentId(student.getId());
             if (instructor == null) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(Response.error("Không tìm thấy thông tin giáo viên"));
             }
 
             List<ConversationDTO> conversations = conversationService.getConversationsByInstructorId(instructor.getId());
+
+            // Validate unique IDs
+            Set<Long> conversationIds = conversations.stream()
+                    .map(ConversationDTO::getId)
+                    .collect(Collectors.toSet());
+            if (conversationIds.size() < conversations.size()) {
+                conversations = conversations.stream()
+                        .distinct()
+                        .collect(Collectors.toList());
+            }
+
             JSONObject response = new JSONObject();
             response.put("conversations", conversations);
             return ResponseEntity.ok(Response.success(response));
@@ -83,6 +91,17 @@ public class ConversationAPI {
             }
 
             List<ConversationDTO> conversations = conversationService.getConversationsByStudentId(student.getId());
+
+            // Validate unique IDs
+            Set<Long> conversationIds = conversations.stream()
+                    .map(ConversationDTO::getId)
+                    .collect(Collectors.toSet());
+            if (conversationIds.size() < conversations.size()) {
+                conversations = conversations.stream()
+                        .distinct()
+                        .collect(Collectors.toList());
+            }
+
             JSONObject response = new JSONObject();
             response.put("conversations", conversations);
             return ResponseEntity.ok(Response.success(response));
@@ -109,7 +128,6 @@ public class ConversationAPI {
                         .body(Response.error("Không tìm thấy thông tin người dùng"));
             }
 
-            // Validate student ID
             if (!student.getId().equals(request.getStudentId())) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
                         .body(Response.error("Không có quyền tạo cuộc trò chuyện"));
@@ -121,7 +139,6 @@ public class ConversationAPI {
                         .body(Response.error("Không tìm thấy thông tin giảng viên"));
             }
 
-            // Check if conversation already exists
             ConversationEntity existingConversation = conversationService.findByStudentIdAndInstructorId(
                     request.getStudentId(), request.getInstructorId()
             );
@@ -131,14 +148,12 @@ public class ConversationAPI {
                 return ResponseEntity.ok(Response.success(response));
             }
 
-            // Create new conversation
             ConversationEntity conversation = new ConversationEntity();
             conversation.setStudentId(request.getStudentId());
             conversation.setInstructorId(request.getInstructorId());
             conversation.setCreatedAt(LocalDateTime.now());
             ConversationEntity savedConversation = conversationService.save(conversation);
 
-            // Notify both student and instructor
             WebSocketMessage notification = WebSocketMessage.info("Bạn có cuộc trò chuyện mới!", null);
             webSocketService.sendToStudent(request.getStudentId(), "/notifications", notification);
             webSocketService.sendToInstructor(request.getInstructorId(), "/notifications", notification);
@@ -164,18 +179,10 @@ public class ConversationAPI {
                         .body(Response.error("Không tìm thấy thông tin người dùng"));
             }
 
-            // Fetch both studentId and instructorId (if any)
             Long studentId = student.getId();
-
             InstructorEntity instructor = instructorService.getInstructorByStudentId(studentId);
+            Long instructorId = instructor != null ? instructor.getId() : null;
 
-            Long instructorId = null;
-
-            if(instructor != null) {
-                instructorId = instructor.getId();
-            }
-
-            // Verify access using both IDs
             boolean hasAccess = conversationService.hasAccessToConversation(studentId, instructorId, conversationId);
             if (!hasAccess) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
@@ -192,5 +199,4 @@ public class ConversationAPI {
                     .body(Response.error("Đã xảy ra lỗi khi lấy tin nhắn"));
         }
     }
-
 }

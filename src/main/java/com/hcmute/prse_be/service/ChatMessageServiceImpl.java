@@ -24,16 +24,18 @@ public class ChatMessageServiceImpl implements ChatMessageService {
                         msg.getConversationId(),
                         msg.getSenderId(),
                         msg.getSenderType(),
+                        msg.getSenderName(),
                         msg.getContent(),
                         msg.getCreatedAt().toString()
                 ))
                 .collect(Collectors.toList());
     }
 
-    public ChatMessageDTO saveMessage(Long conversationId, String senderType, Long senderId, String content) {
+    public ChatMessageDTO saveMessage(Long conversationId, String senderType, Long senderId, String senderName, String content) {
         ChatMessageEntity message = new ChatMessageEntity();
         message.setConversationId(conversationId);
         message.setSenderType(senderType);
+        message.setSenderName(senderName);
         message.setContent(content);
         message.setSenderId(senderId);
         message.setCreatedAt(LocalDateTime.now());
@@ -44,6 +46,7 @@ public class ChatMessageServiceImpl implements ChatMessageService {
                 savedMessage.getConversationId(),
                 savedMessage.getSenderId(),
                 savedMessage.getSenderType(),
+                savedMessage.getSenderName(),
                 savedMessage.getContent(),
                 savedMessage.getCreatedAt().toString()
         );

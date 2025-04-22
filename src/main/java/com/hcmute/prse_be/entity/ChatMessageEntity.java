@@ -23,6 +23,9 @@ public class ChatMessageEntity {
     @Column(name = "sender_id", nullable = false)
     private Long senderId; // Thêm senderId để lưu ID của người gửi
 
+    @Column(name = "sender_name", nullable = false)
+    private String senderName;
+
     @Column(name = "sender_type", nullable = false)
     private String senderType; // "STUDENT" or "INSTRUCTOR"
 

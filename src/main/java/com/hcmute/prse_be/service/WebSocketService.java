@@ -11,5 +11,5 @@ public interface WebSocketService {
 
     void testNotification(Long instructorId);
 
-
+    void sendMessageUpdate(Long userId, String userType, Long conversationId, String senderName, String content, String timestamp);
 }

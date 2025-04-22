@@ -10,4 +10,7 @@ import lombok.NoArgsConstructor;
 public class ConversationDTO {
     private Long id;
     private String participantName; // Student name for instructors, instructor name for students
+    private String avatarUrl; // Avatar URL of the participant
+    private String latestMessage; // Latest message content
+    private String latestTimestamp; // Timestamp of latest message
 }
