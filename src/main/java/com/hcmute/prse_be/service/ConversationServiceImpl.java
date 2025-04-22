@@ -2,8 +2,6 @@ package com.hcmute.prse_be.service;
 
 import com.hcmute.prse_be.dtos.ConversationDTO;
 import com.hcmute.prse_be.entity.ConversationEntity;
-import com.hcmute.prse_be.entity.InstructorEntity;
-import com.hcmute.prse_be.entity.StudentEntity;
 import com.hcmute.prse_be.repository.ChatMessageRepository;
 import com.hcmute.prse_be.repository.ConversationRepository;
 import org.springframework.beans.factory.annotation.Autowired;

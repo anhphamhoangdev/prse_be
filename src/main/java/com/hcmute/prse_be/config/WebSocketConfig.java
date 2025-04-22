@@ -14,7 +14,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         // Endpoint này sẽ là /ws
         // Client sẽ connect tới http(s)://your-domain/ws
-        registry.addEndpoint("/ws")
+        registry.addEndpoint("/wss")
                 .setAllowedOriginPatterns("*")  // CORS config
                 .withSockJS();  // Enable SockJS fallback
     }
