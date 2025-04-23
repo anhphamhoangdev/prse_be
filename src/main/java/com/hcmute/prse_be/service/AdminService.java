@@ -4,6 +4,7 @@ import com.hcmute.prse_be.dtos.AdminWithdrawDTO;
 import com.hcmute.prse_be.dtos.CategoryStatisticDTO;
 import com.hcmute.prse_be.dtos.RevenueStatisticsDTO;
 import com.hcmute.prse_be.entity.AdminEntity;
+import com.hcmute.prse_be.entity.WithDrawEntity;
 
 import java.util.List;
 
@@ -21,4 +22,6 @@ public interface AdminService {
     List<CategoryStatisticDTO> getCourseDistribution();
 
     List<AdminWithdrawDTO> getAllPendinglWithdraws();
+
+    AdminWithdrawDTO updateWithdrawStatus(Long withdrawId, AdminWithdrawDTO adminWithdrawDTO);
 }

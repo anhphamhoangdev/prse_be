@@ -313,4 +313,49 @@ public class AdminAPI {
         }
     }
 
+    @PatchMapping(ApiPaths.UPDATE_WITHDRAW_STATUS)
+    public ResponseEntity<JSONObject> updateWithdrawStatus(
+            @PathVariable Long withdrawId,
+            @RequestBody AdminWithdrawDTO withdrawDTO,
+            Authentication authentication
+    ) {
+        LogService.getgI().info("[AdminAPI] updateWithdrawStatus withdrawId: " + withdrawId + ", instructorId: " + (withdrawDTO.getInstructor() != null ? withdrawDTO.getInstructor().getId() : null) + ", status: " + withdrawDTO.getStatus() + ", rejectionReason: " + withdrawDTO.getRejectionReason());
+        try {
+            // Verify admin
+            String email = authentication.getName();
+            AdminEntity admin = adminService.findByEmail(email);
+            if (admin == null) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Response.error(ErrorMsg.STUDENT_USERNAME_NOT_EXIST));
+            }
+
+            // Validate status
+            if (!"COMPLETED".equals(withdrawDTO.getStatus()) && !"REJECTED".equals(withdrawDTO.getStatus())) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Response.error("Invalid status. Must be COMPLETED or REJECTED."));
+            }
+
+            // If status is REJECTED, ensure rejectionReason is provided
+            if ("REJECTED".equals(withdrawDTO.getStatus()) && (withdrawDTO.getRejectionReason() == null || withdrawDTO.getRejectionReason().isEmpty())) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Response.error("Rejection reason is required for REJECTED status."));
+            }
+
+            // Validate instructor
+            if (withdrawDTO.getInstructor() == null || withdrawDTO.getInstructor().getId() == null) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Response.error("Instructor information with id is required."));
+            }
+
+            // Update withdraw status and instructor balance (if COMPLETED)
+            AdminWithdrawDTO updatedWithdraw = adminService.updateWithdrawStatus(withdrawId, withdrawDTO);
+
+            if (updatedWithdraw == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Response.error("Withdraw request not found."));
+            }
+
+            JSONObject response = new JSONObject();
+            response.put("withdraw", updatedWithdraw);
+            return ResponseEntity.ok(Response.success(response));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Response.error(ErrorMsg.SOMETHING_WENT_WRONG + e.getMessage()));
+        }
+    }
+
 }

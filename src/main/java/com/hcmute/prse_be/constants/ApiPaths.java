@@ -46,6 +46,7 @@ public class ApiPaths {
     public static final String GET_STUDENTS = "/students";
     public static final String UPDATE_STUDENT_STATUS ="/students/{studentId}/toggle-status";
     public static final String GET_WITHDRAWS="/withdraws";
+    public static final String UPDATE_WITHDRAW_STATUS = "/withdraws/{withdrawId}";
 
     // CART API
     public static final String CART_API = "/api/cart";

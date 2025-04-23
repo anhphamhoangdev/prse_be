@@ -68,7 +68,7 @@ public class SecurityConfig {
         // Hoặc cho phép tất cả origins (không recommended cho production)
         // configuration.setAllowedOrigins(Arrays.asList("*"));
 
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS","PATCH"));
         configuration.setAllowedHeaders(Arrays.asList(
                 "Origin",
                 "Content-Type",

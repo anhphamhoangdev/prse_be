@@ -9,12 +9,14 @@ import com.hcmute.prse_be.entity.AdminEntity;
 import com.hcmute.prse_be.entity.InstructorEntity;
 import com.hcmute.prse_be.entity.WithDrawEntity;
 import com.hcmute.prse_be.repository.*;
+import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -119,7 +121,7 @@ public class AdminServiceImpl implements AdminService{
     @Override
     public List<AdminWithdrawDTO> getAllPendinglWithdraws() {
 
-        List<WithDrawEntity> withDrawEntityList = withdrawRepository.findByStatusOrderByCreatedAtDesc(WithDrawStatus.PENDING);
+        List<WithDrawEntity> withDrawEntityList = withdrawRepository.findByStatusOrderByCreatedAtAsc(WithDrawStatus.PENDING);
 
         return withDrawEntityList.stream()
                 .map(withdraw -> {
@@ -158,5 +160,50 @@ public class AdminServiceImpl implements AdminService{
                     return dto;
                 })
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public AdminWithdrawDTO updateWithdrawStatus(Long withdrawId, AdminWithdrawDTO adminWithdrawDTO) {
+        // Tìm yêu cầu rút tiền
+        WithDrawEntity withdraw = withdrawRepository.findById(withdrawId).orElse(null);
+        if (withdraw == null) {
+            return null;
+        }
+
+        if (adminWithdrawDTO.getStatus() != null && !Objects.equals(withdraw.getStatus(), adminWithdrawDTO.getStatus())) {
+            // Cập nhật trạng thái
+            withdraw.setStatus(adminWithdrawDTO.getStatus());
+
+            if ("REJECTED".equals(adminWithdrawDTO.getStatus())) {
+                InstructorEntity instructor = instructorRepository.findById(withdraw.getInstructorId()).orElse(null);
+                if (instructor != null) {
+                    instructor.setMoney(withdraw.getAmount() + instructor.getMoney());
+                    instructorRepository.save(instructor);
+                }
+                withdraw.setRejectionReason(adminWithdrawDTO.getRejectionReason());
+            }
+
+            withdrawRepository.save(withdraw);
+
+
+            AdminWithdrawDTO dto = new AdminWithdrawDTO();
+            dto.setId(withdraw.getId());
+            dto.setInstructor(null);
+            dto.setAmount(withdraw.getAmount());
+            dto.setType(withdraw.getType());
+            dto.setStatus(withdraw.getStatus());
+            dto.setBankCode(withdraw.getBankCode());
+            dto.setBankName(withdraw.getBankName());
+            dto.setAccountNumber(withdraw.getAccountNumber());
+            dto.setAccountHolder(withdraw.getAccountHolder());
+            dto.setRejectionReason(withdraw.getRejectionReason());
+            dto.setCreatedAt(withdraw.getCreatedAt());
+            dto.setUpdatedAt(withdraw.getUpdatedAt());
+
+            return dto;
+        }
+
+        return null;
     }
 }

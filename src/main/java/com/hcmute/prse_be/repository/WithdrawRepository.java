@@ -8,7 +8,7 @@ import java.util.List;
 
 public interface WithdrawRepository extends JpaRepository<WithDrawEntity, Long> {
 
-    List<WithDrawEntity> findByStatusOrderByCreatedAtDesc(String status);
+    List<WithDrawEntity> findByStatusOrderByCreatedAtAsc(String status);
 
     long countByStatus(String status);
 
