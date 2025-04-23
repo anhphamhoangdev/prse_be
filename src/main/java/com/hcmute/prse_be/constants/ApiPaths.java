@@ -101,6 +101,7 @@ public class ApiPaths {
     public static final String INSTRUCTOR_WITHDRAW_BANK ="/withdraw-bank";
     public static final String INSTRUCTOR_UPDATE_CHAPTER ="/courses/{courseId}/chapter/{chapterId}";
     public static final String INSTRUCTOR_POPULAR_POSITION ="/common-titles";
+    public static final String INSTRUCTOR_UPDATE_PROFILE = "/update-profile";
 
     //BANK API
     public static final String BANKS_API = "/api/banks";

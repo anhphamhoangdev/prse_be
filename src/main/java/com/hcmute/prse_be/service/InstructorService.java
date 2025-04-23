@@ -31,4 +31,5 @@ public interface InstructorService {
     List<InstructorCommonTitleEntity> getAllTitles();
 
 
+    void saveAvatarInstructor(String imageUrl, String authenticationName);
 }

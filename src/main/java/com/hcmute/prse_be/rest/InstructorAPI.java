@@ -1348,5 +1348,60 @@ public class InstructorAPI {
         }
     }
 
+    @PostMapping(ApiPaths.UPDATE_AVATAR)
+    public JSONObject updateAvatar(@RequestParam MultipartFile file, Authentication authentication)
+    {
+        LogService.getgI().info("[Instructor] updateAvatar of: " + authentication.getName());
+        try{
+            String imageUrl = cloudinaryService.uploadImage(file, ImageFolderName.INSTRUCTOR_AVATAR_FOLDER);
+            instructorService.saveAvatarInstructor(imageUrl, authentication.getName());
+            JSONObject response = new JSONObject();
+            response.put("avatarUrl",imageUrl);
+            return Response.success(response);
+        } catch (Exception e) {
+            return Response.error(ErrorMsg.SOMETHING_WENT_WRONG + e.getMessage());
+        }
+    }
+
+    @PutMapping(ApiPaths.INSTRUCTOR_UPDATE_PROFILE)
+    public ResponseEntity<JSONObject> updateProfile(
+            @RequestBody UpdateInstructorProfileRequest request,
+            Authentication authentication) {
+        LogService.getgI().info("[InstructorAPI] updateProfile username: " + authentication.getName() + " request: " + request.toString());
+
+        try {
+            // Xác thực người dùng
+            String username = authentication.getName();
+            StudentEntity student = studentService.findByUsername(username);
+            if (student == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Response.error("Không tìm thấy thông tin người dùng"));
+            }
+
+            // Kiểm tra thông tin giảng viên
+            InstructorEntity instructor = instructorService.getInstructorByStudentId(student.getId());
+            if (instructor == null || !instructor.getIsActive()) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Response.error("Không tìm thấy thông tin giáo viên"));
+            }
+
+            // Cập nhật thông tin giảng viên
+            instructor.setFullName(request.getFullName());
+            instructor.setTitle(request.getTitle());
+            instructorService.saveInstructor(instructor);
+
+            // Tạo response
+            InstructorDataResponse instructorDataResponse = new InstructorDataResponse(instructor);
+            JSONObject response = new JSONObject();
+            response.put("instructor", instructorDataResponse);
+
+            return ResponseEntity.ok(Response.success(response));
+
+        } catch (Exception e) {
+            LogService.getgI().error(e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Response.error("Có lỗi xảy ra khi cập nhật thông tin profile"));
+        }
+    }
 
 }

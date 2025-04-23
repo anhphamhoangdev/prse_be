@@ -4,9 +4,11 @@ import com.hcmute.prse_be.dtos.RecentEnrollmentDTO;
 import com.hcmute.prse_be.dtos.RevenueStatisticsDTO;
 import com.hcmute.prse_be.entity.InstructorCommonTitleEntity;
 import com.hcmute.prse_be.entity.InstructorEntity;
+import com.hcmute.prse_be.entity.StudentEntity;
 import com.hcmute.prse_be.repository.InstructorCommonTitleRepository;
 import com.hcmute.prse_be.repository.InstructorPlatformTransactionRepository;
 import com.hcmute.prse_be.repository.InstructorRepository;
+import com.hcmute.prse_be.repository.StudentRepository;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
@@ -22,16 +24,32 @@ public class InstructorServiceImpl implements InstructorService{
     private final InstructorRepository instructorRepository;
     private final InstructorPlatformTransactionRepository transactionRepository;
     private final InstructorCommonTitleRepository instructorCommonTitleRepository;
+    private final StudentRepository studentRepository;
 
-    public InstructorServiceImpl(InstructorRepository instructorRepository, InstructorPlatformTransactionRepository transactionRepository, InstructorCommonTitleRepository instructorCommonTitleRepository) {
+    public InstructorServiceImpl(InstructorRepository instructorRepository, InstructorPlatformTransactionRepository transactionRepository, InstructorCommonTitleRepository instructorCommonTitleRepository, StudentRepository studentRepository) {
         this.instructorRepository = instructorRepository;
         this.transactionRepository = transactionRepository;
         this.instructorCommonTitleRepository = instructorCommonTitleRepository;
+        this.studentRepository = studentRepository;
     }
     @Override
     public List<InstructorCommonTitleEntity> getAllTitles() {
         // Lấy danh sách vị trí từ database theo tên
         return instructorCommonTitleRepository.findAll();
+    }
+
+    @Override
+    public void saveAvatarInstructor(String imageUrl, String authenticationName) {
+        StudentEntity student = studentRepository.findByUsername(authenticationName);
+        if(student != null){
+            InstructorEntity instructor = instructorRepository.findByStudentId(student.getId());
+            if(instructor != null){
+                instructor.setAvatarUrl(imageUrl);
+                instructorRepository.save(instructor);
+            }
+        } else {
+            throw new RuntimeException("Instructor not found");
+        }
     }
 
     @Override
