@@ -1,6 +1,9 @@
 package com.hcmute.prse_be.repository;
 
 import com.hcmute.prse_be.entity.InstructorEntity;
+import com.hcmute.prse_be.entity.StudentEntity;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -22,4 +25,13 @@ public interface InstructorRepository extends JpaRepository<InstructorEntity, Lo
             "WHERE c.instructorId = :instructorId " +
             "AND e.isActive = true")
     long countUniqueStudentsByInstructorId(@Param("instructorId") Long instructorId);
+
+    @Query("SELECT i FROM InstructorEntity i WHERE " +
+            "(:search IS NULL OR LOWER(i.fullName) LIKE LOWER(CONCAT('%', :search, '%'))) AND " +
+            "(:status IS NULL OR i.isActive = :status)")
+    Page<InstructorEntity> findAllWithFilters(
+            @Param("search") String search,
+            @Param("status") Boolean status,
+            Pageable pageable
+    );
 }

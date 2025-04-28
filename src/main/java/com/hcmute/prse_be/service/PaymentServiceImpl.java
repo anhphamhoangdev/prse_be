@@ -323,6 +323,12 @@ public class PaymentServiceImpl implements PaymentService{
         return paymentRequestLogEntities;
     }
 
+    @Override
+    public Double calculateTotalSpentByStudentId(Long studentId) {
+        Double totalSpent = paymentLogRepository.sumAmountByStudentId(studentId);
+        return totalSpent == null ? 0.0 : totalSpent;
+    }
+
 
     private String createTransactionId(Long orderCode, String studentId) {
         return "PAYOS" + "_STDID" + studentId + "_OID" + orderCode;

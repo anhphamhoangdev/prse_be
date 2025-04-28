@@ -3,10 +3,9 @@ package com.hcmute.prse_be.rest;
 
 import com.hcmute.prse_be.constants.ApiPaths;
 import com.hcmute.prse_be.constants.ErrorMsg;
-import com.hcmute.prse_be.dtos.AdminWithdrawDTO;
-import com.hcmute.prse_be.dtos.CategoryStatisticDTO;
-import com.hcmute.prse_be.dtos.RevenueStatisticsDTO;
+import com.hcmute.prse_be.dtos.*;
 import com.hcmute.prse_be.entity.AdminEntity;
+import com.hcmute.prse_be.entity.CourseEntity;
 import com.hcmute.prse_be.entity.InstructorEntity;
 import com.hcmute.prse_be.entity.StudentEntity;
 import com.hcmute.prse_be.request.LoginRequest;
@@ -45,8 +44,11 @@ public class AdminAPI {
     private final StudentService studentService;
     private final CourseService courseService;
     private final InstructorService instructorService;
+    private final EnrollmentService enrollmentService;
 
-    public AdminAPI(AdminService adminService, AuthenticationManager authenticationManager, CustomUserDetailsService customUserDetailsService, JwtService jwtService, StudentService studentService, CourseService courseService, InstructorService instructorService) {
+    private final PaymentService paymentService;
+
+    public AdminAPI(AdminService adminService, AuthenticationManager authenticationManager, CustomUserDetailsService customUserDetailsService, JwtService jwtService, StudentService studentService, CourseService courseService, InstructorService instructorService, EnrollmentService enrollmentService, PaymentService paymentService) {
         this.adminService = adminService;
         this.authenticationManager = authenticationManager;
         this.customUserDetailsService = customUserDetailsService;
@@ -54,6 +56,8 @@ public class AdminAPI {
         this.studentService = studentService;
         this.courseService = courseService;
         this.instructorService = instructorService;
+        this.enrollmentService = enrollmentService;
+        this.paymentService = paymentService;
     }
 
 
@@ -263,6 +267,42 @@ public class AdminAPI {
         }
     }
 
+    @GetMapping("/instructors")
+    public ResponseEntity<JSONObject> getAllStudents(
+            @RequestParam(defaultValue = "") String search,
+            @RequestParam(defaultValue = "ALL") String status,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            Authentication authentication
+    ) {
+        LogService.getgI().info("[AdminAPI] getAllStudents username: "+authentication.getName()
+                + " search: "+ search+" status: "+status + "  page: "+page +" size: "+size);
+        try {
+
+            String email = authentication.getName();
+            AdminEntity admin = adminService.findByEmail(email);
+            if (admin == null) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Response.error(ErrorMsg.STUDENT_USERNAME_NOT_EXIST));
+            }
+
+
+            Page<InstructorEntity> instructorPage = instructorService.findAllWithFilters(
+                    search, status, page, size
+            );
+
+            JSONObject response = new JSONObject();
+            response.put("content", instructorPage.getContent());
+            response.put("totalPages", instructorPage.getTotalPages());
+            response.put("totalElements", instructorPage.getTotalElements());
+            response.put("size", instructorPage.getSize());
+            response.put("number", instructorPage.getNumber());
+
+            return ResponseEntity.ok(Response.success(response));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Response.error(ErrorMsg.SOMETHING_WENT_WRONG + e.getMessage()));
+        }
+    }
+
     @PutMapping(ApiPaths.UPDATE_STUDENT_STATUS)
     public ResponseEntity<JSONObject> changeStudentStatus(
             @PathVariable Long studentId,
@@ -285,6 +325,34 @@ public class AdminAPI {
 
             student.setIsActive(!student.getIsActive());
             studentService.save(student);
+            return ResponseEntity.ok(Response.success());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Response.error(ErrorMsg.SOMETHING_WENT_WRONG + e.getMessage()));
+        }
+    }
+
+    @PutMapping(ApiPaths.UPDATE_INSTRUCTOR_STATUS)
+    public ResponseEntity<JSONObject> changeInstructorStatus(
+            @PathVariable Long instructorId,
+            Authentication authentication
+    ) {
+        LogService.getgI().info("[AdminAPI] changeInstructorStatus id: " + instructorId);
+        try {
+
+            String email = authentication.getName();
+            AdminEntity admin = adminService.findByEmail(email);
+            if (admin == null) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Response.error(ErrorMsg.STUDENT_USERNAME_NOT_EXIST));
+            }
+
+
+            InstructorEntity instructorEntity = instructorService.getInstructorById(instructorId);
+            if (instructorEntity == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Response.error(ErrorMsg.SOMETHING_WENT_WRONG));
+            }
+
+            instructorEntity.setIsActive(!instructorEntity.getIsActive());
+            instructorService.save(instructorEntity);
             return ResponseEntity.ok(Response.success());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Response.error(ErrorMsg.SOMETHING_WENT_WRONG + e.getMessage()));
@@ -357,5 +425,105 @@ public class AdminAPI {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Response.error(ErrorMsg.SOMETHING_WENT_WRONG + e.getMessage()));
         }
     }
+
+
+    // manage student
+    @GetMapping("/student/{studentId}")
+    public ResponseEntity<JSONObject> getStudentById(
+            @PathVariable Long studentId,
+            Authentication authentication
+    ) {
+        LogService.getgI().info("[AdminAPI] getStudentById id: " + studentId);
+        try {
+            String email = authentication.getName();
+            AdminEntity admin = adminService.findByEmail(email);
+            if (admin == null) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Response.error(ErrorMsg.STUDENT_USERNAME_NOT_EXIST));
+            }
+
+            // Find student by ID
+            StudentEntity student = studentService.findById(studentId);
+            if (student == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Response.error("Student not found"));
+            }
+
+            // Create DTO to hold student profile data
+            AdminStudentProfileDTO profileDTO = new AdminStudentProfileDTO();
+            student.setPasswordHash(null);
+            profileDTO.setStudent(student);
+
+            // Check if student is also an instructor
+            InstructorEntity instructor = instructorService.getInstructorByStudentId(studentId);
+            profileDTO.setInstructor(instructor);
+
+            // Get enrolled courses
+            List<EnrolledCourseDTO> enrolledCourses = courseService.getEnrolledCoursesByStudentId(studentId);
+            profileDTO.setEnrolledCourses(enrolledCourses);
+
+            // Calculate total spent
+            Double totalSpent = paymentService.calculateTotalSpentByStudentId(studentId);
+            profileDTO.setTotalSpent(totalSpent);
+
+            JSONObject response = new JSONObject();
+            response.put("studentProfile", profileDTO);
+
+            return ResponseEntity.ok(Response.success(response));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Response.error(ErrorMsg.SOMETHING_WENT_WRONG + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/instructor/{instructorId}")
+    public ResponseEntity<JSONObject> getInstructorById(
+            @PathVariable Long instructorId,
+            Authentication authentication
+    ) {
+        LogService.getgI().info("[AdminAPI] getInstructorById id: " + instructorId);
+        try {
+            String email = authentication.getName();
+            AdminEntity admin = adminService.findByEmail(email);
+            if (admin == null) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Response.error(ErrorMsg.STUDENT_USERNAME_NOT_EXIST));
+            }
+
+            // Find student by ID
+            InstructorEntity instructorEntity = instructorService.getInstructorById(instructorId);
+            if (instructorEntity == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Response.error("Instructor not found"));
+            }
+
+            StudentEntity student = studentService.findById(instructorEntity.getStudentId());
+            if(student == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Response.error("Student not found"));
+            }
+
+            // Create DTO to hold student profile data
+            AdminInstructorProfileDTO profileDTO = new AdminInstructorProfileDTO();
+            student.setPasswordHash(null);
+            profileDTO.setStudentAccount(student);
+            profileDTO.setInstructor(instructorEntity);
+
+
+            // Get enrolled courses
+            profileDTO.setStudents(instructorService.getStudentsByInstructorId(instructorId));
+
+            // get courses
+            profileDTO.setCourses(courseService.getCoursesByInstructorId(instructorId));
+
+            // total revenue
+            profileDTO.setTotalRevenue(instructorService.getTotalRevenueOfInstructor(instructorEntity.getId()));
+
+            JSONObject response = new JSONObject();
+            response.put("instructorProfile", profileDTO);
+
+            return ResponseEntity.ok(Response.success(response));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Response.error(ErrorMsg.SOMETHING_WENT_WRONG + e.getMessage()));
+        }
+    }
+
+
 
 }

@@ -2,8 +2,11 @@ package com.hcmute.prse_be.service;
 
 import com.hcmute.prse_be.dtos.RecentEnrollmentDTO;
 import com.hcmute.prse_be.dtos.RevenueStatisticsDTO;
+import com.hcmute.prse_be.dtos.StudentListDTO;
 import com.hcmute.prse_be.entity.InstructorCommonTitleEntity;
 import com.hcmute.prse_be.entity.InstructorEntity;
+import com.hcmute.prse_be.entity.StudentEntity;
+import org.springframework.data.domain.Page;
 
 import java.util.List;
 
@@ -32,4 +35,15 @@ public interface InstructorService {
 
 
     void saveAvatarInstructor(String imageUrl, String authenticationName);
+
+    Page<InstructorEntity> findAllWithFilters(
+            String search,
+            String status,
+            int page,
+            int size
+    );
+
+    void save(InstructorEntity instructorEntity);
+
+    List<StudentListDTO> getStudentsByInstructorId(Long instructorId);
 }

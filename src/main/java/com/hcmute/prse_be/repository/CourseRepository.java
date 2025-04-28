@@ -275,4 +275,15 @@ public interface CourseRepository extends JpaRepository<CourseEntity, Long> {
     // calculate the number of courses registered in the current month
     @Query("SELECT COUNT(s) FROM CourseEntity s WHERE YEAR(s.createdAt) = :year AND MONTH(s.createdAt) = :month")
     long countByYearAndMonth(@Param("year") int year, @Param("month") int month);
+
+    @Query("SELECT c, e FROM CourseEntity c JOIN EnrollmentEntity e ON c.id = e.courseId WHERE e.studentId = :studentId")
+    List<Object[]> findEnrolledCoursesByStudentId(@Param("studentId") Long studentId);
+
+    @Query("SELECT s.id, s.fullName, s.email, s.avatarUrl, COUNT(e.id) " +
+            "FROM EnrollmentEntity e " +
+            "JOIN CourseEntity c ON e.courseId = c.id " +
+            "JOIN StudentEntity s ON e.studentId = s.id " +
+            "WHERE c.instructorId = :instructorId " +
+            "GROUP BY s.id, s.fullName, s.email")
+    List<Object[]> findStudentsByInstructorId(@Param("instructorId") Long instructorId);
 }

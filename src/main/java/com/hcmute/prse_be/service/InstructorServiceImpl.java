@@ -2,14 +2,14 @@ package com.hcmute.prse_be.service;
 
 import com.hcmute.prse_be.dtos.RecentEnrollmentDTO;
 import com.hcmute.prse_be.dtos.RevenueStatisticsDTO;
+import com.hcmute.prse_be.dtos.StudentListDTO;
 import com.hcmute.prse_be.entity.InstructorCommonTitleEntity;
 import com.hcmute.prse_be.entity.InstructorEntity;
 import com.hcmute.prse_be.entity.StudentEntity;
-import com.hcmute.prse_be.repository.InstructorCommonTitleRepository;
-import com.hcmute.prse_be.repository.InstructorPlatformTransactionRepository;
-import com.hcmute.prse_be.repository.InstructorRepository;
-import com.hcmute.prse_be.repository.StudentRepository;
+import com.hcmute.prse_be.repository.*;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -25,12 +25,14 @@ public class InstructorServiceImpl implements InstructorService{
     private final InstructorPlatformTransactionRepository transactionRepository;
     private final InstructorCommonTitleRepository instructorCommonTitleRepository;
     private final StudentRepository studentRepository;
+    private final CourseRepository courseRepository;
 
-    public InstructorServiceImpl(InstructorRepository instructorRepository, InstructorPlatformTransactionRepository transactionRepository, InstructorCommonTitleRepository instructorCommonTitleRepository, StudentRepository studentRepository) {
+    public InstructorServiceImpl(InstructorRepository instructorRepository, InstructorPlatformTransactionRepository transactionRepository, InstructorCommonTitleRepository instructorCommonTitleRepository, StudentRepository studentRepository, CourseRepository courseRepository) {
         this.instructorRepository = instructorRepository;
         this.transactionRepository = transactionRepository;
         this.instructorCommonTitleRepository = instructorCommonTitleRepository;
         this.studentRepository = studentRepository;
+        this.courseRepository = courseRepository;
     }
     @Override
     public List<InstructorCommonTitleEntity> getAllTitles() {
@@ -50,6 +52,45 @@ public class InstructorServiceImpl implements InstructorService{
         } else {
             throw new RuntimeException("Instructor not found");
         }
+    }
+
+    @Override
+    public Page<InstructorEntity> findAllWithFilters(String search, String status, int page, int size) {
+        // Convert string filters to Boolean
+        Boolean statusFilter = status.equals("ALL") ? null : status.equals("ACTIVE");
+        // Create pageable object
+        Pageable pageable = PageRequest.of(page, size);
+
+        try {
+            return instructorRepository.findAllWithFilters(
+                    search.trim().isEmpty() ? null : search.trim(),
+                    statusFilter,
+                    pageable
+            );
+        } catch (Exception e) {
+            LogService.getgI().info("Error when finding students with filters");
+            return null;
+        }
+    }
+
+    @Override
+    public void save(InstructorEntity instructorEntity) {
+        // Lưu thông tin giảng viên vào database
+        instructorRepository.save(instructorEntity);
+    }
+
+    @Override
+    public List<StudentListDTO> getStudentsByInstructorId(Long instructorId) {
+        List<Object[]> students = courseRepository.findStudentsByInstructorId(instructorId);
+        return students.stream().map(data -> {
+            StudentListDTO dto = new StudentListDTO();
+            dto.setStudentId((Long) data[0]);
+            dto.setFullName((String) data[1]);
+            dto.setEmail((String) data[2]);
+            dto.setAvatarUrl((String) data[3]);
+            dto.setCourseCount(((Number) data[4]).intValue());
+            return dto;
+        }).collect(Collectors.toList());
     }
 
     @Override

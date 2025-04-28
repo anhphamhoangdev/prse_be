@@ -18,4 +18,6 @@ public interface PaymentService {
     void updatePaymentStatusInstructor(PaymentUpdateStatusRequest data);
 
     List<PaymentRequestLogEntity> getAllPaymentRequestLogByStudentId(StudentEntity student);
+
+    Double calculateTotalSpentByStudentId(Long studentId);
 }

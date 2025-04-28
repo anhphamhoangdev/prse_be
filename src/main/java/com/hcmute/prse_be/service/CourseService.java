@@ -88,4 +88,6 @@ public interface CourseService {
     boolean submitLesson(Long courseId, Long chapterId, long lessonId, StudentEntity student);
 
     CourseFeedbackEntity getCourseFeedback(Long courseId, Long studentId);
+
+    List<EnrolledCourseDTO> getEnrolledCoursesByStudentId(Long studentId);
 }

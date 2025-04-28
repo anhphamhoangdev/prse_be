@@ -45,6 +45,7 @@ public class ApiPaths {
     public static final String GET_CATEGORY_DISTRIBUTION = "/category-distribution";
     public static final String GET_STUDENTS = "/students";
     public static final String UPDATE_STUDENT_STATUS ="/students/{studentId}/toggle-status";
+    public static final String UPDATE_INSTRUCTOR_STATUS = "/instructors/{instructorId}/toggle-status";
     public static final String GET_WITHDRAWS="/withdraws";
     public static final String UPDATE_WITHDRAW_STATUS = "/withdraws/{withdrawId}";
 

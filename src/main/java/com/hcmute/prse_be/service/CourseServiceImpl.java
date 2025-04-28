@@ -802,6 +802,32 @@ public class CourseServiceImpl implements CourseService {
         return courseFeedbackRepository.findByStudentIdAndCourseIdAndIsHiddenFalse(studentId, courseId).orElse(null);
     }
 
+    @Override
+    public List<EnrolledCourseDTO> getEnrolledCoursesByStudentId(Long studentId) {
+        // Join courses with enrollments to get enrollment details
+        List<Object[]> results = courseRepository.findEnrolledCoursesByStudentId(studentId);
+
+        List<EnrolledCourseDTO> enrolledCourses = new ArrayList<>();
+        for (Object[] result : results) {
+            CourseEntity course = (CourseEntity) result[0];
+            EnrollmentEntity enrollment = (EnrollmentEntity) result[1];
+
+            EnrolledCourseDTO dto = new EnrolledCourseDTO();
+            dto.setCourseId(course.getId());
+            dto.setTitle(course.getTitle());
+            dto.setImageUrl(course.getImageUrl());
+            dto.setEnrolledAt(enrollment.getEnrolledAt());
+            dto.setProgressPercent(enrollment.getProgressPercent());
+            dto.setIsActive(enrollment.getIsActive());
+            dto.setStatus(enrollment.getStatus());
+            dto.setRating(enrollment.getIsRating());
+            dto.setRatingStart(enrollment.getRating());
+            enrolledCourses.add(dto);
+        }
+
+        return enrolledCourses;
+    }
+
 
     private CourseDTO processDiscountPrice(CourseDTO course) {
         if (Boolean.TRUE.equals(course.getIsDiscount())) {

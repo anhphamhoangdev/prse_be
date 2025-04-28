@@ -5,4 +5,5 @@ import com.hcmute.prse_be.entity.StudentEntity;
 
 public interface EnrollmentService {
     EnrollmentStatsDto getEnrollmentStats(StudentEntity student);
+
 }
