@@ -1,7 +1,9 @@
 package com.hcmute.prse_be.repository;
 
+import com.hcmute.prse_be.dtos.AdminCourseDetailDTO;
 import com.hcmute.prse_be.dtos.CourseBasicDTO;
 import com.hcmute.prse_be.dtos.CourseDTO;
+import com.hcmute.prse_be.dtos.CourseWithInstructorDTO;
 import com.hcmute.prse_be.entity.CourseEntity;
 import com.hcmute.prse_be.entity.EnrollmentEntity;
 import org.springframework.data.domain.Page;
@@ -286,4 +288,36 @@ public interface CourseRepository extends JpaRepository<CourseEntity, Long> {
             "WHERE c.instructorId = :instructorId " +
             "GROUP BY s.id, s.fullName, s.email")
     List<Object[]> findStudentsByInstructorId(@Param("instructorId") Long instructorId);
+
+
+    @Query("SELECT new com.hcmute.prse_be.dtos.CourseWithInstructorDTO(" +
+            "c.id, c.title, c.shortDescription, c.imageUrl, c.originalPrice, " +
+            "c.averageRating, c.totalStudents, c.totalViews, c.isPublish, " +
+            "c.isHot, c.isDiscount, c.createdAt, c.updatedAt, " +
+            "c.instructorId, i.fullName, i.avatarUrl) " +
+            "FROM CourseEntity c LEFT JOIN InstructorEntity i ON c.instructorId = i.id " +
+            "WHERE (:keyword IS NULL OR LOWER(c.title) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
+            "AND (:isHot IS NULL OR c.isHot = :isHot) " +
+            "AND (:isPublish IS NULL OR c.isPublish = :isPublish) " +
+            "AND (:isDiscount IS NULL OR c.isDiscount = :isDiscount)")
+    Page<CourseWithInstructorDTO> findCoursesByFilters(
+            @Param("keyword") String keyword,
+            @Param("isHot") Boolean isHot,
+            @Param("isPublish") Boolean isPublish,
+            @Param("isDiscount") Boolean isDiscount,
+            Pageable pageable);
+
+    @Query("SELECT new com.hcmute.prse_be.dtos.AdminCourseDetailDTO(" +
+            "c.id, c.title, c.shortDescription, c.description, c.imageUrl, " +
+            "c.previewVideoUrl, c.previewVideoDuration, c.language, c.originalPrice, " +
+            "c.averageRating, c.totalStudents, c.totalViews, c.isPublish, " +
+            "c.isHot, c.isDiscount, c.createdAt, c.updatedAt, " +
+            "i.id, i.fullName, i.avatarUrl, i.title, " +
+            "CAST((SELECT COUNT(ch) FROM ChapterEntity ch WHERE ch.courseId = c.id) AS long), " +
+            "CAST((SELECT COUNT(l) FROM LessonEntity l WHERE l.chapterId IN " +
+            "    (SELECT ch.id FROM ChapterEntity ch WHERE ch.courseId = c.id)) AS long), " +
+            "CAST((SELECT COUNT(e) FROM EnrollmentEntity e WHERE e.courseId = c.id) AS long)) " +
+            "FROM CourseEntity c LEFT JOIN InstructorEntity i ON c.instructorId = i.id " +
+            "WHERE c.id = :courseId")
+    Optional<AdminCourseDetailDTO> findCourseDetailById(@Param("courseId") Long courseId);
 }

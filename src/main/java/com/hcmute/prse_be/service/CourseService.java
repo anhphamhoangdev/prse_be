@@ -7,6 +7,7 @@ import com.hcmute.prse_be.request.QuizRequest;
 import com.hcmute.prse_be.response.CoursePageResponse;
 import net.minidev.json.JSONArray;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
 
 import java.util.List;
@@ -90,4 +91,13 @@ public interface CourseService {
     CourseFeedbackEntity getCourseFeedback(Long courseId, Long studentId);
 
     List<EnrolledCourseDTO> getEnrolledCoursesByStudentId(Long studentId);
+
+    Page<CourseWithInstructorDTO> findCoursesByFilters(
+            String keyword, Boolean isHot, Boolean isPublish, Boolean isDiscount, Pageable pageable);
+
+    AdminCourseDetailDTO getCourseDetail(Long courseId);
+
+    List<AdminChapterDTO> getCourseContent(Long courseId);
+
+    LessonEntity getLessonById(Long lessonId);
 }

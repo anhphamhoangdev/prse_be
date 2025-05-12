@@ -12,6 +12,8 @@ import com.hcmute.prse_be.security.Endpoints;
 import com.hcmute.prse_be.util.ConvertUtils;
 import com.hcmute.prse_be.util.JsonUtils;
 import net.minidev.json.JSONObject;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import vn.payos.PayOS;
 import vn.payos.type.CheckoutResponseData;
@@ -327,6 +329,28 @@ public class PaymentServiceImpl implements PaymentService{
     public Double calculateTotalSpentByStudentId(Long studentId) {
         Double totalSpent = paymentLogRepository.sumAmountByStudentId(studentId);
         return totalSpent == null ? 0.0 : totalSpent;
+    }
+
+    @Override
+    public Page<PaymentRequestLogEntity> getAllPayments(Pageable pageable) {
+        return paymentRequestLogRepository.findAll(pageable);
+    }
+
+    @Override
+    public Page<PaymentRequestLogEntity> getFilteredPayments(String transactionId, String status, Pageable pageable) {
+        if (transactionId != null && !transactionId.isEmpty() && status != null && !status.isEmpty()) {
+            // Tìm theo cả transaction ID và status
+            return paymentRequestLogRepository.findByTransactionIdContainingAndStatus(transactionId, status, pageable);
+        } else if (transactionId != null && !transactionId.isEmpty()) {
+            // Chỉ tìm theo transaction ID
+            return paymentRequestLogRepository.findByTransactionIdContaining(transactionId, pageable);
+        } else if (status != null && !status.isEmpty()) {
+            // Chỉ lọc theo status
+            return paymentRequestLogRepository.findByStatus(status, pageable);
+        } else {
+            // Không có điều kiện lọc
+            return paymentRequestLogRepository.findAll(pageable);
+        }
     }
 
 

@@ -17,4 +17,6 @@ public interface LessonRepository extends JpaRepository<LessonEntity, Long> {
             "JOIN ChapterEntity c ON l.chapterId = c.id " +
             "WHERE c.courseId = :courseId AND l.isPublish = true")
     Long countByCourseIdAndIsPublishTrue(Long courseId);
+
+    List<LessonEntity> findByChapterIdOrderByOrderIndex(Long id);
 }

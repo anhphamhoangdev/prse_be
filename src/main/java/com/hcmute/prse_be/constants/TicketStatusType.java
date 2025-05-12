@@ -4,7 +4,6 @@ public class TicketStatusType {
     public static final String NEW = "NEW";
     public static final String IN_PROGRESS = "IN_PROGRESS";
     public static final String RESOLVED = "RESOLVED";
-    public static final String CLOSED = "CLOSED";
 
     private TicketStatusType() {
         // Prevent instantiation

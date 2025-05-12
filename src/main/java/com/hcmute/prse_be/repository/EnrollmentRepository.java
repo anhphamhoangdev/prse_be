@@ -1,6 +1,7 @@
 package com.hcmute.prse_be.repository;
 
 import com.hcmute.prse_be.dtos.EnrollmentStatsDto;
+import com.hcmute.prse_be.dtos.EnrollmentWithStudentDTO;
 import com.hcmute.prse_be.entity.EnrollmentEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -25,4 +26,16 @@ public interface EnrollmentRepository extends JpaRepository<EnrollmentEntity, Lo
             "COUNT(CASE WHEN e.status = 'NOT_STARTED' THEN 1 END)) " +
             "FROM EnrollmentEntity e WHERE e.studentId = :studentId")
     EnrollmentStatsDto getEnrollmentStats(@Param("studentId") Long studentId);
+
+    @Query("SELECT new com.hcmute.prse_be.dtos.EnrollmentWithStudentDTO(" +
+            "e.id, e.studentId, e.courseId, e.paymentLogId, e.enrolledAt, e.status, " +
+            "e.progressPercent, e.completedAt, e.isRating, e.rating, e.isActive, " +
+            "e.createdAt, e.updatedAt, s.id, s.fullName, s.email, s.avatarUrl) " +
+            "FROM EnrollmentEntity e " +
+            "JOIN StudentEntity s ON e.studentId = s.id " +
+            "WHERE e.courseId = :courseId")
+    List<EnrollmentWithStudentDTO> findAllEnrollmentsWithStudentByCourseId(@Param("courseId") Long courseId);
+
+    // Đếm số lượng enrollment theo khóa học
+    long countByCourseId(Long courseId);
 }

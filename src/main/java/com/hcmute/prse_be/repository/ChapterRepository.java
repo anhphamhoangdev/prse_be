@@ -12,4 +12,6 @@ public interface ChapterRepository extends JpaRepository<ChapterEntity, Long> {
     Optional<ChapterEntity> findByIdAndCourseIdAndIsPublishTrue(Long chapterId, Long courseId);
 
     Long countByCourseIdAndIsPublishTrue(Long courseId);
+
+    List<ChapterEntity> findByCourseIdOrderByOrderIndex(Long courseId);
 }

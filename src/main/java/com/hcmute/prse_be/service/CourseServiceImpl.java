@@ -828,6 +828,88 @@ public class CourseServiceImpl implements CourseService {
         return enrolledCourses;
     }
 
+    @Override
+    public Page<CourseWithInstructorDTO> findCoursesByFilters(String keyword, Boolean isHot, Boolean isPublish, Boolean isDiscount, Pageable pageable) {
+        return courseRepository.findCoursesByFilters(keyword, isHot, isPublish, isDiscount, pageable);
+    }
+
+    @Override
+    public AdminCourseDetailDTO getCourseDetail(Long courseId) {
+        return courseRepository.findCourseDetailById(courseId).orElse(null);
+    }
+
+    @Override
+    public List<AdminChapterDTO> getCourseContent(Long courseId) {
+        // Fetch chapters for the course
+        List<ChapterEntity> chapters = chapterRepository.findByCourseIdOrderByOrderIndex(courseId);
+        if (chapters.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        // Map chapters to DTOs
+        return chapters.stream().map(chapter -> {
+            AdminChapterDTO chapterDTO = new AdminChapterDTO();
+            chapterDTO.setId(chapter.getId());
+            chapterDTO.setTitle(chapter.getTitle());
+            chapterDTO.setOrderIndex(chapter.getOrderIndex());
+            chapterDTO.setIsPublish(chapter.getIsPublish());
+
+            // Fetch lessons for the chapter
+            List<LessonEntity> lessons = lessonRepository.findByChapterIdOrderByOrderIndex(chapter.getId());
+            List<AdminLessonDTO> lessonDTOs = lessons.stream().map(lesson -> {
+                AdminLessonDTO lessonDTO = new AdminLessonDTO();
+                lessonDTO.setId(lesson.getId());
+                lessonDTO.setTitle(lesson.getTitle());
+                lessonDTO.setType(lesson.getType());
+                lessonDTO.setOrderIndex(lesson.getOrderIndex());
+                lessonDTO.setIsPublish(lesson.getIsPublish());
+
+                // Handle video lessons
+                if ("video".equals(lesson.getType())) {
+                    VideoLessonEntity videoLesson = videoLessonRepository.findByLessonId(lesson.getId());
+                    if (videoLesson != null) {
+                        AdminVideoLessonDTO videoLessonDTO = new AdminVideoLessonDTO();
+                        videoLessonDTO.setVideoUrl(videoLesson.getVideoUrl());
+                        videoLessonDTO.setDuration(videoLesson.getDuration());
+                        lessonDTO.setVideoLesson(videoLessonDTO);
+                    }
+                }
+                // Handle quiz lessons
+                else if ("quiz".equals(lesson.getType())) {
+                    List<QuestionEntity> questions = questionRepository.findByLessonId(lesson.getId());
+                    List<AdminQuestionDTO> questionDTOs = questions.stream().map(question -> {
+                        AdminQuestionDTO questionDTO = new AdminQuestionDTO();
+                        questionDTO.setId(question.getId());
+                        questionDTO.setText(question.getText());
+
+                        // Fetch answers for the question
+                        List<AnswerEntity> answers = answerRepository.findByQuestionId(question.getId());
+                        List<AdminAnswerDTO> answerDTOs = answers.stream().map(answer -> {
+                            AdminAnswerDTO answerDTO = new AdminAnswerDTO();
+                            answerDTO.setId(answer.getId());
+                            answerDTO.setText(answer.getText());
+                            answerDTO.setIsCorrect(answer.getIsCorrect());
+                            return answerDTO;
+                        }).collect(Collectors.toList());
+                        questionDTO.setAnswers(answerDTOs);
+                        return questionDTO;
+                    }).collect(Collectors.toList());
+                    lessonDTO.setQuestions(questionDTOs);
+                }
+
+                return lessonDTO;
+            }).collect(Collectors.toList());
+
+            chapterDTO.setLessons(lessonDTOs);
+            return chapterDTO;
+        }).collect(Collectors.toList());
+    }
+
+    @Override
+    public LessonEntity getLessonById(Long lessonId) {
+        return lessonRepository.findById(lessonId).orElse(null);
+    }
+
 
     private CourseDTO processDiscountPrice(CourseDTO course) {
         if (Boolean.TRUE.equals(course.getIsDiscount())) {
