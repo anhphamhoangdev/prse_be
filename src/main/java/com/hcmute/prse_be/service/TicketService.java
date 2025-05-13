@@ -12,4 +12,6 @@ public interface TicketService {
     TicketEntity getTicketById(Long id);
 
     TicketEntity updateTicket(TicketEntity ticket);
+
+    long countTicketsByStatus(String status);
 }

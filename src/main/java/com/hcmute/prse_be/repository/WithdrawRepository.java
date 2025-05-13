@@ -18,5 +18,4 @@ public interface WithdrawRepository extends JpaRepository<WithDrawEntity, Long> 
     List<WithDrawEntity> findAllByInstructorIdOrderByIdDesc(Long instructorId);
 
 
-
 }

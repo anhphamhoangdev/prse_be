@@ -37,4 +37,9 @@ public class TicketServiceImpl implements TicketService {
     public TicketEntity updateTicket(TicketEntity ticket) {
         return ticketRepository.save(ticket);
     }
+
+    @Override
+    public long countTicketsByStatus(String status) {
+        return ticketRepository.countByStatus(status);
+    }
 }

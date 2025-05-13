@@ -8,4 +8,6 @@ public interface WithdrawService {
     void saveWithdraw(WithDrawEntity withDrawEntity);
 
     List<WithDrawEntity> getAllWithdrawsByInstructor(Long instructorId);
+
+    long countWithdrawsByStatus(String status);
 }

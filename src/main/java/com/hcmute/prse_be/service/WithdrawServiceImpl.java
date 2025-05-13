@@ -26,5 +26,10 @@ public class WithdrawServiceImpl implements WithdrawService{
         return withdrawRepository.findAllByInstructorIdOrderByIdDesc(instructorId);
     }
 
+    @Override
+    public long countWithdrawsByStatus(String status) {
+        return withdrawRepository.countByStatus(status);
+    }
+
 
 }

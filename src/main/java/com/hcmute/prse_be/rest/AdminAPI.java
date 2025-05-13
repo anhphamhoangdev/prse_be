@@ -1,9 +1,7 @@
 package com.hcmute.prse_be.rest;
 
 
-import com.hcmute.prse_be.constants.ApiPaths;
-import com.hcmute.prse_be.constants.ErrorMsg;
-import com.hcmute.prse_be.constants.TicketStatusType;
+import com.hcmute.prse_be.constants.*;
 import com.hcmute.prse_be.dtos.*;
 import com.hcmute.prse_be.entity.*;
 import com.hcmute.prse_be.request.LoginRequest;
@@ -49,8 +47,9 @@ public class AdminAPI {
     private final TicketService ticketService;
 
     private final PaymentService paymentService;
+    private final WithdrawService withdrawService;
 
-    public AdminAPI(AdminService adminService, AuthenticationManager authenticationManager, CustomUserDetailsService customUserDetailsService, JwtService jwtService, StudentService studentService, CourseService courseService, InstructorService instructorService, EnrollmentService enrollmentService, TicketService ticketService, PaymentService paymentService) {
+    public AdminAPI(AdminService adminService, AuthenticationManager authenticationManager, CustomUserDetailsService customUserDetailsService, JwtService jwtService, StudentService studentService, CourseService courseService, InstructorService instructorService, EnrollmentService enrollmentService, TicketService ticketService, PaymentService paymentService, WithdrawService withdrawService) {
         this.adminService = adminService;
         this.authenticationManager = authenticationManager;
         this.customUserDetailsService = customUserDetailsService;
@@ -61,6 +60,7 @@ public class AdminAPI {
         this.enrollmentService = enrollmentService;
         this.ticketService = ticketService;
         this.paymentService = paymentService;
+        this.withdrawService = withdrawService;
     }
 
 
@@ -889,6 +889,30 @@ public class AdminAPI {
 
             JSONObject response = new JSONObject();
             response.put("enrollment", updatedEnrollment);
+            return ResponseEntity.ok(Response.success(response));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Response.error(ErrorMsg.SOMETHING_WENT_WRONG + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/dashboard/process_statistics")
+    public ResponseEntity<JSONObject> getProcessStatistics(
+            Authentication authentication
+    ) {
+        LogService.getgI().info("[AdminAPI] getProcessStatistics username: " + authentication.getName());
+        try {
+            String email = authentication.getName();
+            AdminEntity admin = adminService.findByEmail(email);
+            if (admin == null) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Response.error(ErrorMsg.STUDENT_USERNAME_NOT_EXIST));
+            }
+
+            long totalNewWithdraws = withdrawService.countWithdrawsByStatus(WithDrawStatus.PENDING);
+            long totalNewtickets = ticketService.countTicketsByStatus(TicketStatusType.NEW);
+            JSONObject response = new JSONObject();
+            response.put("totalNewWithdraws", totalNewWithdraws);
+            response.put("totalNewTickets", totalNewtickets);
             return ResponseEntity.ok(Response.success(response));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
