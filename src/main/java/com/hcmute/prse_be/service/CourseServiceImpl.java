@@ -11,11 +11,14 @@ import com.hcmute.prse_be.request.*;
 import com.hcmute.prse_be.response.CoursePageResponse;
 import net.minidev.json.JSONArray;
 import net.minidev.json.JSONObject;
+import net.minidev.json.parser.JSONParser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.*;
+import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.reactive.function.client.WebClient;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -45,9 +48,12 @@ public class CourseServiceImpl implements CourseService {
     private final CourseSubCategoryRepository courseSubCategoryRepository;
     private final QuestionRepository questionRepository;
     private final AnswerRepository answerRepository;
+    private final StudentCourseViewRepository studentCourseViewRepository;
+    private final WebClient webClient;
+
 
     @Autowired
-    public CourseServiceImpl(CourseRepository courseRepository, CourseDiscountRepository courseDiscountRepository, InstructorRepository instructorRepository, CourseObjectiveRepository courseObjectiveRepository, SubCategoryRepository subCategoryRepository, CoursePrerequisiteRepository coursePrerequisiteRepository, StudentRepository studentRepository, EnrollmentRepository enrollmentRepository, CourseFeedbackRepository courseFeedbackRepository, ChapterRepository chapterRepository, LessonRepository lessonRepository, ChapterProgressRepository chapterProgressRepository, LessonProgressRepository lessonProgressRepository, VideoLessonRepository videoLessonRepository, CourseSubCategoryRepository courseSubCategoryRepository, QuestionRepository questionRepository, AnswerRepository answerRepository) {
+    public CourseServiceImpl(CourseRepository courseRepository, CourseDiscountRepository courseDiscountRepository, InstructorRepository instructorRepository, CourseObjectiveRepository courseObjectiveRepository, SubCategoryRepository subCategoryRepository, CoursePrerequisiteRepository coursePrerequisiteRepository, StudentRepository studentRepository, EnrollmentRepository enrollmentRepository, CourseFeedbackRepository courseFeedbackRepository, ChapterRepository chapterRepository, LessonRepository lessonRepository, ChapterProgressRepository chapterProgressRepository, LessonProgressRepository lessonProgressRepository, VideoLessonRepository videoLessonRepository, CourseSubCategoryRepository courseSubCategoryRepository, QuestionRepository questionRepository, AnswerRepository answerRepository, StudentCourseViewRepository studentCourseViewRepository, WebClient webClient) {
         this.courseRepository = courseRepository;
         this.courseDiscountRepository = courseDiscountRepository;
         this.instructorRepository = instructorRepository;
@@ -65,6 +71,8 @@ public class CourseServiceImpl implements CourseService {
         this.courseSubCategoryRepository = courseSubCategoryRepository;
         this.questionRepository = questionRepository;
         this.answerRepository = answerRepository;
+        this.studentCourseViewRepository = studentCourseViewRepository;
+        this.webClient = webClient;
     }
 
     @Override
@@ -261,6 +269,23 @@ public class CourseServiceImpl implements CourseService {
 
         course.setTotalViews(course.getTotalViews() + 1);
         courseRepository.save(course);
+
+
+        // save history view of course
+        if(authentication != null)
+        {
+            // find student
+            String username = authentication.getName();
+            StudentEntity student = studentRepository.findByUsername(username);
+            if(student != null)
+            {
+                // save history view
+                StudentCourseViewEntity studentCourseViewEntity = new StudentCourseViewEntity();
+                studentCourseViewEntity.setStudentId(student.getId());
+                studentCourseViewEntity.setCourseId(id);
+                studentCourseViewRepository.save(studentCourseViewEntity);
+            }
+        }
 
         // kiem khoa hoc va set 1 vai thong tin
         CourseBasicDTO courseBasic = courseRepository.findCourseBasicById(id);
@@ -938,6 +963,113 @@ public class CourseServiceImpl implements CourseService {
         chapterRepository.delete(chapter);
     }
 
+    @Override
+    public List<CourseDTO> getRecommendationCourse(Authentication authentication) {
+        if(authentication != null && authentication.isAuthenticated()) {
+            String username = authentication.getName();
+            StudentEntity student = studentRepository.findByUsername(username);
+            if(student != null) {
+                try {
+                    // Trích xuất danh sách courseIds
+                    List<Long> viewedCourseIds = studentCourseViewRepository
+                            .findTop10DistinctCourseIdsByStudentId(student.getId());
+
+                    if (viewedCourseIds.isEmpty()) {
+                        return List.of();
+                    }
+
+                    String responseStr = callRecommendationAPI(student.getId() ,viewedCourseIds);
+
+                    // Parse response thành danh sách courseIds
+                    List<Long> recommendedCourseIds = parseRecommendationResponse(responseStr);
+
+                    // Nếu không có gợi ý từ API, trả về danh sách trống
+                    if (recommendedCourseIds.isEmpty()) {
+                        return List.of();
+                    }
+
+                    // Lấy thông tin chi tiết của các khóa học được gợi ý
+                    List<CourseDTO> recommendedCourses = courseRepository.findCoursesByIdIn(recommendedCourseIds);
+
+                    // Xử lý giá khuyến mãi cho các khóa học
+                    return recommendedCourses.stream()
+                            .map(this::processDiscountPrice)
+                            .collect(Collectors.toList());
+                } catch (Exception e) {
+                    LogService.getgI().info("[getRecommendationCourse] Error: " + e.getMessage());
+                    return List.of(); // Trả về danh sách trống nếu có lỗi
+                }
+            }
+        }
+        return List.of();
+    }
+
+    // Gọi API recommendation với danh sách courseIds
+    private String callRecommendationAPI(Long studentId, List<Long> viewedCourseIds) {
+        try {
+            // Create a JSON object with user_id and course_ids
+            JSONObject requestObj = new JSONObject();
+            requestObj.put("user_id", studentId);
+            requestObj.put("course_ids", viewedCourseIds);
+
+            // Convert JSON object to string
+            String requestJson = requestObj.toString();
+
+            // Log the request
+            LogService.getgI().info("[callRecommendationAPI] Request: " + requestJson);
+
+            // Call API and wait for response
+            String responseStr = webClient.post()
+                    .uri("http://192.168.0.218:5000/api/recommend")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .bodyValue(requestJson)
+                    .retrieve()
+                    .bodyToMono(String.class)
+                    .block();
+
+            // Log the response
+            LogService.getgI().info("[callRecommendationAPI] Response: " + responseStr);
+
+            return responseStr;
+        } catch (Exception e) {
+            LogService.getgI().info("[callRecommendationAPI] Error: " + e.getMessage());
+            return "[]"; // Return empty array in case of error
+        }
+    }
+
+    // Parse response từ API recommendation (mảng courseIds)
+    private List<Long> parseRecommendationResponse(String responseStr) {
+        try {
+            // Parse response into JSONObject
+            JSONParser parser = new JSONParser(JSONParser.DEFAULT_PERMISSIVE_MODE);
+            JSONObject jsonObject = (JSONObject) parser.parse(responseStr);
+
+            // Get the course_ids array from the JSON object
+            JSONArray courseIdsArray = (JSONArray) jsonObject.get("course_ids");
+
+            // Convert JSONArray to List<Long>
+            List<Long> courseIds = new ArrayList<>();
+            if (courseIdsArray != null) {
+                for (Object obj : courseIdsArray) {
+                    if (obj instanceof Number) {
+                        courseIds.add(((Number) obj).longValue());
+                    } else if (obj instanceof String) {
+                        try {
+                            courseIds.add(Long.parseLong((String) obj));
+                        } catch (NumberFormatException e) {
+                            // Skip invalid number formats
+                        }
+                    }
+                }
+            }
+
+            return courseIds;
+        } catch (Exception e) {
+            LogService.getgI().info("[parseRecommendationResponse] Error: " + e.getMessage());
+            return List.of(); // Return empty list if there's an error
+        }
+    }
+
 
     private CourseDTO processDiscountPrice(CourseDTO course) {
         if (Boolean.TRUE.equals(course.getIsDiscount())) {
@@ -954,6 +1086,7 @@ public class CourseServiceImpl implements CourseService {
         }
         return course;
     }
+
 
 
 

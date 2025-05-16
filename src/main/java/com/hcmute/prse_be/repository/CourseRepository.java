@@ -320,4 +320,30 @@ public interface CourseRepository extends JpaRepository<CourseEntity, Long> {
             "FROM CourseEntity c LEFT JOIN InstructorEntity i ON c.instructorId = i.id " +
             "WHERE c.id = :courseId")
     Optional<AdminCourseDetailDTO> findCourseDetailById(@Param("courseId") Long courseId);
+
+    // Thêm vào CourseRepository
+    @Query("""
+        SELECT new com.hcmute.prse_be.dtos.CourseDTO(
+            c.id,
+            c.instructorId,
+            c.title,
+            c.shortDescription,
+            c.description,
+            c.imageUrl,
+            c.language,
+            c.originalPrice,
+            c.originalPrice,
+            c.averageRating,
+            c.totalStudents,
+            c.totalViews,
+            c.isPublish,
+            c.isHot,
+            c.isDiscount,
+            c.createdAt,
+            c.updatedAt
+        )
+        FROM CourseEntity c
+        WHERE c.id IN :courseIds
+        """)
+    List<CourseDTO> findCoursesByIdIn(@Param("courseIds") List<Long> courseIds);
 }

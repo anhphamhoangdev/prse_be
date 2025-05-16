@@ -110,7 +110,7 @@ public class CourseAPI {
             @PathVariable("lessonId") Long lessonId,
             Authentication authentication
     ) {
-        LogService.getgI().info("[CourseAPI] getVideoLesson : courseId=" + courseId + ", chapterId=" + chapterId + ", lessonId=" + lessonId);
+        LogService.getgI().info("[CourseAPI] getVideoLesson : courseId= " + courseId + ", chapterId= " + chapterId + ", lessonId= " + lessonId);
 
         try {
 

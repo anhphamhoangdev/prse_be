@@ -107,4 +107,7 @@ public interface CourseService {
     List<LessonEntity> updateLessonOrder(List<OrderRequest.Order> lessonOrders);
 
     void deleteChapter(ChapterEntity chapter);
+
+
+    List<CourseDTO> getRecommendationCourse(Authentication authentication);
 }
