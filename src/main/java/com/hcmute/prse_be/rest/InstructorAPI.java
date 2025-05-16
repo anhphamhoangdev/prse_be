@@ -19,6 +19,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
@@ -851,6 +852,24 @@ public class InstructorAPI {
             LogService.getgI().info("File size: " + file.getSize());
             LogService.getgI().info("File name: " + file.getOriginalFilename());
             LogService.getgI().info("File content type: " + file.getContentType());
+
+            // ĐỌC FILE NGAY LẬP TỨC VÀO BỘ NHỚ
+            byte[] fileData;
+            String originalFilename;
+            String contentType;
+
+            try {
+                fileData = file.getBytes(); // Đọc toàn bộ file vào bộ nhớ
+                originalFilename = file.getOriginalFilename();
+                contentType = file.getContentType();
+
+                LogService.getgI().info("Successfully read file data, size: " + fileData.length);
+            } catch (IOException e) {
+                LogService.getgI().error(e);
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body(Response.error("Lỗi đọc dữ liệu file"));
+            }
+
             String username = authentication.getName();
             StudentEntity student = studentService.findByUsername(username);
             if (student == null) {
@@ -897,9 +916,9 @@ public class InstructorAPI {
                     uploadStatus.setLessonId(lessonId);
                     uploadStatus.setTitle("Video cho bài học: " + lesson.getTitle());
 
-
                     // save to cache
                     UploadingVideoCache.getInstance().getUploadingVideo().put(threadId, uploadStatus);
+
                     // Folder structure: course/{courseId}/chapter/{chapterId}/lesson/{lessonId}
                     String folderName = String.format("%s/%s/chapter/%s/lesson/%s",
                             ImageFolderName.COURSE,
@@ -910,6 +929,12 @@ public class InstructorAPI {
                     LogService.getgI().info("Uploading video... : " + folderName);
 
                     VideoLessonEntity finalVideoLessonEntity = videoLessonEntity;
+
+                    // SỬ DỤNG DỮ LIỆU ĐÃ ĐỌC TRƯỚC ĐÓ TRONG TIẾN TRÌNH BẤT ĐỒNG BỘ
+                    final byte[] finalFileData = fileData;
+                    final String finalOriginalFilename = originalFilename;
+                    final String finalContentType = contentType;
+
                     CompletableFuture.supplyAsync(() -> {
                         try {
                             // Start progress simulation in separate thread
@@ -935,7 +960,9 @@ public class InstructorAPI {
 
                             // Actual upload process
                             LogService.getgI().info("PASSED 0");
-                            Map uploadResult = cloudinaryService.uploadVideo(file, folderName);
+                            // SỬ DỤNG PHƯƠNG THỨC MỚI NHẬN BYTE ARRAY THAY VÌ MULTIPARTFILE
+                            Map uploadResult = cloudinaryService.uploadVideoFromBytes(
+                                    finalFileData, finalOriginalFilename, finalContentType, folderName);
 
                             // Upload completed
                             uploadStatus.setStatus("COMPLETED");
@@ -962,6 +989,8 @@ public class InstructorAPI {
 
                             return uploadResult;
                         } catch (Exception e) {
+                            LogService.getgI().error(e);
+                            e.printStackTrace();
                             uploadStatus.setStatus("FAILED");
                             uploadStatus.setProgress(0.0);
                             uploadStatus.setErrorMessage(e.getMessage());
@@ -970,13 +999,16 @@ public class InstructorAPI {
                             UploadingVideoCache.getInstance().getUploadingVideo().remove(threadId);
                         }
                     });
+
                     return ResponseEntity.ok(Response.success(response));
                 }
             }
+
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(Response.error("Không tìm thấy thông tin"));
         } catch (Exception e) {
             LogService.getgI().error(e);
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Response.error("Có lỗi xảy ra khi tải lên video"));
         }

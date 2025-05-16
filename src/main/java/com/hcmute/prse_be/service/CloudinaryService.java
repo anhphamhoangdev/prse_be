@@ -11,4 +11,6 @@ public interface CloudinaryService {
     String uploadFile(byte[] fileData, String folderName, String filePath) throws IOException;
 
     Map uploadVideo(MultipartFile file, String folderName) throws IOException;
+
+    Map uploadVideoFromBytes(byte[] finalFileData, String finalOriginalFilename, String finalContentType, String folderName);
 }
