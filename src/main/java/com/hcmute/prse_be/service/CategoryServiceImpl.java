@@ -276,6 +276,30 @@ public class CategoryServiceImpl implements CategoryService{
         return updatedCategories;
     }
 
+    @Transactional
+    @Override
+    public List<SubCategoryEntity> updateSubCategoryOrder(List<CategoryOrderRequest.CategoryOrder> categoryOrders) {
+        List<SubCategoryEntity> updatedSubCategories = new ArrayList<>();
+        for (CategoryOrderRequest.CategoryOrder order : categoryOrders) {
+            SubCategoryEntity subCategory = subCategoryRepository.findById(order.getId())
+                    .orElseThrow(() -> new IllegalArgumentException("SubCategory with ID " + order.getId() + " not found"));
+
+            subCategory.setOrderIndex(order.getOrderIndex());
+            updatedSubCategories.add(subCategoryRepository.save(subCategory));
+        }
+        return updatedSubCategories;
+    }
+
+    @Override
+    public CategoryEntity save(CategoryEntity categoryEntity) {
+        return categoryRepository.save(categoryEntity);
+    }
+
+    @Override
+    public SubCategoryEntity saveSubCategory(SubCategoryEntity updatedSubCategory) {
+        return subCategoryRepository.save(updatedSubCategory);
+    }
+
 
     private CourseDTO processDiscountPrice(CourseDTO course) {
         if (Boolean.TRUE.equals(course.getIsDiscount())) {

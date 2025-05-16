@@ -1077,6 +1077,150 @@ public class AdminAPI {
     }
 
 
+    @PostMapping("/categories/{categoryId}/sub-categories/update-order")
+    public ResponseEntity<JSONObject> updateSubCategoryOrder(
+            @RequestBody CategoryOrderRequest request,
+            @PathVariable Long categoryId,
+            Authentication authentication
+    ) {
+        LogService.getgI().info("[AdminAPI] updateSubCategoryOrder username: " + authentication.getName());
+        try {
+            String email = authentication.getName();
+            AdminEntity admin = adminService.findByEmail(email);
+            if (admin == null) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Response.error(ErrorMsg.STUDENT_USERNAME_NOT_EXIST));
+            }
+
+            List<SubCategoryEntity> updatedCategories = categoryService.updateSubCategoryOrder(request.getSubCategoryOrders());
+
+            JSONObject response = new JSONObject();
+            response.put("subCategory", updatedCategories);
+
+            return ResponseEntity.ok(Response.success(response));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Response.error(e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Response.error(ErrorMsg.SOMETHING_WENT_WRONG + e.getMessage()));
+        }
+    }
+
+    @PutMapping("/categories/{categoryId}/toggle-status")
+    public ResponseEntity<JSONObject> updateCategoryToggleStatus(
+            @PathVariable Long categoryId,
+            Authentication authentication
+    ) {
+        LogService.getgI().info("[AdminAPI] updateCategoryToggleStatus username: " + authentication.getName());
+        try {
+            String email = authentication.getName();
+            AdminEntity admin = adminService.findByEmail(email);
+            if (admin == null) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Response.error(ErrorMsg.STUDENT_USERNAME_NOT_EXIST));
+            }
+
+            // find category by id
+            CategoryEntity categoryEntity = categoryService.getCategoryById(categoryId);
+            if (categoryEntity == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Response.error("Category not found"));
+            }
+            // toggle status
+            categoryEntity.setIsActive(!categoryEntity.getIsActive());
+            CategoryEntity updatedCategory = categoryService.save(categoryEntity);
+
+            JSONObject response = new JSONObject();
+            response.put("category", updatedCategory);
+
+            return ResponseEntity.ok(Response.success(response));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Response.error(e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Response.error(ErrorMsg.SOMETHING_WENT_WRONG + e.getMessage()));
+        }
+    }
+
+    @PutMapping("/categories/{categoryId}/sub-categories/{subCategoriesId}/toggle-status")
+    public ResponseEntity<JSONObject> updateSubCategoryToggleStatus(
+            @PathVariable Long categoryId,
+            @PathVariable Long subCategoriesId,
+            Authentication authentication
+    ) {
+        LogService.getgI().info("[AdminAPI] updateCategoryToggleStatus username: " + authentication.getName());
+        try {
+            String email = authentication.getName();
+            AdminEntity admin = adminService.findByEmail(email);
+            if (admin == null) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Response.error(ErrorMsg.STUDENT_USERNAME_NOT_EXIST));
+            }
+
+            // find category by id
+            SubCategoryEntity categoryEntity = categoryService.getSubCategoryById(subCategoriesId);
+            if (categoryEntity == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Response.error("Category not found"));
+            }
+            // toggle status
+            categoryEntity.setIsActive(!categoryEntity.getIsActive());
+            SubCategoryEntity updatedCategory = categoryService.saveSubCategory(categoryEntity);
+
+            JSONObject response = new JSONObject();
+            response.put("category", updatedCategory);
+
+            return ResponseEntity.ok(Response.success(response));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Response.error(e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Response.error(ErrorMsg.SOMETHING_WENT_WRONG + e.getMessage()));
+        }
+    }
+
+    @PutMapping("/categories/{categoryId}/sub-categories/{subCategoriesId}")
+    public ResponseEntity<JSONObject> updateSubCategory(
+            @RequestBody SubCategoryEntity updateSubCategory,
+            Authentication authentication
+    ) {
+        LogService.getgI().info("[AdminAPI] updateCategoryToggleStatus username: " + authentication.getName());
+        try {
+            String email = authentication.getName();
+            AdminEntity admin = adminService.findByEmail(email);
+            if (admin == null) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Response.error(ErrorMsg.STUDENT_USERNAME_NOT_EXIST));
+            }
+
+            // find category by id
+            SubCategoryEntity subCategory = categoryService.getSubCategoryById(updateSubCategory.getId());
+            if (subCategory == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Response.error("Category not found"));
+            }
+            // toggle status
+            subCategory.setName(updateSubCategory.getName());
+            subCategory.setIsActive(updateSubCategory.getIsActive());
+            subCategory.setCategoryId(updateSubCategory.getCategoryId());
+            subCategory.setOrderIndex(updateSubCategory.getOrderIndex());
+            SubCategoryEntity updatedSubCategory = categoryService.saveSubCategory(subCategory);
+
+            JSONObject response = new JSONObject();
+            response.put("subCategory", updatedSubCategory);
+
+            return ResponseEntity.ok(Response.success(response));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Response.error(e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Response.error(ErrorMsg.SOMETHING_WENT_WRONG + e.getMessage()));
+        }
+    }
 
 
 

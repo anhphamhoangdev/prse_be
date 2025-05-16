@@ -39,4 +39,10 @@ public interface CategoryService {
     SubCategoryEntity createSubCategory(SubCategoryEntity subCategory);
 
     List<CategoryEntity> updateCategoryOrder(List<CategoryOrderRequest.CategoryOrder> categoryOrders);
+
+    List<SubCategoryEntity> updateSubCategoryOrder(List<CategoryOrderRequest.CategoryOrder> categoryOrders);
+
+    CategoryEntity save(CategoryEntity categoryEntity);
+
+    SubCategoryEntity saveSubCategory(SubCategoryEntity updatedSubCategory);
 }

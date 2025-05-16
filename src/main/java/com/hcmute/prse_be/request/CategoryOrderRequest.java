@@ -4,6 +4,7 @@ import java.util.List;
 
 public class CategoryOrderRequest {
     private List<CategoryOrder> categoryOrders;
+    private List<CategoryOrder> subCategoryOrders;
 
     public List<CategoryOrder> getCategoryOrders() {
         return categoryOrders;
@@ -11,6 +12,13 @@ public class CategoryOrderRequest {
 
     public void setCategoryOrders(List<CategoryOrder> categoryOrders) {
         this.categoryOrders = categoryOrders;
+    }
+
+    public List<CategoryOrder> getSubCategoryOrders() {
+        return subCategoryOrders;
+    }
+    public void setSubCategoryOrders(List<CategoryOrder> subCategoryOrders) {
+        this.subCategoryOrders = subCategoryOrders;
     }
 
     public static class CategoryOrder {
