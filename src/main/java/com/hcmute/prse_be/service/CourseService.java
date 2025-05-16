@@ -3,6 +3,7 @@ package com.hcmute.prse_be.service;
 import com.hcmute.prse_be.dtos.*;
 import com.hcmute.prse_be.entity.*;
 import com.hcmute.prse_be.request.CourseFormDataRequest;
+import com.hcmute.prse_be.request.OrderRequest;
 import com.hcmute.prse_be.request.QuizRequest;
 import com.hcmute.prse_be.response.CoursePageResponse;
 import net.minidev.json.JSONArray;
@@ -100,4 +101,10 @@ public interface CourseService {
     List<AdminChapterDTO> getCourseContent(Long courseId);
 
     LessonEntity getLessonById(Long lessonId);
+
+    List<ChapterEntity> updateChapterOrder(List<OrderRequest.Order> chapterOrders);
+
+    List<LessonEntity> updateLessonOrder(List<OrderRequest.Order> lessonOrders);
+
+    void deleteChapter(ChapterEntity chapter);
 }

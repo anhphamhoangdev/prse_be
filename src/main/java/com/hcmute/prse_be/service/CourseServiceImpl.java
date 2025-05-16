@@ -7,10 +7,7 @@ import com.hcmute.prse_be.constants.StatusType;
 import com.hcmute.prse_be.dtos.*;
 import com.hcmute.prse_be.entity.*;
 import com.hcmute.prse_be.repository.*;
-import com.hcmute.prse_be.request.AnswerRequest;
-import com.hcmute.prse_be.request.CourseFormDataRequest;
-import com.hcmute.prse_be.request.QuestionRequest;
-import com.hcmute.prse_be.request.QuizRequest;
+import com.hcmute.prse_be.request.*;
 import com.hcmute.prse_be.response.CoursePageResponse;
 import net.minidev.json.JSONArray;
 import net.minidev.json.JSONObject;
@@ -908,6 +905,37 @@ public class CourseServiceImpl implements CourseService {
     @Override
     public LessonEntity getLessonById(Long lessonId) {
         return lessonRepository.findById(lessonId).orElse(null);
+    }
+
+    @Override
+    public List<ChapterEntity> updateChapterOrder(List<OrderRequest.Order> chapterOrders) {
+        List<ChapterEntity> updatedChapters = new ArrayList<>();
+        for (OrderRequest.Order chapterOrder : chapterOrders) {
+            ChapterEntity chapter = chapterRepository.findById(chapterOrder.getId()).orElse(null);
+            if (chapter != null) {
+                chapter.setOrderIndex(chapterOrder.getOrderIndex());
+                updatedChapters.add(chapter);
+            }
+        }
+        return chapterRepository.saveAll(updatedChapters);
+    }
+
+    @Override
+    public List<LessonEntity> updateLessonOrder(List<OrderRequest.Order> lessonOrders) {
+        List<LessonEntity> updatedLessons = new ArrayList<>();
+        for (OrderRequest.Order lessonOrder : lessonOrders) {
+            LessonEntity lesson = lessonRepository.findById(lessonOrder.getId()).orElse(null);
+            if (lesson != null) {
+                lesson.setOrderIndex(lessonOrder.getOrderIndex());
+                updatedLessons.add(lesson);
+            }
+        }
+        return lessonRepository.saveAll(updatedLessons);
+    }
+
+    @Override
+    public void deleteChapter(ChapterEntity chapter) {
+        chapterRepository.delete(chapter);
     }
 
 

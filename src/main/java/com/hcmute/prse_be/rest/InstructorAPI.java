@@ -1440,4 +1440,125 @@ public class InstructorAPI {
         }
     }
 
+
+    @PostMapping("/courses/{courseId}/curriculum/chapters/update-order")
+    public ResponseEntity<JSONObject> updateChapterOrder(
+            @RequestBody OrderRequest chapterOrderRequest,
+            @PathVariable Long courseId,
+            Authentication authentication
+    ) {
+        LogService.getgI().info("[InstructorAPI] updateChapterOrder username: " + authentication.getName() + " request course Id: " + courseId);
+        try {
+
+            String username = authentication.getName();
+            StudentEntity student = studentService.findByUsername(username);
+            if (student == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Response.error("Không tìm thấy thông tin người dùng"));
+            }
+
+            InstructorEntity instructor = instructorService.getInstructorByStudentId(student.getId());
+            if (instructor == null || !instructor.getIsActive()) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Response.error("Không tìm thấy thông tin giáo viên"));
+            }
+
+            List<ChapterEntity> chapterOrders = courseService.updateChapterOrder(chapterOrderRequest.getChapterOrders());
+
+
+            JSONObject response = new JSONObject();
+            response.put("chapterOrders", chapterOrders);
+
+            return ResponseEntity.ok(Response.success(response));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Response.error(e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Response.error(ErrorMsg.SOMETHING_WENT_WRONG + e.getMessage()));
+        }
+    }
+
+    @PutMapping("/courses/{courseId}/chapters/{chapterId}/lessons/update-order")
+    public ResponseEntity<JSONObject> updateLessonOrder(
+            @RequestBody OrderRequest lessonOrders,
+            @PathVariable Long courseId,
+            @PathVariable Long chapterId,
+            Authentication authentication
+    ) {
+        LogService.getgI().info("[InstructorAPI] updateLessonOrder username: " + authentication.getName() + " request course Id: " + courseId + " chapterId: " + chapterId);
+        try {
+
+            String username = authentication.getName();
+            StudentEntity student = studentService.findByUsername(username);
+            if (student == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Response.error("Không tìm thấy thông tin người dùng"));
+            }
+
+            InstructorEntity instructor = instructorService.getInstructorByStudentId(student.getId());
+            if (instructor == null || !instructor.getIsActive()) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Response.error("Không tìm thấy thông tin giáo viên"));
+            }
+
+            List<LessonEntity> lessonEntities = courseService.updateLessonOrder(lessonOrders.getLessonOrders());
+
+
+            JSONObject response = new JSONObject();
+            response.put("lessonEntities", lessonEntities);
+
+            return ResponseEntity.ok(Response.success(response));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Response.error(e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Response.error(ErrorMsg.SOMETHING_WENT_WRONG + e.getMessage()));
+        }
+    }
+
+    @DeleteMapping("/courses/{courseId}/curriculum/chapters/{chapterId}")
+    public ResponseEntity<JSONObject> deleteChapter(
+            @PathVariable Long courseId,
+            @PathVariable Long chapterId,
+            Authentication authentication
+    ) {
+        LogService.getgI().info("[InstructorAPI] deleteChapter username: " + authentication.getName() + " request course Id: " + courseId + " chapterId: " + chapterId);
+        try {
+
+            String username = authentication.getName();
+            StudentEntity student = studentService.findByUsername(username);
+            if (student == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Response.error("Không tìm thấy thông tin người dùng"));
+            }
+
+            InstructorEntity instructor = instructorService.getInstructorByStudentId(student.getId());
+            if (instructor == null || !instructor.getIsActive()) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Response.error("Không tìm thấy thông tin giáo viên"));
+            }
+
+            // delete
+            ChapterEntity chapterEntity = courseService.getChapterById(chapterId);
+            if (chapterEntity == null || !chapterEntity.getCourseId().equals(courseId)) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Response.error("Không tìm thấy thông tin chương"));
+            }
+            courseService.deleteChapter(chapterEntity);
+
+            JSONObject response = new JSONObject();
+            return ResponseEntity.ok(Response.success(response));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Response.error(e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Response.error(ErrorMsg.SOMETHING_WENT_WRONG + e.getMessage()));
+        }
+    }
+
+
+
 }
