@@ -6,16 +6,16 @@ import com.hcmute.prse_be.dtos.CourseDTO;
 import com.hcmute.prse_be.dtos.SubCategoryDTO;
 import com.hcmute.prse_be.entity.*;
 import com.hcmute.prse_be.repository.*;
+import com.hcmute.prse_be.request.CategoryOrderRequest;
 import com.hcmute.prse_be.response.CoursePageResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.*;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -191,6 +191,91 @@ public class CategoryServiceImpl implements CategoryService{
                 coursePage.getTotalElements()
         );
     }
+
+    @Override
+    public List<CategoryEntity> findAllWithFilters(String search, String status) {
+        List<CategoryEntity> allCategories = categoryRepository.findAllByOrderByOrderIndexAsc();
+
+        if (!search.isEmpty()) {
+            String searchLower = search.toLowerCase();
+            allCategories = allCategories.stream()
+                    .filter(category -> category.getName().toLowerCase().contains(searchLower))
+                    .collect(Collectors.toList());
+        }
+
+        // Apply status filter if provided
+        if (!status.equals("ALL")) {
+            boolean isActive = status.equals("ACTIVE");
+            allCategories = allCategories.stream()
+                    .filter(category -> category.getIsActive() == isActive)
+                    .collect(Collectors.toList());
+        }
+
+        return allCategories;
+    }
+
+    @Override
+    public CategoryEntity getCategoryById(Long id) {
+        Optional<CategoryEntity> categoryOptional = categoryRepository.findById(id);
+        return categoryOptional.orElse(null);
+    }
+
+    @Override
+    public List<SubCategoryEntity> getSubCategoriesByCategoryId(Long categoryId, String search, String status) {
+        List<SubCategoryEntity> subCategories = subCategoryRepository.findByCategoryId(categoryId);
+
+        // Apply search filter if provided
+        if (!search.isEmpty()) {
+            String searchLower = search.toLowerCase();
+            subCategories = subCategories.stream()
+                    .filter(subCategory -> subCategory.getName().toLowerCase().contains(searchLower))
+                    .collect(Collectors.toList());
+        }
+
+        // Apply status filter if provided
+        if (!status.equals("ALL")) {
+            boolean isActive = status.equals("ACTIVE");
+            subCategories = subCategories.stream()
+                    .filter(subCategory -> subCategory.getIsActive() == isActive)
+                    .collect(Collectors.toList());
+        }
+
+        return subCategories;
+    }
+
+    @Override
+    public CategoryEntity createCategory(CategoryEntity category) {
+        if (category.getIsActive() == null) {
+            category.setIsActive(true);
+        }
+        return categoryRepository.save(category);
+    }
+
+    @Override
+    public SubCategoryEntity createSubCategory(SubCategoryEntity subCategory) {
+
+        if (subCategory.getIsActive() == null) {
+            subCategory.setIsActive(true);
+        }
+        return subCategoryRepository.save(subCategory);
+    }
+
+    @Transactional
+    @Override
+    public List<CategoryEntity> updateCategoryOrder(List<CategoryOrderRequest.CategoryOrder> categoryOrders) {
+        List<CategoryEntity> updatedCategories = new ArrayList<>();
+
+        for (CategoryOrderRequest.CategoryOrder order : categoryOrders) {
+            CategoryEntity category = categoryRepository.findById(order.getId())
+                    .orElseThrow(() -> new IllegalArgumentException("Category with ID " + order.getId() + " not found"));
+
+            category.setOrderIndex(order.getOrderIndex());
+            updatedCategories.add(categoryRepository.save(category));
+        }
+
+        return updatedCategories;
+    }
+
 
     private CourseDTO processDiscountPrice(CourseDTO course) {
         if (Boolean.TRUE.equals(course.getIsDiscount())) {

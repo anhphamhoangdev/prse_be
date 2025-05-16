@@ -31,4 +31,6 @@ public interface SubCategoryRepository extends JpaRepository<SubCategoryEntity, 
         ORDER BY s.orderIndex ASC
     """)
     List<SubCategoryDTO> findByCourseId(@Param("courseId") Long courseId);
+
+    List<SubCategoryEntity> findByCategoryId(Long categoryId);
 }

@@ -4,6 +4,7 @@ package com.hcmute.prse_be.rest;
 import com.hcmute.prse_be.constants.*;
 import com.hcmute.prse_be.dtos.*;
 import com.hcmute.prse_be.entity.*;
+import com.hcmute.prse_be.request.CategoryOrderRequest;
 import com.hcmute.prse_be.request.LoginRequest;
 import com.hcmute.prse_be.response.JwtResponse;
 import com.hcmute.prse_be.response.Response;
@@ -48,8 +49,9 @@ public class AdminAPI {
 
     private final PaymentService paymentService;
     private final WithdrawService withdrawService;
+    private final CategoryService categoryService;
 
-    public AdminAPI(AdminService adminService, AuthenticationManager authenticationManager, CustomUserDetailsService customUserDetailsService, JwtService jwtService, StudentService studentService, CourseService courseService, InstructorService instructorService, EnrollmentService enrollmentService, TicketService ticketService, PaymentService paymentService, WithdrawService withdrawService) {
+    public AdminAPI(AdminService adminService, AuthenticationManager authenticationManager, CustomUserDetailsService customUserDetailsService, JwtService jwtService, StudentService studentService, CourseService courseService, InstructorService instructorService, EnrollmentService enrollmentService, TicketService ticketService, PaymentService paymentService, WithdrawService withdrawService, CategoryService categoryService) {
         this.adminService = adminService;
         this.authenticationManager = authenticationManager;
         this.customUserDetailsService = customUserDetailsService;
@@ -61,6 +63,7 @@ public class AdminAPI {
         this.ticketService = ticketService;
         this.paymentService = paymentService;
         this.withdrawService = withdrawService;
+        this.categoryService = categoryService;
     }
 
 
@@ -919,6 +922,162 @@ public class AdminAPI {
                     .body(Response.error(ErrorMsg.SOMETHING_WENT_WRONG + e.getMessage()));
         }
     }
+
+    @GetMapping("/categories")
+    public ResponseEntity<JSONObject> getAllCategories(
+            @RequestParam(defaultValue = "") String search,
+            @RequestParam(defaultValue = "ALL") String status,
+            Authentication authentication
+    ) {
+        LogService.getgI().info("[AdminAPI] getAllCategories username: " + authentication.getName()
+                + " search: " + search + " status: " + status);
+        try {
+            String email = authentication.getName();
+            AdminEntity admin = adminService.findByEmail(email);
+            if (admin == null) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Response.error(ErrorMsg.STUDENT_USERNAME_NOT_EXIST));
+            }
+
+            List<CategoryEntity> categories = categoryService.findAllWithFilters(
+                    search, status
+            );
+
+            JSONObject response = new JSONObject();
+            response.put("categories", categories);
+            response.put("totalElements", categories.size());
+
+            return ResponseEntity.ok(Response.success(response));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Response.error(ErrorMsg.SOMETHING_WENT_WRONG + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/categories/{categoryId}/sub-categories")
+    public ResponseEntity<JSONObject> getSubCategoriesByCategoryId(
+            @PathVariable Long categoryId,
+            @RequestParam(defaultValue = "") String search,
+            @RequestParam(defaultValue = "ALL") String status,
+            Authentication authentication
+    ) {
+        LogService.getgI().info("[AdminAPI] getSubCategoriesByCategoryId categoryId: " + categoryId
+                + " search: " + search + " status: " + status);
+        try {
+            String email = authentication.getName();
+            AdminEntity admin = adminService.findByEmail(email);
+            if (admin == null) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Response.error(ErrorMsg.STUDENT_USERNAME_NOT_EXIST));
+            }
+
+            // Find category by ID
+            CategoryEntity categoryEntity = categoryService.getCategoryById(categoryId);
+            if (categoryEntity == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Response.error("Category not found"));
+            }
+
+            List<SubCategoryEntity> subCategories = categoryService.getSubCategoriesByCategoryId(
+                    categoryId, search, status
+            );
+
+            JSONObject response = new JSONObject();
+            response.put("category", categoryEntity);
+            response.put("subCategories", subCategories);
+            response.put("totalElements", subCategories.size());
+
+            return ResponseEntity.ok(Response.success(response));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Response.error(ErrorMsg.SOMETHING_WENT_WRONG + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/categories")
+    public ResponseEntity<JSONObject> createCategory(
+            @RequestBody CategoryEntity category,
+            Authentication authentication
+    ) {
+        LogService.getgI().info("[AdminAPI] createCategory username: " + authentication.getName());
+        try {
+            String email = authentication.getName();
+            AdminEntity admin = adminService.findByEmail(email);
+            if (admin == null) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Response.error(ErrorMsg.STUDENT_USERNAME_NOT_EXIST));
+            }
+
+            CategoryEntity newCategory = categoryService.createCategory(category);
+
+            JSONObject response = new JSONObject();
+            response.put("category", newCategory);
+
+            return ResponseEntity.status(HttpStatus.CREATED).body(Response.success(response));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Response.error(ErrorMsg.SOMETHING_WENT_WRONG + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/categories/{categoryId}/sub-categories")
+    public ResponseEntity<JSONObject> createSubCategory(
+            @PathVariable Long categoryId,
+            @RequestBody SubCategoryEntity subCategory,
+            Authentication authentication
+    ) {
+        LogService.getgI().info("[AdminAPI] createSubCategory for categoryId: " + categoryId);
+        try {
+            String email = authentication.getName();
+            AdminEntity admin = adminService.findByEmail(email);
+            if (admin == null) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Response.error(ErrorMsg.STUDENT_USERNAME_NOT_EXIST));
+            }
+
+            // Find category by ID
+            CategoryEntity categoryEntity = categoryService.getCategoryById(categoryId);
+            if (categoryEntity == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Response.error("Category not found"));
+            }
+
+            subCategory.setCategoryId(categoryId);
+            SubCategoryEntity newSubCategory = categoryService.createSubCategory(subCategory);
+
+            JSONObject response = new JSONObject();
+            response.put("subCategory", newSubCategory);
+
+            return ResponseEntity.status(HttpStatus.CREATED).body(Response.success(response));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Response.error(ErrorMsg.SOMETHING_WENT_WRONG + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/categories/update-order")
+    public ResponseEntity<JSONObject> updateCategoryOrder(
+            @RequestBody CategoryOrderRequest request,
+            Authentication authentication
+    ) {
+        LogService.getgI().info("[AdminAPI] updateCategoryOrder username: " + authentication.getName());
+        try {
+            String email = authentication.getName();
+            AdminEntity admin = adminService.findByEmail(email);
+            if (admin == null) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Response.error(ErrorMsg.STUDENT_USERNAME_NOT_EXIST));
+            }
+
+            List<CategoryEntity> updatedCategories = categoryService.updateCategoryOrder(request.getCategoryOrders());
+
+            JSONObject response = new JSONObject();
+            response.put("categories", updatedCategories);
+
+            return ResponseEntity.ok(Response.success(response));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Response.error(e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Response.error(ErrorMsg.SOMETHING_WENT_WRONG + e.getMessage()));
+        }
+    }
+
+
+
 
 
 
