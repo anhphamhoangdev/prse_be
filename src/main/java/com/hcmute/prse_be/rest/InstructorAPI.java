@@ -847,6 +847,10 @@ public class InstructorAPI {
         LogService.getgI().info("[InstructorAPI] uploadLessonVideo username: "+ authentication.getName()+ " courseId: "+courseId+" chapterId: "+chapterId+" lessonId: "+lessonId);
         try {
             LogService.getgI().info("[InstructorAPI] uploadLessonVideo courseId: "  +courseId +" chapterId: "+chapterId+" lessonId: "+lessonId);
+            LogService.getgI().info("File empty? " + file.isEmpty());
+            LogService.getgI().info("File size: " + file.getSize());
+            LogService.getgI().info("File name: " + file.getOriginalFilename());
+            LogService.getgI().info("File content type: " + file.getContentType());
             String username = authentication.getName();
             StudentEntity student = studentService.findByUsername(username);
             if (student == null) {
