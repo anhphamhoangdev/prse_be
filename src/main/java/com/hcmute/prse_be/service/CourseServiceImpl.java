@@ -1063,6 +1063,7 @@ public class CourseServiceImpl implements CourseService {
                 }
             }
 
+            courseIds.add(122L);
             return courseIds;
         } catch (Exception e) {
             LogService.getgI().info("[parseRecommendationResponse] Error: " + e.getMessage());
