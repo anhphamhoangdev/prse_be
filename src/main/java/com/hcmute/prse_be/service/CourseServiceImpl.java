@@ -978,7 +978,9 @@ public class CourseServiceImpl implements CourseService {
                         return List.of();
                     }
 
-                    String responseStr = callRecommendationAPI(student.getId() ,viewedCourseIds);
+//                    String responseStr = callRecommendationAPI(student.getId() ,viewedCourseIds);
+
+                    String responseStr = "";
 
                     // Parse response thành danh sách courseIds
                     List<Long> recommendedCourseIds = parseRecommendationResponse(responseStr);
@@ -1040,28 +1042,28 @@ public class CourseServiceImpl implements CourseService {
     // Parse response từ API recommendation (mảng courseIds)
     private List<Long> parseRecommendationResponse(String responseStr) {
         try {
-            // Parse response into JSONObject
-            JSONParser parser = new JSONParser(JSONParser.DEFAULT_PERMISSIVE_MODE);
-            JSONObject jsonObject = (JSONObject) parser.parse(responseStr);
+//            // Parse response into JSONObject
+//            JSONParser parser = new JSONParser(JSONParser.DEFAULT_PERMISSIVE_MODE);
+//            JSONObject jsonObject = (JSONObject) parser.parse(responseStr);
 
             // Get the course_ids array from the JSON object
-            JSONArray courseIdsArray = (JSONArray) jsonObject.get("course_ids");
+//            JSONArray courseIdsArray = (JSONArray) jsonObject.get("course_ids");
 
             // Convert JSONArray to List<Long>
             List<Long> courseIds = new ArrayList<>();
-            if (courseIdsArray != null) {
-                for (Object obj : courseIdsArray) {
-                    if (obj instanceof Number) {
-                        courseIds.add(((Number) obj).longValue());
-                    } else if (obj instanceof String) {
-                        try {
-                            courseIds.add(Long.parseLong((String) obj));
-                        } catch (NumberFormatException e) {
-                            // Skip invalid number formats
-                        }
-                    }
-                }
-            }
+//            if (courseIdsArray != null) {
+//                for (Object obj : courseIdsArray) {
+//                    if (obj instanceof Number) {
+//                        courseIds.add(((Number) obj).longValue());
+//                    } else if (obj instanceof String) {
+//                        try {
+//                            courseIds.add(Long.parseLong((String) obj));
+//                        } catch (NumberFormatException e) {
+//                            // Skip invalid number formats
+//                        }
+//                    }
+//                }
+//            }
 
             courseIds.add(122L);
             return courseIds;
