@@ -264,10 +264,32 @@ public class InstructorAPI {
     @PostMapping(ApiPaths.INSTRUCTOR_UPLOAD_PREVIEW_VIDEO)
     public ResponseEntity<JSONObject> uploadVideo(@RequestParam("video") MultipartFile file,
                                                   @RequestParam("courseId") String courseId,
-                                                  Authentication authentication) {
+                                                  Authentication authentication)  {
         LogService.getgI().info("[InstructorAPI] UploadPreviewVideo courseId: " +courseId +" Instructor: "+ authentication.getName() );
         try {
             LogService.getgI().info("Uploading video... : uploadVideo");
+            LogService.getgI().info("File empty? " + file.isEmpty());
+            LogService.getgI().info("File size: " + file.getSize());
+            LogService.getgI().info("File name: " + file.getOriginalFilename());
+            LogService.getgI().info("File content type: " + file.getContentType());
+
+            // ĐỌC FILE NGAY LẬP TỨC VÀO BỘ NHỚ
+            byte[] fileData;
+            String originalFilename;
+            String contentType;
+
+            try {
+                fileData = file.getBytes(); // Đọc toàn bộ file vào bộ nhớ
+                originalFilename = file.getOriginalFilename();
+                contentType = file.getContentType();
+
+                LogService.getgI().info("Successfully read file data, size: " + fileData.length);
+            } catch (IOException e) {
+                LogService.getgI().error(e);
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body(Response.error("Lỗi đọc dữ liệu file"));
+            }
+
             String username = authentication.getName();
             StudentEntity student = studentService.findByUsername(username);
             if (student == null) {
@@ -288,7 +310,6 @@ public class InstructorAPI {
                         .body(Response.error("Không tìm thấy thông tin khóa học"));
             }
 
-
             // Tạo một UploadingVideoDetail mới
             String threadId = UUID.randomUUID().toString();
             UploadingVideoDetail uploadStatus = new UploadingVideoDetail(threadId, "PENDING");
@@ -301,17 +322,52 @@ public class InstructorAPI {
 
             // Tên thư mục : course/{courseId}
             String folderName = ImageFolderName.COURSE + "/" + course.getId();
+
+            // SỬ DỤNG DỮ LIỆU ĐÃ ĐỌC TRƯỚC ĐÓ TRONG TIẾN TRÌNH BẤT ĐỒNG BỘ
+            final byte[] finalFileData = fileData;
+            final String finalOriginalFilename = originalFilename;
+            final String finalContentType = contentType;
+
             CompletableFuture.supplyAsync(() -> {
                 try {
-                    // Thực hiện upload video
-                    Map uploadResult = cloudinaryService.uploadVideo(file, folderName);
-                    LogService.getgI().info("Video uploaded successfully. URL: " + JsonUtils.Serialize(uploadResult));
+                    // Start progress simulation in separate thread
+                    Thread progressSimulator = new Thread(() -> {
+                        try {
+                            double progress = 0;
+                            while (progress < 95 && "UPLOADING".equals(uploadStatus.getStatus())) {
+                                // Simulate slower progress as we get closer to 95%
+                                double increment = (95 - progress) / 20;
+                                progress += increment;
+                                uploadStatus.setProgress(progress);
+                                LogService.getgI().info("Progress: " + progress);
+                                Thread.sleep(1000); // Update every second
+                            }
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                        }
+                    });
+
+                    // Start progress simulation
+                    uploadStatus.setStatus("UPLOADING");
+                    progressSimulator.start();
+
+                    // Actual upload process
+                    LogService.getgI().info("PASSED 0");
+                    // SỬ DỤNG PHƯƠNG THỨC MỚI NHẬN BYTE ARRAY THAY VÌ MULTIPARTFILE
+                    Map uploadResult = cloudinaryService.uploadVideoFromBytes(
+                            finalFileData, finalOriginalFilename, finalContentType, folderName);
+
+                    // Upload completed
                     uploadStatus.setStatus("COMPLETED");
+                    uploadStatus.setProgress(100.0);
+                    LogService.getgI().info("PASSED 1");
 
                     String videoUrl = (String) uploadResult.get("secure_url");
+                    LogService.getgI().info("PASSED 2");
                     uploadStatus.setUploadResult(uploadResult);
+                    LogService.getgI().info("PASSED 3");
 
-                    // Cập nhật thông tin khóa học ở đây
+                    // Cập nhật thông tin khóa học
                     course.setPreviewVideoUrl(videoUrl);
                     courseService.saveCourse(course);
 
@@ -319,13 +375,15 @@ public class InstructorAPI {
                     WebSocketMessage messageSuccess = WebSocketMessage.uploadComplete(
                             "Khóa học: " + course.getTitle(),
                             "Preview video đã được upload thành công"
-
                     );
                     webSocketService.sendToInstructor(instructor.getId(), "/uploads", messageSuccess);
 
                     return uploadResult;
                 } catch (Exception e) {
+                    LogService.getgI().error(e);
+                    e.printStackTrace();
                     uploadStatus.setStatus("FAILED");
+                    uploadStatus.setProgress(0.0);
                     uploadStatus.setErrorMessage(e.getMessage());
                     return null;
                 } finally {
@@ -333,16 +391,16 @@ public class InstructorAPI {
                 }
             });
 
-
-
             // Trả về phản hồi ngay lập tức
             JSONObject response = new JSONObject();
             response.put("success", true);
             return ResponseEntity.ok(Response.success(response));
 
         } catch (Exception e) {
+            LogService.getgI().error(e);
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Response.error("Có lỗi xảy ra khi tải lên khóa học"));
+                    .body(Response.error("Có lỗi xảy ra khi tải lên video"));
         }
     }
 
