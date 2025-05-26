@@ -344,6 +344,7 @@ public interface CourseRepository extends JpaRepository<CourseEntity, Long> {
         )
         FROM CourseEntity c
         WHERE c.id IN :courseIds
+        AND c.isPublish = true
         """)
     List<CourseDTO> findCoursesByIdIn(@Param("courseIds") List<Long> courseIds);
 }
