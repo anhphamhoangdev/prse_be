@@ -1,5 +1,6 @@
 package com.hcmute.prse_be.service;
 
+import com.hcmute.prse_be.config.Config;
 import com.hcmute.prse_be.constants.Constant;
 import com.hcmute.prse_be.constants.LessonType;
 import com.hcmute.prse_be.constants.PaginationNumber;
@@ -19,17 +20,21 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.util.UriBuilder;
 
+import java.net.URI;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
 public class CourseServiceImpl implements CourseService {
 
+    private static final String RECOMMENDATION_URL = Config.getParam("ai", "recommendation_url");
     private final CourseRepository courseRepository;
     private final CourseDiscountRepository courseDiscountRepository;
 
@@ -978,9 +983,7 @@ public class CourseServiceImpl implements CourseService {
                         return List.of();
                     }
 
-//                    String responseStr = callRecommendationAPI(student.getId() ,viewedCourseIds);
-
-                    String responseStr = "";
+                    String responseStr = callRecommendationAPI(student.getId() ,viewedCourseIds);
 
                     // Parse response thành danh sách courseIds
                     List<Long> recommendedCourseIds = parseRecommendationResponse(responseStr);
@@ -1022,7 +1025,7 @@ public class CourseServiceImpl implements CourseService {
 
             // Call API and wait for response
             String responseStr = webClient.post()
-                    .uri("http://192.168.0.218:5000/api/recommend")
+                    .uri(RECOMMENDATION_URL)
                     .contentType(MediaType.APPLICATION_JSON)
                     .bodyValue(requestJson)
                     .retrieve()
@@ -1035,41 +1038,35 @@ public class CourseServiceImpl implements CourseService {
             return responseStr;
         } catch (Exception e) {
             LogService.getgI().info("[callRecommendationAPI] Error: " + e.getMessage());
-            return "[]"; // Return empty array in case of error
+            return "[]";
         }
     }
 
-    // Parse response từ API recommendation (mảng courseIds)
     private List<Long> parseRecommendationResponse(String responseStr) {
         try {
-//            // Parse response into JSONObject
-//            JSONParser parser = new JSONParser(JSONParser.DEFAULT_PERMISSIVE_MODE);
-//            JSONObject jsonObject = (JSONObject) parser.parse(responseStr);
+            JSONParser parser = new JSONParser(JSONParser.DEFAULT_PERMISSIVE_MODE);
+            JSONObject jsonObject = (JSONObject) parser.parse(responseStr);
 
-            // Get the course_ids array from the JSON object
-//            JSONArray courseIdsArray = (JSONArray) jsonObject.get("course_ids");
+            JSONArray courseIdsArray = (JSONArray) jsonObject.get("course_ids");
 
-            // Convert JSONArray to List<Long>
             List<Long> courseIds = new ArrayList<>();
-//            if (courseIdsArray != null) {
-//                for (Object obj : courseIdsArray) {
-//                    if (obj instanceof Number) {
-//                        courseIds.add(((Number) obj).longValue());
-//                    } else if (obj instanceof String) {
-//                        try {
-//                            courseIds.add(Long.parseLong((String) obj));
-//                        } catch (NumberFormatException e) {
-//                            // Skip invalid number formats
-//                        }
-//                    }
-//                }
-//            }
+            if (courseIdsArray != null) {
+                for (Object obj : courseIdsArray) {
+                    if (obj instanceof Number) {
+                        courseIds.add(((Number) obj).longValue());
+                    } else if (obj instanceof String) {
+                        try {
+                            courseIds.add(Long.parseLong((String) obj));
+                        } catch (NumberFormatException ignored) {
+                        }
+                    }
+                }
+            }
 
-            courseIds.add(122L);
             return courseIds;
         } catch (Exception e) {
             LogService.getgI().info("[parseRecommendationResponse] Error: " + e.getMessage());
-            return List.of(); // Return empty list if there's an error
+            return List.of();
         }
     }
 
