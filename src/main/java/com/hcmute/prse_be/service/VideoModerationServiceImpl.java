@@ -318,13 +318,23 @@ public class VideoModerationServiceImpl implements VideoModerationService{
      */
     private List<String> extractFramesFromVideo(String videoUrl) {
         List<String> frameBase64List = new ArrayList<>();
-        String tempDir = System.getProperty("java.io.tmpdir");
+
+        // Thử dùng home directory thay vì /tmp để tránh snap permission issues
+        String tempDir = System.getProperty("user.home") + "/temp_video";
+
+        // Tạo thư mục nếu chưa có
+        java.io.File tempDirFile = new java.io.File(tempDir);
+        if (!tempDirFile.exists()) {
+            tempDirFile.mkdirs();
+        }
+
         String videoFileName = "video_" + System.currentTimeMillis() + ".mp4";
         String videoPath = tempDir + "/" + videoFileName;
         String framePattern = tempDir + "/frame_%03d.jpg";
 
         try {
             log.info("Bắt đầu extract frames từ video: {}", videoUrl);
+            log.info("Using temp directory: {}", tempDir);
 
             // Download video trước
             try {
@@ -342,6 +352,21 @@ public class VideoModerationServiceImpl implements VideoModerationService{
             }
 
             log.info("Video file ready for processing: {} - Size: {} bytes", videoPath, videoFile.length());
+
+            // Debug: Test FFmpeg có thể access file không
+            ProcessBuilder testBuilder = new ProcessBuilder("ffmpeg", "-i", videoPath);
+            testBuilder.redirectErrorStream(true);
+            Process testProcess = testBuilder.start();
+
+            StringBuilder testOutput = new StringBuilder();
+            try (var testReader = new java.io.BufferedReader(new java.io.InputStreamReader(testProcess.getInputStream()))) {
+                String line;
+                while ((line = testReader.readLine()) != null) {
+                    testOutput.append(line).append("\n");
+                }
+            }
+            int testExitCode = testProcess.waitFor();
+            log.info("FFmpeg file access test - Exit code: {}, Output: {}", testExitCode, testOutput.toString());
 
             ProcessBuilder processBuilder = new ProcessBuilder(
                     "ffmpeg",
@@ -479,7 +504,10 @@ public class VideoModerationServiceImpl implements VideoModerationService{
                 log.debug("Đã xóa temp video file: {}", videoPath);
             }
 
-            String tempDir = System.getProperty("java.io.tmpdir");
+            // Get directory from videoPath instead of using system temp
+            java.io.File videoFileObj = new java.io.File(videoPath);
+            String tempDir = videoFileObj.getParent();
+
             java.io.File dir = new java.io.File(tempDir);
             java.io.File[] frameFiles = dir.listFiles((d, name) -> name.startsWith("frame_") && name.endsWith(".jpg"));
 
