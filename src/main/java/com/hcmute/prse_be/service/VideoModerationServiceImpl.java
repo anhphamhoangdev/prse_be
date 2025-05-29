@@ -109,23 +109,28 @@ public class VideoModerationServiceImpl implements VideoModerationService{
                     result.isApproved() ? "True" : "False",
                     result.getOverallReason());
 
-            // Tạo HTML content cho từng frame
+            // Tạo HTML content cho từng frame với format mới
             StringBuilder contentBuilder = new StringBuilder();
 
             if (result.getFrameAnalyses().isEmpty()) {
                 // Không có frames được phân tích
                 contentBuilder.append("<p>Đã có lỗi xảy ra khi phân tích video - không thể trích xuất nội dung từ video</p>");
             } else {
+                contentBuilder.append("<ul>\n");
                 for (FrameAnalysis analysis : result.getFrameAnalyses()) {
                     contentBuilder
-                            .append("<p><strong>Frame ")
+                            .append("<li>\n")
+                            .append("<strong>Frame ")
                             .append(analysis.getFrameNumber())
                             .append(" - ")
                             .append(analysis.isApproved() ? "Phù hợp" : "Không phù hợp")
-                            .append("</p>\n<p>")
+                            .append(":</strong>\n")
+                            .append("<p>")
                             .append(escapeHtml(analysis.getContent()))
-                            .append("</p>\n");
+                            .append("</p>\n")
+                            .append("</li>\n");
                 }
+                contentBuilder.append("</ul>");
             }
 
             // Tạo JSON response
