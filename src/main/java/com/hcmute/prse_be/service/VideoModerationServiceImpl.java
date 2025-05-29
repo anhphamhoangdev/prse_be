@@ -1,11 +1,9 @@
 package com.hcmute.prse_be.service;
 
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hcmute.prse_be.config.Config;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -87,6 +85,7 @@ public class VideoModerationServiceImpl implements VideoModerationService{
         public List<FrameAnalysis> getFrameAnalyses() { return frameAnalyses; }
         public void setFrameAnalyses(List<FrameAnalysis> frameAnalyses) { this.frameAnalyses = frameAnalyses; }
     }
+
     private String escapeHtml(String text) {
         if (text == null) return "";
         return text
@@ -96,7 +95,6 @@ public class VideoModerationServiceImpl implements VideoModerationService{
                 .replace("\"", "&quot;")
                 .replace("'", "&#x27;");
     }
-
 
     /**
      * Main method để trả về response format mong muốn
@@ -112,15 +110,21 @@ public class VideoModerationServiceImpl implements VideoModerationService{
 
             // Tạo HTML content cho từng frame
             StringBuilder contentBuilder = new StringBuilder();
-            for (FrameAnalysis analysis : result.getFrameAnalyses()) {
-                contentBuilder
-                        .append("<p><strong>Frame ")
-                        .append(analysis.getFrameNumber())
-                        .append(" - ")
-                        .append(analysis.isApproved() ? "Phù hợp" : "Không phù hợp")
-                        .append("</p>\n<p>")
-                        .append(escapeHtml(analysis.getContent()))
-                        .append("</p>\n");
+
+            if (result.getFrameAnalyses().isEmpty()) {
+                // Không có frames được phân tích
+                contentBuilder.append("<p>Đã có lỗi xảy ra khi phân tích video - không thể trích xuất nội dung từ video</p>");
+            } else {
+                for (FrameAnalysis analysis : result.getFrameAnalyses()) {
+                    contentBuilder
+                            .append("<p><strong>Frame ")
+                            .append(analysis.getFrameNumber())
+                            .append(" - ")
+                            .append(analysis.isApproved() ? "Phù hợp" : "Không phù hợp")
+                            .append("</p>\n<p>")
+                            .append(escapeHtml(analysis.getContent()))
+                            .append("</p>\n");
+                }
             }
 
             // Tạo JSON response
@@ -131,19 +135,18 @@ public class VideoModerationServiceImpl implements VideoModerationService{
             return objectMapper.writeValueAsString(response);
 
         } catch (Exception e) {
-            log.error("Error creating custom format response: ", e);
+            log.error("Error creating custom format response: {}", e.getMessage(), e);
             Map<String, String> errorResponse = new HashMap<>();
-            errorResponse.put("response_fromai", "Approved: False<br/>Description: System error: " + e.getMessage());
-            errorResponse.put("content", "<p>Cannot analyze the video due to a system error</p>");
+            errorResponse.put("response_fromai", "Approved: False<br/>Description: Đã có lỗi xảy ra khi phân tích video - " + e.getMessage());
+            errorResponse.put("content", "<p>Đã có lỗi xảy ra khi phân tích video do lỗi hệ thống</p>");
 
             try {
                 return objectMapper.writeValueAsString(errorResponse);
             } catch (Exception jsonEx) {
-                return "{\"response_fromai\": \"Approved: False<br/>Description: System error\", \"content\": \"<p>Cannot analyze video</p>\"}";
+                return "{\"response_fromai\": \"Approved: False<br/>Description: Đã có lỗi xảy ra khi phân tích video\", \"content\": \"<p>Đã có lỗi xảy ra khi phân tích video</p>\"}";
             }
         }
     }
-
 
     /**
      * Core analysis method - đã được tối ưu
@@ -158,7 +161,7 @@ public class VideoModerationServiceImpl implements VideoModerationService{
                 log.warn("Không thể trích xuất frames từ video: {}", videoUrl);
                 return new VideoModerationResult(
                         false,
-                        "Không thể trích xuất frames từ video hoặc video không hợp lệ",
+                        "Đã có lỗi xảy ra khi phân tích video - không thể trích xuất frames từ video hoặc video không hợp lệ",
                         0,
                         new ArrayList<>()
                 );
@@ -191,10 +194,10 @@ public class VideoModerationServiceImpl implements VideoModerationService{
             );
 
         } catch (Exception e) {
-            log.error("Lỗi kiểm duyệt video: ", e);
+            log.error("Lỗi kiểm duyệt video - System error: {}", e.getMessage(), e);
             return new VideoModerationResult(
                     false,
-                    "Lỗi hệ thống: " + e.getMessage(),
+                    "Đã có lỗi xảy ra khi phân tích video - lỗi hệ thống: " + e.getMessage(),
                     0,
                     new ArrayList<>()
             );
@@ -309,7 +312,9 @@ public class VideoModerationServiceImpl implements VideoModerationService{
         return new FrameAnalysis(frameNumber, false, "Không thể xác định nội dung", timestamp);
     }
 
-    // Giữ nguyên các method extract frames (không thay đổi)
+    /**
+     * Extract frames từ video với improved error handling
+     */
     private List<String> extractFramesFromVideo(String videoUrl) {
         List<String> frameBase64List = new ArrayList<>();
         String tempDir = System.getProperty("java.io.tmpdir");
@@ -332,22 +337,41 @@ public class VideoModerationServiceImpl implements VideoModerationService{
                     framePattern
             );
 
-            processBuilder.redirectErrorStream(true);
+            // Không merge stderr với stdout để capture riêng biệt
+            processBuilder.redirectErrorStream(false);
             Process process = processBuilder.start();
 
-            try (var reader = new java.io.BufferedReader(new java.io.InputStreamReader(process.getInputStream()))) {
+            // Capture both stdout và stderr để lấy lỗi thực sự
+            StringBuilder ffmpegOutput = new StringBuilder();
+            StringBuilder ffmpegError = new StringBuilder();
+
+            try (var reader = new java.io.BufferedReader(new java.io.InputStreamReader(process.getInputStream()));
+                 var errorReader = new java.io.BufferedReader(new java.io.InputStreamReader(process.getErrorStream()))) {
+
                 String line;
                 while ((line = reader.readLine()) != null) {
-                    log.debug("FFmpeg output: {}", line);
+                    ffmpegOutput.append(line).append("\n");
+                    log.debug("FFmpeg stdout: {}", line);
+                }
+
+                while ((line = errorReader.readLine()) != null) {
+                    ffmpegError.append(line).append("\n");
+                    log.debug("FFmpeg stderr: {}", line);
                 }
             }
 
             int exitCode = process.waitFor();
+
             if (exitCode != 0) {
-                log.error("FFmpeg failed with exit code: {}", exitCode);
+                // Log ra lỗi thực sự từ FFmpeg, không format gì cả
+                String actualError = ffmpegError.length() > 0 ? ffmpegError.toString() : ffmpegOutput.toString();
+                log.error("FFmpeg failed with exit code: {} - Actual FFmpeg error: {}", exitCode, actualError);
+
+                // Return empty list để trigger error response
                 return frameBase64List;
             }
 
+            // Process frames như cũ
             for (int i = 1; i <= 6; i++) {
                 String framePath = tempDir + "/frame_" + String.format("%03d", i) + ".jpg";
                 java.io.File frameFile = new java.io.File(framePath);
@@ -363,7 +387,8 @@ public class VideoModerationServiceImpl implements VideoModerationService{
             log.info("Đã extract {} frames từ video", frameBase64List.size());
 
         } catch (Exception e) {
-            log.error("Lỗi extract frames từ video: ", e);
+            // Log lỗi Java thực sự, không format
+            log.error("Lỗi extract frames từ video - Exception: {}", e.getMessage(), e);
         } finally {
             cleanupTempFiles(videoPath, tempDir + "/frame_*.jpg");
         }
