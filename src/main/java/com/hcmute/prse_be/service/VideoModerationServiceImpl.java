@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hcmute.prse_be.config.Config;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -325,7 +326,22 @@ public class VideoModerationServiceImpl implements VideoModerationService{
         try {
             log.info("Bắt đầu extract frames từ video: {}", videoUrl);
 
-            downloadVideo(videoUrl, videoPath);
+            // Download video trước
+            try {
+                downloadVideo(videoUrl, videoPath);
+            } catch (Exception downloadEx) {
+                log.error("Lỗi download video từ URL: {} - Error: {}", videoUrl, downloadEx.getMessage(), downloadEx);
+                return frameBase64List; // Return empty list
+            }
+
+            // Verify file tồn tại trước khi chạy FFmpeg
+            java.io.File videoFile = new java.io.File(videoPath);
+            if (!videoFile.exists()) {
+                log.error("Video file không tồn tại sau khi download: {}", videoPath);
+                return frameBase64List;
+            }
+
+            log.info("Video file ready for processing: {} - Size: {} bytes", videoPath, videoFile.length());
 
             ProcessBuilder processBuilder = new ProcessBuilder(
                     "ffmpeg",
@@ -404,12 +420,38 @@ public class VideoModerationServiceImpl implements VideoModerationService{
 
             byte[] buffer = new byte[8192];
             int bytesRead;
+            long totalBytes = 0;
+
             while ((bytesRead = in.read(buffer)) != -1) {
                 out.write(buffer, 0, bytesRead);
+                totalBytes += bytesRead;
             }
-        }
 
-        log.info("Đã download video thành công: {}", outputPath);
+            log.info("Đã download video thành công: {} - Size: {} bytes", outputPath, totalBytes);
+
+            // Verify file exists và có size > 0
+            java.io.File videoFile = new java.io.File(outputPath);
+            if (!videoFile.exists()) {
+                throw new Exception("Downloaded file does not exist: " + outputPath);
+            }
+            if (videoFile.length() == 0) {
+                throw new Exception("Downloaded file is empty: " + outputPath);
+            }
+
+            log.info("Video file verified successfully - Path: {}, Size: {} bytes", outputPath, videoFile.length());
+
+        } catch (Exception e) {
+            log.error("Lỗi download video từ URL: {} - Error: {}", videoUrl, e.getMessage(), e);
+
+            // Clean up failed download file
+            java.io.File failedFile = new java.io.File(outputPath);
+            if (failedFile.exists()) {
+                failedFile.delete();
+                log.debug("Đã xóa file download lỗi: {}", outputPath);
+            }
+
+            throw e; // Re-throw để caller handle
+        }
     }
 
     private String convertImageToBase64(String imagePath) {
