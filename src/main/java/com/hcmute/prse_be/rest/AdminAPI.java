@@ -30,7 +30,10 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 @RequestMapping(ApiPaths.ADMIN_API)
 @RestController
@@ -51,7 +54,11 @@ public class AdminAPI {
     private final WithdrawService withdrawService;
     private final CategoryService categoryService;
 
-    public AdminAPI(AdminService adminService, AuthenticationManager authenticationManager, CustomUserDetailsService customUserDetailsService, JwtService jwtService, StudentService studentService, CourseService courseService, InstructorService instructorService, EnrollmentService enrollmentService, TicketService ticketService, PaymentService paymentService, WithdrawService withdrawService, CategoryService categoryService) {
+    private final LessonDraftService lessonDraftService;
+
+    private final VideoLessonDraftService videoLessonDraftService;
+
+    public AdminAPI(AdminService adminService, AuthenticationManager authenticationManager, CustomUserDetailsService customUserDetailsService, JwtService jwtService, StudentService studentService, CourseService courseService, InstructorService instructorService, EnrollmentService enrollmentService, TicketService ticketService, PaymentService paymentService, WithdrawService withdrawService, CategoryService categoryService, LessonDraftService lessonDraftService, VideoLessonDraftService videoLessonDraftService) {
         this.adminService = adminService;
         this.authenticationManager = authenticationManager;
         this.customUserDetailsService = customUserDetailsService;
@@ -64,6 +71,8 @@ public class AdminAPI {
         this.paymentService = paymentService;
         this.withdrawService = withdrawService;
         this.categoryService = categoryService;
+        this.lessonDraftService = lessonDraftService;
+        this.videoLessonDraftService = videoLessonDraftService;
     }
 
 
@@ -1219,6 +1228,147 @@ public class AdminAPI {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Response.error(ErrorMsg.SOMETHING_WENT_WRONG + e.getMessage()));
+        }
+    }
+
+
+    @GetMapping("/lessons-draft")
+    public ResponseEntity<JSONObject> getAllLessonsDraft(
+            @RequestParam(defaultValue = "ALL") String status,
+            Authentication authentication
+    ) {
+        LogService.getgI().info("[AdminAPI] getAllLessonsDraft username: " + authentication.getName()
+                + " status: " + status);
+        try {
+            String email = authentication.getName();
+            AdminEntity admin = adminService.findByEmail(email);
+            if (admin == null) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Response.error(ErrorMsg.STUDENT_USERNAME_NOT_EXIST));
+            }
+
+            List<Map<String, Object>> lessonsDraft = lessonDraftService.findAllWithStatus(status);
+
+            JSONObject response = new JSONObject();
+            response.put("lessons", lessonsDraft);
+            response.put("totalElements", lessonsDraft.size());
+
+            return ResponseEntity.ok(Response.success(response));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Response.error(ErrorMsg.SOMETHING_WENT_WRONG + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/video-lessons-draft")
+    public ResponseEntity<JSONObject> getVideoLessonDraft(
+            @RequestParam Long lessonDraftId,
+            Authentication authentication
+    ) {
+        LogService.getgI().info("[AdminAPI] getVideoLessonDraft username: " + authentication.getName()
+                + " lessonDraftId: " + lessonDraftId);
+        try {
+            String email = authentication.getName();
+            AdminEntity admin = adminService.findByEmail(email);
+            if (admin == null) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Response.error(ErrorMsg.STUDENT_USERNAME_NOT_EXIST));
+            }
+
+            VideoLessonDraftEntity videoLesson = videoLessonDraftService.findByLessonDraftId(lessonDraftId);
+            if (videoLesson == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Response.error("Video lesson not found"));
+            }
+
+            JSONObject response = new JSONObject();
+            response.put("videoLesson", videoLesson);
+
+            return ResponseEntity.ok(Response.success(response));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Response.error(ErrorMsg.SOMETHING_WENT_WRONG + e.getMessage()));
+        }
+    }
+
+
+    @PatchMapping("/lessons-draft/{lessonDraftId}/approve")
+    public ResponseEntity<JSONObject> approveLessonDraft(Authentication authentication,
+                                                         @PathVariable Long lessonDraftId)
+    {
+        LogService.getgI().info("[AdminAPI] approveLessonDraft username: " + authentication.getName()
+                + " lessonDraftId: " + lessonDraftId);
+        try {
+            String email = authentication.getName();
+            AdminEntity admin = adminService.findByEmail(email);
+            if (admin == null) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Response.error(ErrorMsg.STUDENT_USERNAME_NOT_EXIST));
+            }
+
+            LessonDraftEntity lessonDraftEntity = courseService.getLessonDraftById(lessonDraftId);
+
+            if (lessonDraftEntity == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Response.error("Lesson Draft not found"));
+            }
+
+            if(Objects.equals(lessonDraftEntity.getType(), LessonType.VIDEO))
+            {
+
+                VideoLessonDraftEntity videoLessonDraft = videoLessonDraftService.findByLessonDraftId(lessonDraftId);
+                if (videoLessonDraft == null) {
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Response.error("Video lesson not found"));
+                }
+
+                // tao lesson moi
+                List<LessonEntity> lessons = courseService.getLessonsByChapterId(lessonDraftEntity.getChapterId());
+                LessonEntity lesson = new LessonEntity();
+                lesson.setTitle(lessonDraftEntity.getTitle());
+                lesson.setChapterId(lessonDraftEntity.getChapterId());
+                lesson.setType(lessonDraftEntity.getType());
+                lesson.setOrderIndex(lessons.size() + 1);
+                lesson.setIsPublish(lessonDraftEntity.getIsPublish());
+                lesson = courseService.saveLesson(lesson);
+
+
+                // tao video lesson moi
+                VideoLessonEntity videoLesson = new VideoLessonEntity();
+                videoLesson.setLessonId(lesson.getId());
+                videoLesson.setVideoUrl(videoLessonDraft.getVideoUrl());
+                videoLesson.setDuration(videoLessonDraft.getDuration());
+                courseService.saveVideoLesson(videoLesson);
+
+                lessonDraftEntity.setStatus(LessonDraftStatus.APPROVED);
+                lessonDraftService.save(lessonDraftEntity);
+            }
+            return ResponseEntity.ok(Response.success());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Response.error(ErrorMsg.SOMETHING_WENT_WRONG + e.getMessage()));
+        }
+    }
+
+    @PatchMapping("/lessons-draft/{lessonDraftId}/reject")
+    public ResponseEntity<JSONObject> rejectLessonDraft(Authentication authentication,
+                                                         @PathVariable Long lessonDraftId,
+                                                        @RequestBody  Map<String, String> request)
+    {
+        LogService.getgI().info("[AdminAPI] rejectLessonDraft username: " + authentication.getName()
+                + " lessonDraftId: " + lessonDraftId);
+        try {
+            String rejectReason = request.get("rejectedReason");
+            String email = authentication.getName();
+            AdminEntity admin = adminService.findByEmail(email);
+            if (admin == null) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Response.error(ErrorMsg.STUDENT_USERNAME_NOT_EXIST));
+            }
+
+            LessonDraftEntity lessonDraftEntity = courseService.getLessonDraftById(lessonDraftId);
+
+            if (lessonDraftEntity == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Response.error("Lesson Draft not found"));
+            }
+
+            lessonDraftEntity.setStatus(LessonDraftStatus.REJECTED);
+            lessonDraftEntity.setRejectedReason(rejectReason);
+            lessonDraftService.save(lessonDraftEntity);
+
+            return ResponseEntity.ok(Response.success());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Response.error(ErrorMsg.SOMETHING_WENT_WRONG + e.getMessage()));
         }
     }
 

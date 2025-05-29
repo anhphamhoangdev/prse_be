@@ -95,7 +95,10 @@ public class ApiPaths {
     public static final String INSTRUCTOR_UPDATE_LESSON_ID ="/courses/{courseId}/chapter/{chapterId}/lesson/{lessonId}";
     public static final String INSTRUCTOR_GET_LESSON_DETAILS ="/courses/{courseId}/chapter/{chapterId}/lesson/{lessonId}/details";
     public static final String INSTRUCTOR_POST_LESSON_INFOR = "/courses/{courseId}/chapter/{chapterId}/lessons";
+    public static final String INSTRUCTOR_POST_LESSON_DRAFT_INFOR = "/courses/{courseId}/chapter/{chapterId}/lesson-draft";
     public static final String INSTRUCTOR_UPLOAD_LESSON_VIDEO ="/courses/{courseId}/chapter/{chapterId}/lesson/{lessonId}/video/upload";
+    public static final String INSTRUCTOR_UPLOAD_LESSON_VIDEO_DRAFT ="/courses/{courseId}/chapter/{chapterId}/lesson/{lessonDraftId}/video-draft/upload";
+
     public static final String INSTRUCTOR_CREATE_CHAPTER = "/courses/{courseId}/curriculum/chapters";
     public static final String INSTRUCTOR_CHECK_UPLOAD_STATUS ="/courses/{courseId}/chapter/{chapterId}/lesson/{lessonId}/video/upload-status";
     public static final String INSTRUCTOR_WITHDRAW_STUDENT ="/withdraw-student-account";

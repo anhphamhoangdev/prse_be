@@ -65,6 +65,9 @@ public interface CourseService {
 
     LessonEntity saveLesson(LessonEntity lessonEntity);
 
+    LessonDraftEntity saveLessonDraft(LessonDraftEntity lessonEntity);
+
+
     VideoLessonEntity saveVideoLesson(VideoLessonEntity videoLessonEntity);
 
     boolean isCompleteLesson(Long lessonId, Long studentId);
@@ -110,4 +113,8 @@ public interface CourseService {
 
 
     List<CourseDTO> getRecommendationCourse(Authentication authentication);
+
+    LessonDraftEntity getLessonDraftById(Long lessonDraftId);
+
+    void saveVideoLessonDraft(VideoLessonDraftEntity videoLessonDraft);
 }

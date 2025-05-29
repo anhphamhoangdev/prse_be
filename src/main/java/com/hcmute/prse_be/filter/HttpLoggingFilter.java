@@ -20,7 +20,6 @@ public class HttpLoggingFilter extends OncePerRequestFilter {
 
     private static final Logger logger = LoggerFactory.getLogger(HttpLoggingFilter.class);
 
-
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
 
@@ -39,10 +38,11 @@ public class HttpLoggingFilter extends OncePerRequestFilter {
 
         logRequest(request, requestWrapper);
         filterChain.doFilter(requestWrapper, responseWrapper);
+
         if (request.getRequestURI() != null && request.getRequestURI().contains("api/v1/web/get_all_user")) {
             responseWrapper.copyBodyToResponse();
-        }else {
-            logResponse(responseWrapper);
+        } else {
+            logResponse(request, responseWrapper); // Truyền thêm request
         }
     }
 
@@ -54,11 +54,15 @@ public class HttpLoggingFilter extends OncePerRequestFilter {
         )){
             return;
         }
-        logger.info("REQUEST " + request.getRequestURI() + ": " + body.replaceAll("\\s", ""));
+        String httpMethod = request.getMethod();
+        logger.info(httpMethod + " " + request.getRequestURI() + ": " + body.replaceAll("\\s", ""));
     }
 
-    private void logResponse(ContentCachingResponseWrapper responseWrapper) throws IOException {
-        logger.info("RESPONSE " + new String(responseWrapper.getContentAsByteArray()));
+    private void logResponse(HttpServletRequest request, ContentCachingResponseWrapper responseWrapper) throws IOException {
+        // Thêm method và URI vào log response
+        String httpMethod = request.getMethod();
+        String uri = request.getRequestURI();
+        logger.info("RESPONSE " + httpMethod + " " + uri + ": " + new String(responseWrapper.getContentAsByteArray()));
         responseWrapper.copyBodyToResponse();
     }
 

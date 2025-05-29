@@ -896,6 +896,60 @@ public class InstructorAPI {
         }
     }
 
+
+    @PostMapping(ApiPaths.INSTRUCTOR_POST_LESSON_DRAFT_INFOR)
+    public ResponseEntity<JSONObject> addNewLessonDraft(Authentication authentication,
+                                                        @PathVariable("courseId") Long courseId,
+                                                        @PathVariable("chapterId") Long chapterId,
+                                                        @RequestBody AddNewLessonRequest addLessonRequest)
+    {
+        LogService.getgI().info("[InstructorAPI] createLesson username: "+ authentication.getName()+" courseId: "+ courseId + "chapterId: "+chapterId+ addLessonRequest.toString());
+        try {
+            String username = authentication.getName();
+            StudentEntity student = studentService.findByUsername(username);
+            if (student == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Response.error("Không tìm thấy thông tin người dùng"));
+            }
+
+            InstructorEntity instructor = instructorService.getInstructorByStudentId(student.getId());
+            if (instructor == null || !instructor.getIsActive()) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Response.error("Không tìm thấy thông tin giáo viên"));
+            }
+
+            CourseEntity courseEntity = courseService.getCourse(courseId);
+            if(courseEntity == null || !courseEntity.getInstructorId().equals(instructor.getId())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Response.error("Không tìm thấy thông tin khóa học"));
+            }
+
+            ChapterEntity chapterEntity = courseService.getChapterById(chapterId);
+
+            if(chapterEntity == null || !chapterEntity.getCourseId().equals(courseId)) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Response.error("Không tìm thấy thông tin chương"));
+            }
+            LessonDraftEntity lessonEntity = new LessonDraftEntity();
+            lessonEntity.setTitle(addLessonRequest.getLesson().getTitle());
+            lessonEntity.setType(addLessonRequest.getLesson().getType());
+            lessonEntity.setChapterId(chapterId);
+            lessonEntity.setStatus(LessonDraftStatus.NEW);
+            lessonEntity.setOrderIndex(addLessonRequest.getLesson().getOrderIndex());
+            lessonEntity.setIsPublish(addLessonRequest.getLesson().isPublish());
+            courseService.saveLessonDraft(lessonEntity);
+            // Trả về response thành công
+            JSONObject jsonObject = new JSONObject();
+            jsonObject.put("lesson_draft", lessonEntity);
+            return ResponseEntity.ok(Response.success(jsonObject));
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Response.error("Có lỗi xảy ra khi"));
+        }
+    }
+
+
     @PostMapping(ApiPaths.INSTRUCTOR_UPLOAD_LESSON_VIDEO)
     public ResponseEntity<JSONObject> uploadLessonVideo(
             @RequestParam("video") MultipartFile file,
@@ -1067,6 +1121,163 @@ public class InstructorAPI {
         } catch (Exception e) {
             LogService.getgI().error(e);
             e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Response.error("Có lỗi xảy ra khi tải lên video"));
+        }
+    }
+
+    @PostMapping(ApiPaths.INSTRUCTOR_UPLOAD_LESSON_VIDEO_DRAFT)
+    public ResponseEntity<JSONObject> uploadLessonDraftVideo(
+            @RequestParam("video") MultipartFile file,
+            @PathVariable Long courseId,
+            @PathVariable Long chapterId,
+            @PathVariable Long lessonDraftId,
+            Authentication authentication) {
+        LogService.getgI().info("[InstructorAPI] uploadLessonDraftVideo lessonDraftId: " + lessonDraftId +
+                " by: " + authentication.getName());
+        try {
+            // Đọc file vào bộ nhớ
+            byte[] fileData;
+            String originalFilename;
+            String contentType;
+
+            try {
+                fileData = file.getBytes();
+                originalFilename = file.getOriginalFilename();
+                contentType = file.getContentType();
+                LogService.getgI().info("Successfully read file data, size: " + fileData.length);
+            } catch (IOException e) {
+                LogService.getgI().error(e);
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body(Response.error("Lỗi đọc dữ liệu file"));
+            }
+
+            // Validate user authentication
+            String username = authentication.getName();
+            StudentEntity student = studentService.findByUsername(username);
+            if (student == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Response.error("Không tìm thấy thông tin người dùng"));
+            }
+
+            InstructorEntity instructor = instructorService.getInstructorByStudentId(student.getId());
+            if (instructor == null || !instructor.getIsActive()) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Response.error("Không tìm thấy thông tin giáo viên"));
+            }
+
+            // Validate course ownership
+            CourseEntity course = courseService.getCourse(courseId);
+            if (course == null || !course.getInstructorId().equals(instructor.getId())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Response.error("Không có quyền truy cập khóa học này"));
+            }
+
+            // Validate lesson draft
+            LessonDraftEntity lessonDraft = courseService.getLessonDraftById(lessonDraftId);
+            if (lessonDraft == null || !lessonDraft.getChapterId().equals(chapterId)) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Response.error("Không tìm thấy thông tin bài học"));
+            }
+
+            // Generate upload tracking ID
+            String threadId = UUID.randomUUID().toString();
+            UploadingVideoDetail uploadStatus = new UploadingVideoDetail(threadId, "PENDING");
+            uploadStatus.setInstructorId(instructor.getId());
+            uploadStatus.setLessonId(lessonDraftId); // Sử dụng lessonDraftId
+            uploadStatus.setTitle("Video cho bài học: " + lessonDraft.getTitle());
+
+            // Save to cache
+            UploadingVideoCache.getInstance().getUploadingVideo().put(threadId, uploadStatus);
+
+            // Define folder structure
+            String folderName = String.format("%s/%s/chapter/%s/lesson_draft/%s",
+                    ImageFolderName.COURSE,
+                    course.getId(),
+                    chapterId,
+                    lessonDraftId);
+
+            LogService.getgI().info("Uploading video to folder: " + folderName);
+
+            // Asynchronous upload process
+            final byte[] finalFileData = fileData;
+            final String finalOriginalFilename = originalFilename;
+            final String finalContentType = contentType;
+
+            CompletableFuture.supplyAsync(() -> {
+                try {
+                    // Start progress simulation
+                    Thread progressSimulator = new Thread(() -> {
+                        try {
+                            double progress = 0;
+                            while (progress < 95 && "UPLOADING".equals(uploadStatus.getStatus())) {
+                                double increment = (95 - progress) / 20;
+                                progress += increment;
+                                uploadStatus.setProgress(progress);
+                                LogService.getgI().info("Upload progress: " + progress + "%");
+                                Thread.sleep(1000);
+                            }
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                        }
+                    });
+
+                    uploadStatus.setStatus("UPLOADING");
+                    progressSimulator.start();
+
+                    // Upload video to cloud
+                    Map uploadResult = cloudinaryService.uploadVideoFromBytes(
+                            finalFileData, finalOriginalFilename, finalContentType, folderName);
+
+                    uploadStatus.setStatus("COMPLETED");
+                    uploadStatus.setProgress(100.0);
+
+                    String videoUrl = (String) uploadResult.get("secure_url");
+                    Double duration = ConvertUtils.toDouble(uploadResult.get("duration"));
+
+                    uploadStatus.setUploadResult(uploadResult);
+
+                    // Save video lesson draft với lesson_draft_id
+                    VideoLessonDraftEntity videoLessonDraft = new VideoLessonDraftEntity();
+                    videoLessonDraft.setLessonDraftId(lessonDraftId); // Gắn lesson_draft_id
+                    videoLessonDraft.setVideoUrl(videoUrl);
+                    videoLessonDraft.setDuration(duration);
+
+                    courseService.saveVideoLessonDraft(videoLessonDraft);
+
+                    // Send success notification
+                    WebSocketMessage messageSuccess = WebSocketMessage.uploadComplete(
+                            "Khóa học: " + course.getTitle(),
+                            "Video " + lessonDraft.getTitle() + " đã được upload thành công"
+                    );
+                    webSocketService.sendToInstructor(instructor.getId(), "/uploads", messageSuccess);
+
+                    LogService.getgI().info("Video upload completed successfully for lesson draft: " + lessonDraftId);
+                    return uploadResult;
+
+                } catch (Exception e) {
+                    LogService.getgI().error(e);
+                    uploadStatus.setStatus("FAILED");
+                    uploadStatus.setProgress(0.0);
+                    uploadStatus.setErrorMessage(e.getMessage());
+
+                    // Send failure notification
+
+                    return null;
+                } finally {
+                    UploadingVideoCache.getInstance().getUploadingVideo().remove(threadId);
+                }
+            });
+
+            JSONObject response = new JSONObject();
+            response.put("uploadId", threadId);
+            response.put("status", "PENDING");
+            response.put("message", "Video đang được xử lý");
+
+            return ResponseEntity.ok(Response.success(response));
+
+        } catch (Exception e) {
+            LogService.getgI().error(e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Response.error("Có lỗi xảy ra khi tải lên video"));
         }
