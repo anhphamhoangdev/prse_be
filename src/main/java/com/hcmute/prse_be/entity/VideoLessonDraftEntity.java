@@ -32,8 +32,10 @@ public class VideoLessonDraftEntity {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    @Column(name = "content", columnDefinition = "TEXT")
     private String content;
 
+    @Column(name = "responseFromAI", columnDefinition = "TEXT")
     private String responseFromAI;
 
     @PrePersist

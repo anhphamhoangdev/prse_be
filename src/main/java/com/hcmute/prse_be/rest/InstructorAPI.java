@@ -1,6 +1,7 @@
 package com.hcmute.prse_be.rest;
 
 import com.cloudinary.Api;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.hcmute.prse_be.constants.*;
 import com.hcmute.prse_be.dtos.*;
 import com.hcmute.prse_be.entity.*;
@@ -12,6 +13,8 @@ import com.hcmute.prse_be.util.ConvertUtils;
 import com.hcmute.prse_be.util.JsonUtils;
 import net.minidev.json.JSONArray;
 import net.minidev.json.JSONObject;
+import net.minidev.json.parser.JSONParser;
+import net.minidev.json.parser.ParseException;
 import org.apache.commons.logging.Log;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -40,13 +43,16 @@ public class InstructorAPI {
 
     private final WithdrawService withdrawService;
 
-    public InstructorAPI(StudentService studentService, InstructorService instructorService, CloudinaryService cloudinaryService, CourseService courseService, WebSocketService webSocketService, WithdrawService withdrawService) {
+    private final VideoModerationService videoModerationService;
+
+    public InstructorAPI(StudentService studentService, InstructorService instructorService, CloudinaryService cloudinaryService, CourseService courseService, WebSocketService webSocketService, WithdrawService withdrawService, VideoModerationService videoModerationService) {
         this.studentService = studentService;
         this.instructorService = instructorService;
         this.cloudinaryService = cloudinaryService;
         this.courseService = courseService;
         this.webSocketService = webSocketService;
         this.withdrawService = withdrawService;
+        this.videoModerationService = videoModerationService;
     }
 
 
@@ -1242,9 +1248,7 @@ public class InstructorAPI {
                     videoLessonDraft.setLessonDraftId(lessonDraftId); // Gắn lesson_draft_id
                     videoLessonDraft.setVideoUrl(videoUrl);
                     videoLessonDraft.setDuration(duration);
-
                     courseService.saveVideoLessonDraft(videoLessonDraft);
-
                     // Send success notification
                     WebSocketMessage messageSuccess = WebSocketMessage.uploadComplete(
                             "Khóa học: " + course.getTitle(),
@@ -1252,7 +1256,20 @@ public class InstructorAPI {
                     );
                     webSocketService.sendToInstructor(instructor.getId(), "/uploads", messageSuccess);
 
+                    // send to AI to check content
+                    String result = videoModerationService.moderateVideoCustomFormat(videoUrl);
+
                     LogService.getgI().info("Video upload completed successfully for lesson draft: " + lessonDraftId);
+                    LogService.getgI().info("result: " + result);
+                    JSONParser parser = new JSONParser();
+                    try {
+                        JSONObject jsonObject = (JSONObject) parser.parse(result);
+                        videoLessonDraft.setContent(jsonObject.getAsString("content"));
+                        videoLessonDraft.setResponseFromAI(jsonObject.getAsString("response_fromai"));
+                        courseService.saveVideoLessonDraft(videoLessonDraft);
+                    } catch (ParseException e) {
+                        // Xử lý lỗi
+                    }
                     return uploadResult;
 
                 } catch (Exception e) {
@@ -1280,6 +1297,80 @@ public class InstructorAPI {
             LogService.getgI().error(e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Response.error("Có lỗi xảy ra khi tải lên video"));
+        }
+    }
+
+    @PostMapping("/courses/{courseId}/chapter/{chapterId}/lesson/{lessonId}/code-draft")
+    public ResponseEntity<JSONObject> saveCodeLessonDraft(
+            @PathVariable Long courseId,
+            @PathVariable Long chapterId,
+            @PathVariable Long lessonId,
+            @RequestBody CodeLessonDraftRequest codeLessonDraftRequest,
+            Authentication authentication) {
+        LogService.getgI().info("[InstructorAPI] saveCodeLessonDraft lessonId: " + lessonId +
+                " by: " + authentication.getName());
+
+        try {
+            // Validate user authentication
+            String username = authentication.getName();
+            StudentEntity student = studentService.findByUsername(username);
+            if (student == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Response.error("Không tìm thấy thông tin người dùng"));
+            }
+
+            InstructorEntity instructor = instructorService.getInstructorByStudentId(student.getId());
+            if (instructor == null || !instructor.getIsActive()) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Response.error("Không tìm thấy thông tin giáo viên hoặc tài khoản không hoạt động"));
+            }
+
+            // Validate course ownership
+            CourseEntity course = courseService.getCourse(courseId);
+            if (course == null || !course.getInstructorId().equals(instructor.getId())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Response.error("Không có quyền truy cập khóa học này"));
+            }
+
+            // Validate lesson draft
+            LessonDraftEntity lessonDraft = courseService.getLessonDraftById(lessonId);
+            if (lessonDraft == null || !lessonDraft.getChapterId().equals(chapterId)) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Response.error("Không tìm thấy thông tin bài học hoặc bài học không thuộc chương"));
+            }
+
+            // Map request to entity
+            CodeLessonDraftEntity codeLessonDraft = new CodeLessonDraftEntity();
+            codeLessonDraft.setLessonDraftId(lessonId);
+            codeLessonDraft.setLanguage(codeLessonDraftRequest.getLanguage());
+            codeLessonDraft.setContent(codeLessonDraftRequest.getContent());
+            codeLessonDraft.setInitialCode(codeLessonDraftRequest.getInitialCode());
+            codeLessonDraft.setSolutionCode(codeLessonDraftRequest.getSolutionCode());
+            codeLessonDraft.setExpectedOutput(codeLessonDraftRequest.getExpectedOutput());
+            codeLessonDraft.setHints(codeLessonDraftRequest.getHints());
+            codeLessonDraft.setDifficultyLevel(codeLessonDraftRequest.getDifficultyLevel());
+
+            // Handle test case
+            if (codeLessonDraftRequest.getTestCase() != null) {
+                codeLessonDraft.setTestCaseInput(codeLessonDraftRequest.getTestCase().getInput());
+                codeLessonDraft.setTestCaseOutput(codeLessonDraftRequest.getTestCase().getExpectedOutput());
+                codeLessonDraft.setTestCaseDescription(codeLessonDraftRequest.getTestCase().getDescription());
+            }
+
+            // Save code lesson draft
+            CodeLessonDraftEntity savedDraft = courseService.saveCodeLessonDraft(codeLessonDraft);
+
+            // Log success
+            LogService.getgI().info("Code lesson draft saved successfully for lessonId: " + lessonId);
+
+            // Prepare response
+            JSONObject response = new JSONObject();
+            response.put("savedDraft", savedDraft);
+            return ResponseEntity.ok(Response.success(response));
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Response.error("Có lỗi xảy ra khi lưu bài tập lập trình"));
         }
     }
 

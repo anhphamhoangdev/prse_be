@@ -117,4 +117,6 @@ public interface CourseService {
     LessonDraftEntity getLessonDraftById(Long lessonDraftId);
 
     void saveVideoLessonDraft(VideoLessonDraftEntity videoLessonDraft);
+
+    CodeLessonDraftEntity saveCodeLessonDraft(CodeLessonDraftEntity codeLessonDraft);
 }
