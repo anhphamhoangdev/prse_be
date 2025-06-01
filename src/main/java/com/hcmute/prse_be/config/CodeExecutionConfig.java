@@ -13,13 +13,15 @@ import java.util.Map;
 @ConfigurationProperties(prefix = "code-execution")
 public class CodeExecutionConfig {
     private String tempDirectory = System.getProperty("java.io.tmpdir") + "/code-execution";
+
     private Map<String, LanguageConfig> languages = Map.of(
             "python", new LanguageConfig("python:3.11-alpine", "py", null, "python", 10000),
 
-            // ✅ Đổi thành ubuntu:22.04 và install GCC
-            "cpp", new LanguageConfig("ubuntu:22.04", "cpp",
-                    "apt-get update && apt-get install -y g++ && g++ -o /tmp/program /tmp/code.cpp",
+
+            "cpp", new LanguageConfig("alpine:latest", "cpp",
+                    "apk add --no-cache g++ && g++ -o /tmp/program /tmp/code.cpp",
                     "/tmp/program", 15000),
+
 
             "java", new LanguageConfig("amazoncorretto:17-alpine", "java",
                     "javac -d /tmp /tmp/Main.java",

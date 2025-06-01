@@ -134,13 +134,13 @@ public class CodeExecutionServiceImpl implements CodeExecutionService {
         String fileName = "java".equalsIgnoreCase(request.getLanguage()) ?
                 "Main.java" : "code." + langConfig.getExtension();
 
-        // KHÔNG dùng autoRemove - để có thể lấy logs sau khi container finish
+
         HostConfig hostConfig = HostConfig.newHostConfig()
                 .withMemory(128L * 1024 * 1024) // 128MB
                 .withCpuQuota(50000L) // 50% CPU
                 .withNetworkMode("none")
                 .withBinds(Bind.parse(execDir.toString() + ":/tmp:rw"));
-        // .withAutoRemove(true); // BỎ dòng này
+
 
         CreateContainerResponse container = dockerClient.createContainerCmd(langConfig.getImage())
                 .withHostConfig(hostConfig)

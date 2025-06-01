@@ -1267,6 +1267,7 @@ public class InstructorAPI {
                         videoLessonDraft.setContent(jsonObject.getAsString("content"));
                         videoLessonDraft.setResponseFromAI(jsonObject.getAsString("response_fromai"));
                         courseService.saveVideoLessonDraft(videoLessonDraft);
+                        UploadingVideoCache.getInstance().getUploadingVideo().remove(threadId);
                     } catch (ParseException e) {
                         // Xử lý lỗi
                     }
@@ -1277,8 +1278,6 @@ public class InstructorAPI {
                     uploadStatus.setStatus("FAILED");
                     uploadStatus.setProgress(0.0);
                     uploadStatus.setErrorMessage(e.getMessage());
-
-                    // Send failure notification
 
                     return null;
                 } finally {

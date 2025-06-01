@@ -3,16 +3,11 @@ package com.hcmute.prse_be.rest;
 import com.hcmute.prse_be.constants.ApiPaths;
 import com.hcmute.prse_be.constants.ErrorMsg;
 import com.hcmute.prse_be.constants.StatusType;
-import com.hcmute.prse_be.dtos.CourseCurriculumDTO;
-import com.hcmute.prse_be.dtos.CourseDTO;
-import com.hcmute.prse_be.dtos.CourseFeedbackDTO;
-import com.hcmute.prse_be.dtos.EnrollmentDTO;
+import com.hcmute.prse_be.dtos.*;
 import com.hcmute.prse_be.entity.*;
 import com.hcmute.prse_be.response.Response;
 import com.hcmute.prse_be.response.VideoLessonInfoResponse;
-import com.hcmute.prse_be.service.CourseService;
-import com.hcmute.prse_be.service.LogService;
-import com.hcmute.prse_be.service.StudentService;
+import com.hcmute.prse_be.service.*;
 import com.hcmute.prse_be.util.ConvertUtils;
 import net.minidev.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,11 +28,18 @@ public class CourseAPI {
 
     private final StudentService studentService;
 
+    private final UserSubmissionService userSubmissionService;
+
+    private final CodeExecutionService codeExecutionService;
+
+
 
     @Autowired
-    public CourseAPI(CourseService courseService, StudentService studentService) {
+    public CourseAPI(CourseService courseService, StudentService studentService, UserSubmissionService userSubmissionService, CodeExecutionService codeExecutionService) {
         this.courseService = courseService;
         this.studentService = studentService;
+        this.userSubmissionService = userSubmissionService;
+        this.codeExecutionService = codeExecutionService;
     }
 
     @GetMapping(ApiPaths.COURSE_PATH_ID)
@@ -173,7 +175,18 @@ public class CourseAPI {
             // check xem complete chua thong qua progress cua lesson
             boolean isCompleted = courseService.isCompleteLesson(lessonId, studentService.findByUsername(authentication.getName()).getId());
 
+            // User last submission
             JSONObject data = new JSONObject();
+
+            if(isCompleted)
+            {
+                StudentEntity student = studentService.findByUsername(authentication.getName());
+                UserSubmissionEntity userSubmissionEntity = userSubmissionService
+                        .getLatestSubmission(student.getId(), lessonId)
+                        .orElse(null);
+                data.put("lastSubmission", userSubmissionEntity);
+            }
+
             data.put("currentLesson", codeLessonEntity);
             data.put("isCompleted", isCompleted);
 
@@ -336,6 +349,79 @@ public class CourseAPI {
 
         } catch (Exception e) {
             return ResponseEntity.ok(Response.error("Không tìm thấy khóa học"));
+        }
+    }
+
+    @PostMapping("/submit-code")
+    public ResponseEntity<JSONObject> submitCodeLesson(@RequestBody JSONObject data, Authentication authentication) {
+        LogService.getgI().info("[CourseAPI] submitCodeLesson : " + data.toJSONString());
+
+        try {
+            // 1. Nhận request
+            Long courseId = Long.parseLong(data.getAsString("courseId"));
+            Long chapterId = Long.parseLong(data.getAsString("chapterId"));
+            Long lessonId = Long.parseLong(data.getAsString("lessonId"));
+            String code = data.getAsString("code");
+            String language = data.getAsString("language");
+            String input = data.getAsString("input");
+            String expectedOutput = data.getAsString("expectedOutput");
+
+            if (!courseService.checkCourseAccess(courseId, authentication)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Response.error("Không có quyền truy cập khóa học"));
+            }
+
+            StudentEntity student = studentService.findByUsername(authentication.getName());
+            if (student == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Response.error(ErrorMsg.STUDENT_USERNAME_NOT_EXIST));
+            }
+
+            // 4. Validate code không rỗng
+            if (code == null || code.trim().isEmpty()) {
+                return ResponseEntity.ok(Response.error("Code cannot be empty"));
+            }
+
+            // 5. Cho chạy code
+            CodeExecutionRequestDto executionRequest = new CodeExecutionRequestDto();
+            executionRequest.setCode(code);
+            executionRequest.setLanguage(language);
+            executionRequest.setInput(input);
+            executionRequest.setExpectedOutput(expectedOutput);
+
+            CodeExecutionResponseDto executionResult = codeExecutionService.executeCode(executionRequest);
+
+            LogService.getgI().info("[CourseAPI] Code execution completed. Success: " +
+                    executionResult.isSuccess() + " isCorrect: " + executionResult.getIsCorrect());
+
+            // 6. Lưu submission
+            UserSubmissionEntity submission = userSubmissionService.createSubmission(
+                    student.getId(),
+                    courseId,
+                    chapterId,
+                    lessonId,
+                    code,
+                    language,
+                    executionResult.getIsCorrect(),
+                    executionResult.getExecutionTime(),
+                    executionResult.getMemoryUsed()
+            );
+
+            // 7. Nếu 2 cái bằng nhau => correct và lưu lesson progress
+            if (executionResult.getIsCorrect() != null && executionResult.getIsCorrect()) {
+                boolean lessonProgressUpdated = courseService.submitLesson(courseId, chapterId, lessonId, student);
+                LogService.getgI().info("[CourseAPI] Lesson progress updated: " + lessonProgressUpdated);
+            }
+            // 8. Nếu sai thì trả về thôi không lưu progress (đã handle ở trên)
+
+            // 9. Return execution result (giống executeCode response format)
+            JSONObject response = new JSONObject();
+            response.put("result", executionResult);
+
+            return ResponseEntity.ok(Response.success(response));
+
+        } catch (Exception e) {
+            return ResponseEntity.ok(Response.error("Đã có lỗi xảy ra khi submit code lesson!"));
         }
     }
 }
