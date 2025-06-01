@@ -145,6 +145,45 @@ public class CourseAPI {
         }
     }
 
+    @GetMapping("/{courseId}/{chapterId}/{lessonId}/code")
+    public ResponseEntity<JSONObject> getCodeLesson(
+            @PathVariable("courseId") Long courseId,
+            @PathVariable("chapterId") Long chapterId,
+            @PathVariable("lessonId") Long lessonId,
+            Authentication authentication
+    ) {
+        LogService.getgI().info("[CourseAPI] getCodeLesson : courseId= " + courseId + ", chapterId= " + chapterId + ", lessonId= " + lessonId);
+
+        try {
+
+            // check coi no co vao khoa hoc chua neu chua thi tra ve forbidden
+            if (!courseService.checkCourseAccess(courseId, authentication)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Response.error("Không có quyền truy cập khóa học"));
+            }
+
+            // Lấy video lesson theo courseId, chapterId, lessonId
+            CodeLessonEntity codeLessonEntity = courseService.getCodeLesson(courseId, chapterId, lessonId);
+
+            // Nếu không tìm thấy code lesson thì trả về not found
+            if(codeLessonEntity == null)
+            {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Response.error("Không tìm thấy video lesson"));
+            }
+
+            // check xem complete chua thong qua progress cua lesson
+            boolean isCompleted = courseService.isCompleteLesson(lessonId, studentService.findByUsername(authentication.getName()).getId());
+
+            JSONObject data = new JSONObject();
+            data.put("currentLesson", codeLessonEntity);
+            data.put("isCompleted", isCompleted);
+
+            return ResponseEntity.ok(Response.success(data));
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Response.error("Không tìm thấy video lesson"));
+        }
+    }
+
     // submit lesson
     @PostMapping(ApiPaths.COURSE_SUBMIT_VIDEO)
     public ResponseEntity<JSONObject> submitLesson(@RequestBody JSONObject data, Authentication authentication) {

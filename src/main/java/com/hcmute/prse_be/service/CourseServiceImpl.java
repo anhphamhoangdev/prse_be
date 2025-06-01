@@ -58,10 +58,11 @@ public class CourseServiceImpl implements CourseService {
     private final LessonDraftRepository lessonDraftRepository;
     private final VideoLessonDraftRepository videoLessonDraftRepository;
     private final CodeLessonDraftRepository codeLessonDraftRepository;
+    private final CodeLessonRepository codeLessonRepository;
 
 
     @Autowired
-    public CourseServiceImpl(CourseRepository courseRepository, CourseDiscountRepository courseDiscountRepository, InstructorRepository instructorRepository, CourseObjectiveRepository courseObjectiveRepository, SubCategoryRepository subCategoryRepository, CoursePrerequisiteRepository coursePrerequisiteRepository, StudentRepository studentRepository, EnrollmentRepository enrollmentRepository, CourseFeedbackRepository courseFeedbackRepository, ChapterRepository chapterRepository, LessonRepository lessonRepository, ChapterProgressRepository chapterProgressRepository, LessonProgressRepository lessonProgressRepository, VideoLessonRepository videoLessonRepository, CourseSubCategoryRepository courseSubCategoryRepository, QuestionRepository questionRepository, AnswerRepository answerRepository, StudentCourseViewRepository studentCourseViewRepository, WebClient webClient, LessonDraftRepository lessonDraftRepository, VideoLessonDraftRepository videoLessonDraftRepository, CodeLessonDraftRepository codeLessonDraftRepository) {
+    public CourseServiceImpl(CourseRepository courseRepository, CourseDiscountRepository courseDiscountRepository, InstructorRepository instructorRepository, CourseObjectiveRepository courseObjectiveRepository, SubCategoryRepository subCategoryRepository, CoursePrerequisiteRepository coursePrerequisiteRepository, StudentRepository studentRepository, EnrollmentRepository enrollmentRepository, CourseFeedbackRepository courseFeedbackRepository, ChapterRepository chapterRepository, LessonRepository lessonRepository, ChapterProgressRepository chapterProgressRepository, LessonProgressRepository lessonProgressRepository, VideoLessonRepository videoLessonRepository, CourseSubCategoryRepository courseSubCategoryRepository, QuestionRepository questionRepository, AnswerRepository answerRepository, StudentCourseViewRepository studentCourseViewRepository, WebClient webClient, LessonDraftRepository lessonDraftRepository, VideoLessonDraftRepository videoLessonDraftRepository, CodeLessonDraftRepository codeLessonDraftRepository, CodeLessonRepository codeLessonRepository) {
         this.courseRepository = courseRepository;
         this.courseDiscountRepository = courseDiscountRepository;
         this.instructorRepository = instructorRepository;
@@ -84,6 +85,7 @@ public class CourseServiceImpl implements CourseService {
         this.lessonDraftRepository = lessonDraftRepository;
         this.videoLessonDraftRepository = videoLessonDraftRepository;
         this.codeLessonDraftRepository = codeLessonDraftRepository;
+        this.codeLessonRepository = codeLessonRepository;
     }
 
     @Override
@@ -1032,6 +1034,18 @@ public class CourseServiceImpl implements CourseService {
     @Override
     public CodeLessonDraftEntity saveCodeLessonDraft(CodeLessonDraftEntity codeLessonDraft) {
         return codeLessonDraftRepository.save(codeLessonDraft);
+    }
+
+    @Override
+    public void saveCodeLesson(CodeLessonEntity codeLesson) {
+        codeLessonRepository.save(codeLesson);
+    }
+
+    @Override
+    public CodeLessonEntity getCodeLesson(Long courseId, Long chapterId, Long lessonId) {
+        return codeLessonRepository.findCodeLessonByCourseAndChapterAndLesson(
+                courseId, chapterId, lessonId
+        );
     }
 
     // Gọi API recommendation với danh sách courseIds

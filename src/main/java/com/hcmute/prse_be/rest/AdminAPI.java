@@ -58,7 +58,9 @@ public class AdminAPI {
 
     private final VideoLessonDraftService videoLessonDraftService;
 
-    public AdminAPI(AdminService adminService, AuthenticationManager authenticationManager, CustomUserDetailsService customUserDetailsService, JwtService jwtService, StudentService studentService, CourseService courseService, InstructorService instructorService, EnrollmentService enrollmentService, TicketService ticketService, PaymentService paymentService, WithdrawService withdrawService, CategoryService categoryService, LessonDraftService lessonDraftService, VideoLessonDraftService videoLessonDraftService) {
+    private final CodeLessonDraftService codeLessonDraftService;
+
+    public AdminAPI(AdminService adminService, AuthenticationManager authenticationManager, CustomUserDetailsService customUserDetailsService, JwtService jwtService, StudentService studentService, CourseService courseService, InstructorService instructorService, EnrollmentService enrollmentService, TicketService ticketService, PaymentService paymentService, WithdrawService withdrawService, CategoryService categoryService, LessonDraftService lessonDraftService, VideoLessonDraftService videoLessonDraftService, CodeLessonDraftService codeLessonDraftService) {
         this.adminService = adminService;
         this.authenticationManager = authenticationManager;
         this.customUserDetailsService = customUserDetailsService;
@@ -73,6 +75,7 @@ public class AdminAPI {
         this.categoryService = categoryService;
         this.lessonDraftService = lessonDraftService;
         this.videoLessonDraftService = videoLessonDraftService;
+        this.codeLessonDraftService = codeLessonDraftService;
     }
 
 
@@ -1286,6 +1289,34 @@ public class AdminAPI {
         }
     }
 
+    @GetMapping("/code-lessons-draft")
+    public ResponseEntity<JSONObject> getCodeLessonDraft(
+            @RequestParam Long lessonDraftId,
+            Authentication authentication
+    ) {
+        LogService.getgI().info("[AdminAPI] getCodeLessonDraft username: " + authentication.getName()
+                + " lessonDraftId: " + lessonDraftId);
+        try {
+            String email = authentication.getName();
+            AdminEntity admin = adminService.findByEmail(email);
+            if (admin == null) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Response.error(ErrorMsg.STUDENT_USERNAME_NOT_EXIST));
+            }
+
+            CodeLessonDraftEntity codeLessonDraftEntity = codeLessonDraftService.findByLessonDraftId(lessonDraftId);
+            if (codeLessonDraftEntity == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Response.error("Code lesson draft not found"));
+            }
+
+            JSONObject response = new JSONObject();
+            response.put("codeLessonDraft", codeLessonDraftEntity);
+
+            return ResponseEntity.ok(Response.success(response));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Response.error(ErrorMsg.SOMETHING_WENT_WRONG + e.getMessage()));
+        }
+    }
+
 
     @PatchMapping("/lessons-draft/{lessonDraftId}/approve")
     public ResponseEntity<JSONObject> approveLessonDraft(Authentication authentication,
@@ -1306,8 +1337,7 @@ public class AdminAPI {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Response.error("Lesson Draft not found"));
             }
 
-            if(Objects.equals(lessonDraftEntity.getType(), LessonType.VIDEO))
-            {
+            if(Objects.equals(lessonDraftEntity.getType(), LessonType.VIDEO)) {
 
                 VideoLessonDraftEntity videoLessonDraft = videoLessonDraftService.findByLessonDraftId(lessonDraftId);
                 if (videoLessonDraft == null) {
@@ -1331,6 +1361,44 @@ public class AdminAPI {
                 videoLesson.setVideoUrl(videoLessonDraft.getVideoUrl());
                 videoLesson.setDuration(videoLessonDraft.getDuration());
                 courseService.saveVideoLesson(videoLesson);
+
+                lessonDraftEntity.setStatus(LessonDraftStatus.APPROVED);
+                lessonDraftService.save(lessonDraftEntity);
+            }
+
+            if(Objects.equals(lessonDraftEntity.getType(), LessonType.CODE)) {
+
+                CodeLessonDraftEntity codeLessonDraftEntity = codeLessonDraftService.findByLessonDraftId(lessonDraftId);
+
+                if(codeLessonDraftEntity == null) {
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Response.error("Code lesson not found"));
+                }
+
+                // tao lesson moi
+                List<LessonEntity> lessons = courseService.getLessonsByChapterId(lessonDraftEntity.getChapterId());
+                LessonEntity lesson = new LessonEntity();
+                lesson.setTitle(lessonDraftEntity.getTitle());
+                lesson.setChapterId(lessonDraftEntity.getChapterId());
+                lesson.setType(lessonDraftEntity.getType());
+                lesson.setOrderIndex(lessons.size() + 1);
+                lesson.setIsPublish(lessonDraftEntity.getIsPublish());
+                lesson = courseService.saveLesson(lesson);
+
+
+                CodeLessonEntity codeLesson = new CodeLessonEntity();
+                codeLesson.setLessonId(lesson.getId());
+                codeLesson.setLanguage(codeLessonDraftEntity.getLanguage());
+                codeLesson.setContent(codeLessonDraftEntity.getContent());
+                codeLesson.setInitialCode(codeLessonDraftEntity.getInitialCode());
+                codeLesson.setSolutionCode(codeLessonDraftEntity.getSolutionCode());
+                codeLesson.setExpectedOutput(codeLessonDraftEntity.getExpectedOutput());
+                codeLesson.setHints(codeLessonDraftEntity.getHints());
+                codeLesson.setDifficultyLevel(codeLessonDraftEntity.getDifficultyLevel().toLowerCase());
+                codeLesson.setTestCaseInput(codeLessonDraftEntity.getTestCaseInput());
+                codeLesson.setTestCaseOutput(codeLessonDraftEntity.getTestCaseOutput());
+                codeLesson.setTestCaseDescription(codeLessonDraftEntity.getTestCaseDescription());
+
+                courseService.saveCodeLesson(codeLesson);
 
                 lessonDraftEntity.setStatus(LessonDraftStatus.APPROVED);
                 lessonDraftService.save(lessonDraftEntity);
