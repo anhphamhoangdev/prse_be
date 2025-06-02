@@ -176,7 +176,7 @@ public class VideoModerationServiceImpl implements VideoModerationService{
                 log.warn("Không thể trích xuất frames từ video: {}", videoUrl);
                 return new VideoModerationResult(
                         false,
-                        "Đã có lỗi xảy ra khi phân tích video - không thể trích xuất frames từ video hoặc video không hợp lệ",
+                        "Không thể trích xuất frames từ video hoặc video không hợp lệ",
                         0,
                         new ArrayList<>()
                 );
@@ -199,7 +199,7 @@ public class VideoModerationServiceImpl implements VideoModerationService{
 
             String finalReason = hasViolations ?
                     "Video chứa nội dung không phù hợp cho môi trường giáo dục" :
-                    String.format("Video phù hợp cho môi trường giáo dục - đã phân tích %d frames", frameBase64List.size());
+                    String.format("Video phù hợp cho môi trường giáo dục");
 
             return new VideoModerationResult(
                     !hasViolations,
@@ -209,10 +209,10 @@ public class VideoModerationServiceImpl implements VideoModerationService{
             );
 
         } catch (Exception e) {
-            log.error("Lỗi kiểm duyệt video - System error: {}", e.getMessage(), e);
+            log.error("Lỗi kiểm duyệt video: ", e);
             return new VideoModerationResult(
                     false,
-                    "Đã có lỗi xảy ra khi phân tích video - lỗi hệ thống: " + e.getMessage(),
+                    "Lỗi hệ thống: " + e.getMessage(),
                     0,
                     new ArrayList<>()
             );
