@@ -144,7 +144,7 @@ public class VideoModerationServiceImpl implements VideoModerationService{
 
             // Tạo JSON response
             Map<String, String> response = new HashMap<>();
-            response.put("description", description);
+            response.put("response_fromai", description);
             response.put("content", contentBuilder.toString());
 
             return objectMapper.writeValueAsString(response);
@@ -152,13 +152,13 @@ public class VideoModerationServiceImpl implements VideoModerationService{
         } catch (Exception e) {
             log.error("Error creating custom format response: {}", e.getMessage(), e);
             Map<String, String> errorResponse = new HashMap<>();
-            errorResponse.put("description", "<p style='color:red'>Đã có lỗi xảy ra khi phân tích video - " + escapeHtml(e.getMessage()) + "</p>");
+            errorResponse.put("response_fromai", "<p style='color:red'>Đã có lỗi xảy ra khi phân tích video - " + escapeHtml(e.getMessage()) + "</p>");
             errorResponse.put("content", "<p style='color:red'>Đã có lỗi xảy ra khi phân tích video do lỗi hệ thống</p>");
 
             try {
                 return objectMapper.writeValueAsString(errorResponse);
             } catch (Exception jsonEx) {
-                return "{\"description\": \"<p style='color:red'>Đã có lỗi xảy ra khi phân tích video</p>\", \"content\": \"<p style='color:red'>Đã có lỗi xảy ra khi phân tích video</p>\"}";
+                return "{\"response_fromai\": \"<p style='color:red'>Đã có lỗi xảy ra khi phân tích video</p>\", \"content\": \"<p style='color:red'>Đã có lỗi xảy ra khi phân tích video</p>\"}";
             }
         }
     }
