@@ -104,18 +104,18 @@ public class VideoModerationServiceImpl implements VideoModerationService{
         try {
             VideoModerationResult result = moderateVideoDetailed(videoUrl);
 
-            // Màu sắc tổng thể
-            String overallColor = result.isApproved() ? "green" : "red";
+            // Xác định màu mô tả tổng thể dựa vào kết quả phê duyệt
+            boolean approved = result.isApproved();
+            String descriptionColor = approved ? "green" : "red";
 
-            // Phần kết quả tổng quát
-            String responseFromAi = String.format(
-                    "<strong style='color:%s'>Approved: %s</strong><br/>Description: %s",
-                    overallColor,
-                    result.isApproved() ? "True" : "False",
+            // Escape nội dung mô tả và gán màu sắc
+            String description = String.format(
+                    "<p style='color:%s'>%s</p>",
+                    descriptionColor,
                     escapeHtml(result.getOverallReason())
             );
 
-            // Nội dung từng frame
+            // Phân tích nội dung từng frame
             StringBuilder contentBuilder = new StringBuilder();
 
             if (result.getFrameAnalyses().isEmpty()) {
@@ -123,16 +123,20 @@ public class VideoModerationServiceImpl implements VideoModerationService{
             } else {
                 contentBuilder.append("<ul>\n");
                 for (FrameAnalysis analysis : result.getFrameAnalyses()) {
-                    String frameColor = analysis.isApproved() ? "green" : "red";
-                    String frameStatus = analysis.isApproved() ? "Phù hợp" : "Không phù hợp";
+                    boolean frameApproved = analysis.isApproved();
+                    String frameColor = frameApproved ? "green" : "red";
+                    String frameStatus = frameApproved ? "Phù hợp" : "Không phù hợp";
 
                     contentBuilder
                             .append("<li>\n")
-                            .append(String.format("<strong style='color:%s'>- Frame %d - %s:</strong>\n",
-                                    frameColor, analysis.getFrameNumber(), frameStatus))
-                            .append("<p>")
-                            .append(escapeHtml(analysis.getContent()))
-                            .append("</p>\n")
+                            .append(String.format(
+                                    "<strong style='color:%s'>%d - Frame - %s:</strong>\n",
+                                    frameColor, analysis.getFrameNumber(), frameStatus
+                            ))
+                            .append(String.format(
+                                    "<p style='color:%s'>%s</p>\n",
+                                    frameColor, escapeHtml(analysis.getContent())
+                            ))
                             .append("</li>\n");
                 }
                 contentBuilder.append("</ul>");
@@ -140,7 +144,7 @@ public class VideoModerationServiceImpl implements VideoModerationService{
 
             // Tạo JSON response
             Map<String, String> response = new HashMap<>();
-            response.put("response_fromai", responseFromAi);
+            response.put("description", description);
             response.put("content", contentBuilder.toString());
 
             return objectMapper.writeValueAsString(response);
@@ -148,13 +152,13 @@ public class VideoModerationServiceImpl implements VideoModerationService{
         } catch (Exception e) {
             log.error("Error creating custom format response: {}", e.getMessage(), e);
             Map<String, String> errorResponse = new HashMap<>();
-            errorResponse.put("response_fromai", "<strong style='color:red'>Approved: False</strong><br/>Description: Đã có lỗi xảy ra khi phân tích video - " + escapeHtml(e.getMessage()));
-            errorResponse.put("content", "<p>Đã có lỗi xảy ra khi phân tích video do lỗi hệ thống</p>");
+            errorResponse.put("description", "<p style='color:red'>Đã có lỗi xảy ra khi phân tích video - " + escapeHtml(e.getMessage()) + "</p>");
+            errorResponse.put("content", "<p style='color:red'>Đã có lỗi xảy ra khi phân tích video do lỗi hệ thống</p>");
 
             try {
                 return objectMapper.writeValueAsString(errorResponse);
             } catch (Exception jsonEx) {
-                return "{\"response_fromai\": \"<strong style='color:red'>Approved: False</strong><br/>Description: Đã có lỗi xảy ra khi phân tích video\", \"content\": \"<p>Đã có lỗi xảy ra khi phân tích video</p>\"}";
+                return "{\"description\": \"<p style='color:red'>Đã có lỗi xảy ra khi phân tích video</p>\", \"content\": \"<p style='color:red'>Đã có lỗi xảy ra khi phân tích video</p>\"}";
             }
         }
     }
