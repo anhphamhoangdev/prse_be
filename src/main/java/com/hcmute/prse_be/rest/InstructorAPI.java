@@ -1267,7 +1267,6 @@ public class InstructorAPI {
                         videoLessonDraft.setContent(jsonObject.getAsString("content"));
                         videoLessonDraft.setResponseFromAI(jsonObject.getAsString("response_fromai"));
                         courseService.saveVideoLessonDraft(videoLessonDraft);
-                        UploadingVideoCache.getInstance().getUploadingVideo().remove(threadId);
                     } catch (ParseException e) {
                         // Xử lý lỗi
                     }
