@@ -104,27 +104,32 @@ public class VideoModerationServiceImpl implements VideoModerationService{
         try {
             VideoModerationResult result = moderateVideoDetailed(videoUrl);
 
-            // Tạo response_fromai
-            String responseFromAi = String.format("Approved: %s<br/>Description: %s",
-                    result.isApproved() ? "True" : "False",
-                    result.getOverallReason());
+            // Màu sắc tổng thể
+            String overallColor = result.isApproved() ? "green" : "red";
 
-            // Tạo HTML content cho từng frame với format mới
+            // Phần kết quả tổng quát
+            String responseFromAi = String.format(
+                    "<strong style='color:%s'>Approved: %s</strong><br/>Description: %s",
+                    overallColor,
+                    result.isApproved() ? "True" : "False",
+                    escapeHtml(result.getOverallReason())
+            );
+
+            // Nội dung từng frame
             StringBuilder contentBuilder = new StringBuilder();
 
             if (result.getFrameAnalyses().isEmpty()) {
-                // Không có frames được phân tích
                 contentBuilder.append("<p>Đã có lỗi xảy ra khi phân tích video - không thể trích xuất nội dung từ video</p>");
             } else {
                 contentBuilder.append("<ul>\n");
                 for (FrameAnalysis analysis : result.getFrameAnalyses()) {
+                    String frameColor = analysis.isApproved() ? "green" : "red";
+                    String frameStatus = analysis.isApproved() ? "Phù hợp" : "Không phù hợp";
+
                     contentBuilder
                             .append("<li>\n")
-                            .append("<strong>Frame ")
-                            .append(analysis.getFrameNumber())
-                            .append(" - ")
-                            .append(analysis.isApproved() ? "Phù hợp" : "Không phù hợp")
-                            .append(":</strong>\n")
+                            .append(String.format("<strong style='color:%s'>- Frame %d - %s:</strong>\n",
+                                    frameColor, analysis.getFrameNumber(), frameStatus))
                             .append("<p>")
                             .append(escapeHtml(analysis.getContent()))
                             .append("</p>\n")
@@ -143,13 +148,13 @@ public class VideoModerationServiceImpl implements VideoModerationService{
         } catch (Exception e) {
             log.error("Error creating custom format response: {}", e.getMessage(), e);
             Map<String, String> errorResponse = new HashMap<>();
-            errorResponse.put("response_fromai", "Approved: False<br/>Description: Đã có lỗi xảy ra khi phân tích video - " + e.getMessage());
+            errorResponse.put("response_fromai", "<strong style='color:red'>Approved: False</strong><br/>Description: Đã có lỗi xảy ra khi phân tích video - " + escapeHtml(e.getMessage()));
             errorResponse.put("content", "<p>Đã có lỗi xảy ra khi phân tích video do lỗi hệ thống</p>");
 
             try {
                 return objectMapper.writeValueAsString(errorResponse);
             } catch (Exception jsonEx) {
-                return "{\"response_fromai\": \"Approved: False<br/>Description: Đã có lỗi xảy ra khi phân tích video\", \"content\": \"<p>Đã có lỗi xảy ra khi phân tích video</p>\"}";
+                return "{\"response_fromai\": \"<strong style='color:red'>Approved: False</strong><br/>Description: Đã có lỗi xảy ra khi phân tích video\", \"content\": \"<p>Đã có lỗi xảy ra khi phân tích video</p>\"}";
             }
         }
     }
